@@ -236,6 +236,39 @@ Regeln:
 3. Bei gefundenen fremden Zeichen (z.B. Chinesisch, Japanisch, Arabisch): **Sofort korrigieren und erneut prüfen.**
 4. Erst wenn alle Beschreibungen geprüft sind, mit dem Schreiben fortfahren.
 
+### Schritt 4c: HITL-Bildprüfung via review.html / review.json (verbindlich)
+
+Vor dem physischen Umbenennen (Schritt 5) MÜSSEN alle Umbenennungen und Beschreibungskorrekturen über die visuelle Review-Seite verifiziert werden. Das verhindert, dass Bildinhalte falsch benannt werden (z. B. Spieler verwechselt, Rauchfarbe falsch, Touchdown statt Tackle).
+
+**Datenquelle (einziges Source of Truth – NICHT committet):**
+- `review.json` im Projekt-Root: ein **Array** mit je einem Objekt pro Bild:
+  ```json
+  {
+    "id": "V-049 — hoeneckl-und-raffl.jpg",
+    "bild": "apps/reisinger.pictures/src/content/portfolio/.../hoeneckl-und-raffl.jpg",
+    "originalerDateiname": "hoeneckl-und-raffl.jpg",
+    "finalerDateiname": "hoeneckl-gegen-baltram.jpg",
+    "finaleDescription": "Der Eishockey-Goalie ..."
+  }
+  ```
+  - `bild`: relativer Pfad zum Originalbild (für `<img src>`).
+  - `originalerDateiname`: aktueller Dateiname **vor** dem Umbenennen.
+  - `finalerDateiname`: vorgeschlagener / finaler SEO-Dateiname nach Freigabe.
+  - `finaleDescription`: final freigegebene Beschreibung.
+  - `review.json` ist **lokal** und wird **nicht committet** (Eintrag in `.gitignore`). Es darf **nie** inline in die HTML dupliziert werden – die HTML lädt es per `fetch`.
+
+**Viewer (committet, fix):**
+- `review.html` im Projekt-Root: lädt `review.json` per `fetch` (Poll alle 2 s) und rendert pro Bild: **Bild + finaler Dateiname + originaler Dateiname + finale description**. Sie ist ein **fixer Viewer** – sie ändert sich NICHT, wenn sich die Bilddaten ändern. Neue Daten → einfach `review.json` anpassen; die Seite aktualisiert sich live (in der WebStorm-Live-Vorschau über http).
+- `review.html` wird **einmalig committet**, `review.json` **nie**.
+
+**Ablauf:**
+1. Während des Reviews (Schritt 4) werden mehrdeutige Bilder wie gewohnt interaktiv via `question`-Tool geklärt.
+2. Nach Abschluss aller Klärungen wird `review.json` mit den finalen Werten (Dateiname + Description) befüllt.
+3. Der User öffnet `review.html` (WebStorm-Live-Vorschau) und prüft visuell: Stimmt der finale Dateiname zum Bildinhalt? Stimmt die finale Beschreibung?
+4. **Erst nach dieser finalen Verifikation** wird physisch umbenannt (Schritt 5) und die YAMLs / `index.mdx` geschrieben.
+
+**`progress.md`:** Der Fortschritt der Bildprüfung (pro Bild: originaler / finaler Dateiname, finale Description, Status) wird in `progress.md` dokumentiert – konsistent mit den Feldern in `review.json`.
+
 ### Schritt 5: Bilder & YAMLs physisch umbenennen (nach Freigabe)
 
 **Bilder und YAMLs MÜSSEN immer physisch umbenannt werden!**

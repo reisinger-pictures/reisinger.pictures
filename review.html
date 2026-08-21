@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Review – Bildprüfung (HITL)</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:32px auto;padding:0 16px;background:#fafafa;color:#111}
+  h1{font-size:20px;margin:0 0 6px}
+  .hint{color:#666;font-size:13px;margin:0 0 24px}
+  section{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin:16px 0;display:flex;flex-direction:column;box-sizing:border-box}
+  h2{font-size:14px;margin:0 0 12px;word-break:break-all}
+  img{max-width:100%;max-height:calc(100vh - 320px);width:auto;height:auto;object-fit:contain;align-self:center;border-radius:8px;border:1px solid #eee;background:#fff}
+  .path{font-size:11px;color:#888;word-break:break-all;margin-top:8px}
+  .meta{font-size:12px;line-height:1.5;margin-top:10px;border-top:1px dashed #ddd;padding-top:10px}
+  .meta b{color:#333}
+  .changed{color:#c0392b}
+  .same{color:#2e7d32}
+  .desc{background:#f6f6f6;border-radius:8px;padding:10px 12px;margin-top:8px;font-size:13px;line-height:1.45}
+  .err{color:#c0392b;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Review – Bildprüfung (HITL)</h1>
+<p class="hint" id="hint">REVIEW-Bilder · relativ zu Projekt-Root · Bild + finaler Dateiname + originaler Dateiname + finale description. Daten werden aus <code>review.json</code> geladen.</p>
+
+<script>
+  function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function render(data){
+    // Vorhandene, per JS erzeugte Sektionen entfernen
+    document.querySelectorAll('section.review-item').forEach(function(n){ n.remove(); });
+    const body=document.body;
+    data.forEach(function(d){
+      const sec=document.createElement('section');
+      sec.className='review-item';
+      const h=document.createElement('h2'); h.textContent=d.id; sec.appendChild(h);
+      const img=document.createElement('img'); img.src=d.bild; img.alt=d.originalerDateiname; img.loading='lazy'; sec.appendChild(img);
+      const p=document.createElement('div'); p.className='path'; p.textContent=d.bild; sec.appendChild(p);
+      const meta=document.createElement('div'); meta.className='meta';
+      const renamed = d.originalerDateiname !== d.finalerDateiname;
+      meta.innerHTML = '<b>Originaler Dateiname:</b> <span class="'+(renamed?'changed':'same')+'">'+esc(d.originalerDateiname)+'</span><br>'
+                    + '<b>Finaler Dateiname:</b> <span class="'+(renamed?'changed':'same')+'">'+esc(d.finalerDateiname)+'</span>';
+      sec.appendChild(meta);
+      const desc=document.createElement('div'); desc.className='desc';
+      desc.innerHTML='<b>Finale description:</b><br>'+esc(d.finaleDescription);
+      sec.appendChild(desc);
+      body.appendChild(sec);
+    });
+    document.getElementById('hint').textContent =
+      data.length + ' REVIEW-Bilder · relativ zu Projekt-Root · Bild + finaler Dateiname + originaler Dateiname + finale description. Daten werden live aus review.json geladen (Polling alle 2 s).';
+  }
+
+  var lastJson = null;
+  function load(){
+    fetch('review.json', { cache: 'no-store' })
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(data){
+        const json = JSON.stringify(data);
+        if(json !== lastJson){ lastJson = json; render(data); }
+      })
+      .catch(function(e){
+        if(lastJson === null){
+          const h=document.getElementById('hint');
+          h.innerHTML = '<span class="err">review.json konnte nicht geladen werden: '+esc(e.message)+
+            '<br>Hinweis: Die Datei muss über einen http-Server (z.B. WebStorm-Live-Vorschau) geöffnet werden, nicht per file://.</span>';
+        }
+      });
+  }
+
+  load();
+  setInterval(load, 2000);
+</script>
+</body></html>

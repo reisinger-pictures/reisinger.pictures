@@ -147,3 +147,6 @@ apps/reisinger.pictures/public/dsb
 test-results
 playwright-report
 playwright/.cache
+
+# Lokales Review-Artefakt (Bild-Metadaten-Review) – wird NICHT committet; review.html lädt es per fetch
+review.json
