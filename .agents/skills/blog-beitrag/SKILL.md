@@ -291,6 +291,17 @@ Vor dem physischen Umbenennen (Schritt 5) MÜSSEN alle Umbenennungen und Beschre
 
 5. **Slug-Prefix & Ordnername (verbindlich):** Der generierte Slug enthält den Ordnerpfad als Präfix (z.B. `events-2026-pflasterspektakel-…`). Den Namen des Event-Ordners daher **niemals** im Dateinamen wiederholen – sonst entstehen Dopplungen wie `…-pflasterspektakel-pflasterspektakel-…`. Datei `linz-pole-jungle-auftakt.jpg` im Ordner `pflasterspektakel/` → Slug `events-2026-pflasterspektakel-linz-pole-jungle-auftakt`. Event-spezifische, suchbare Begriffe (Ort, Sportart, Studio, Motiv) im Dateinamen sind erwünscht.
 
+### Schritt 5a: Slug-Referenzen aktualisieren & Kollisionsprüfung (verbindlich)
+
+Nach dem Umbenennen MÜSSEN alle Referenzen auf geänderte Slugs aktualisiert werden (`index.mdx`-Galerien/`heroImage`, `areas/**/*.mdx`, Feeds). Dabei gelten harte Regeln – aus einem echten Vorfall gelernt, bei dem der Build brach:
+
+1. **Kein globales Suchen-Ersetzen über nackte Basisnamen!** Derselbe Dateiname kann in MEHREREN Event-Ordnern existieren und dort ein **vollkommen anderes Bild** bezeichnen. Realbeispiele: `portrait-sean-collins.jpg` existierte in `s8-bwl-rbs/gallery/` UND `s13-bwl-g99/gallery/` (zwei verschiedene Fotos, eines davon `favorite: true`); `logan-roe-am-puck.jpg` in `s8` UND `s16`. Nur der `bild`-Pfad aus `review.json` definiert, WELCHE Datei umbenannt wird – alle gleichnamigen Dateien in anderen Ordnern bleiben unangetastet.
+2. **Nur den vollen Slug ersetzen** (Ordner-Präfix + Dateiname): `sport-eishockey-ice-2025-26-s8-bwl-rbs-gallery-portrait-sean-collins` → `…-portrait-logan-roe`. Niemals den Basisnamen alleine ersetzen.
+3. **Zielordner-Kollision vor dem Umbenennen prüfen:** Existiert `finalerDateiname` (jpg ODER yaml) bereits im Zielordner, darf NICHT umbenannt werden (Überschreiben!) – stattdessen kollisionsfreien, ebenso sprechenden Namen wählen und `review.json` aktualisieren. Realbeispiel: `linz-pole-dance-leopard.jpg` war ein anderes, bereits vorhandenes Foto → `linz-pole-dance-leopardenkostuem.jpg`.
+4. **Verifikation nach jeder Ersetzung:** Alle Slug-Referenzen der betroffenen `.mdx`-Dateien gegen die tatsächlich vorhandenen YAML-Slugs auf Disk prüfen (alle quotierten slug-artigen Strings extrahieren und gegen die aus `src/**` berechnete Slug-Menge matchen). Jeder Treffer ohne YAML ist ein garantiert Build-Fehler; zusätzlich auf Duplikate innerhalb einer Galerie-Liste prüfen (falsche Ersetzung erzeugt sonst still doppelte Einträge).
+5. **Voller Prebuild ist Pflicht:** `pnpm run prebuild` (add-metadata UND process-images) ausführen. Wird nur `add-metadata.mjs` ausgeführt, fehlen die neuen Slugs in `.imagedist/manifest.json` und der Build bricht ab mit `ResponsiveImage: "<slug>" nicht in .imagedist/manifest.json gefunden`.
+6. **Abschließend bauen und erst dann deployen:** `pnpm run build` muss inklusive `check_links.mjs` mit „No missing links found!" durchlaufen, bevor `sync.sh` / `pnpm run publish` läuft. Cache-Verzeichnisse (`.cache/`, `.astro/`, `.imagedist/`) dabei niemals löschen – die Skripte arbeiten inkrementell.
+
 ### Schritt 6: YAML-Sidecars erstellen (nach Freigabe)
 
 Nach Freigabe durch den User:
