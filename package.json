@@ -2,10 +2,7 @@
   "name": "reisinger-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@11.23.0",
   "scripts": {
     "dev": "pnpm --filter reisinger.pictures dev",
     "build": "pnpm --filter reisinger.pictures build",
