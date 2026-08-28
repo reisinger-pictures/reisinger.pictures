@@ -7,7 +7,8 @@
     "dev": "pnpm --filter reisinger.pictures dev",
     "build": "pnpm --filter reisinger.pictures build",
     "build:reisinger.pictures": "pnpm --filter reisinger.pictures exec astro check && pnpm --filter reisinger.pictures build",
-    "test:screenshots": "pnpm exec playwright test -c playwright.screenshots.config.ts"
+    "test:screenshots": "pnpm exec playwright test -c playwright.screenshots.config.ts",
+    "review:validate": "node packages/tools/scripts/validate-review.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",

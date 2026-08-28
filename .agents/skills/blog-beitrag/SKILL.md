@@ -1,409 +1,555 @@
 ---
 name: blog-beitrag
-description: Verarbeitet Event-Bilder (Sport, Lifestyle) zu strukturierten Blog-Artikeln: EXIF-Daten sammeln, Bilder analysieren & kategorisieren (A/B/C), SEO-Beschreibungen erstellen, bei Sport-Events mit Liveticker matchen, Artikel schreiben. YAML-Sidecars NUR nach expliziter Freigabe erstellen, dann `add-metadata.mjs` für slug/metadata/categories laufen lassen. Enthält sport-spezifische Zeitlogik (Fußball Brutto, Eishockey/AmFoot Netto) und Parallel-Verarbeitung der vision-Batches bei Nicht-Sport-Events. Bildanalyse über den `vision`-Subagent (max. 10 Bilder gleichzeitig, parallel bei Nicht-Sport / sequenziell bei Sport), kreative Artikeltexte über den `author`-Subagent. Mehrdeutige Bilder liefert der `vision`-Subagent mit mehreren Interpretationen zurück, die dem User als interaktive Fragen (`question`-Tool) statt in einer Tabelle präsentiert werden. TRIGGER when Event-Bilder verarbeitet, Blog-Artikel geschrieben oder Bilder zu einem Event mit Liveticker strukturiert werden sollen.
+description: Use when turning a set of event photographs and optional context into a reviewed German blog article with image descriptions, SEO filenames, galleries, and project metadata. Supports sports and non-sports events, optional technical image classification, and human approval before any deliverable is written.
 ---
 
-# Blog-Beitrag: Bilder & Artikel verarbeiten
+# Event Blog Production
 
-## Rolle & Ziel
+## Purpose and Scope
 
-Du bist ein hochqualifizierter Sport- und Lifestyle-Journalist, Bildredakteur und SEO-Experte.
-Deine Aufgabe ist es, einen unsortierten Satz von Bildern (Sport-Action, Zweikämpfe, aber auch Beauty-Porträts von Athleten/Zuschauern) gemeinsam mit einem Event-Log (Liveticker/Notizen) zu verarbeiten.
-Du analysierst die Bilder, erstellst Beschreibungen und verfasst einen packenden Artikel.
+Use this skill to turn an unordered set of event images into:
 
-**Wer macht was:**
-- **Dieser Agent (du):** Koordiniert den Workflow. Sammelt EXIF-Daten, bereitet die Bild-Batches für die Analyse vor, matched Bilder mit dem Ticker (nur bei Sport-Events), erstellt Beschreibungen, strukturiert Kategorien, schreibt YAML/`index.mdx`. Faktische Inhalte (Spielverlauf, Zuordnungen, technische Details) kommen von dir.
-- **`vision`-Subagent:** Analysiert die Bilder (Kategorisierung + visuelle Beschreibungen). Bekommt **maximal 10 Bilder pro Aufruf** – bei mehr Bildern werden mehrere Batches ausgeführt. Pro Batch dieselben Analyseregeln (Kategorien A/B/C, Sport-Interaktions-Prompting) übergeben. **Ausführungsmodus:** Bei **Nicht-Sport-Events parallel** (alle Batches gleichzeitig), bei **Sport-Events strikt nacheinander** (siehe Schritt 1).
-- **`author`-Subagent:** Verfasst den kreativen Artikeltext (Titel, Untertitel, Einleitung, Hauptteil, Fazit) aus den von dir vorbereiteten Fakten. Best for structured, highly logical, or creative writing tasks requiring strict adherence to prompts. Der Subagent bekommt als Prompt die Fakten, Bild-Zuordnungstabelle und Artikelregeln aus Schritt 3/3b – seine Textausgabe wird von dir anschließend geprüft und dem User vorgelegt.
-- **Mensch (Review):** Prüft die Vorschläge im Chat, korrigiert Fehler, gibt Freigabe. Keine Bilderkennung ohne menschliche Validierung.
+- accurate, standalone German image descriptions;
+- safe, descriptive filenames and generated image slugs;
+- a factually grounded German blog article in the repository's content format;
+- an approved gallery and hero-image selection;
+- valid YAML sidecars and content references.
 
-## Inputs vom User
+The workflow is deliberately event-agnostic. Do not assume a sport, teams,
+people, venue, competition, event format, or timing model. Derive those facts
+from user-provided context, repository content, EXIF data, and visible image
+content. Treat every interpretation as a proposal until the user approves it.
 
-1. **Event-Kontext:** Liveticker, Notizen oder grober Spielverlauf (Text).
-2. **Bildordner:** Pfad zum Ordner mit den Bildern (relativ zum Workspace oder absolut). Max. 25 Bilder.
+Read the repository's `AGENTS.md`, relevant files in `rules/`, the content
+schema, and applicable skills before starting. Repository rules override this
+skill when they are more specific.
 
-> **Global Linking:** Der Skill funktioniert von jedem beliebigen Ordner aus. Er sucht automatisch nach Bilddateien (`.jpg`, `.jpeg`, `.png`, `.webp`) im angegebenen oder aktuellen Ordner und nach Kontext-Dateien (`liveticker.txt`, `ticker.md`, `notes.md`, `event.md`, `context.txt`) im selben oder übergeordneten Ordner. Keine Kontextangabe vom User nötig, wenn die Bilder in einem eigenen Ordner liegen.
+## Agent Responsibilities
 
-> **Info-/Kontext-Dateien löschen (verbindlich, ohne Rückfrage):** Event-Kontext-Dateien (z. B. `info.txt`, `liveticker.txt`, `ticker.md`, `notes.md`, `event.md`, `context.txt`) sowie Referenz-Bilder ohne YAML-Sidecar (z. B. `aufstellung.jpg`, `schema.png`) werden nach **Fertigstellung des Blog-Beitrags** (nach Freigabe und Schreiben aller Dateien) automatisch gelöscht – **ohne den User zu fragen**. Sie sind nur Arbeitsmittel und sollen nicht im Repository verbleiben. Ausnahme: Vom User explizit als dauerhaft gewünscht gekennzeichnet.
+The global OpenCode configuration defines these relevant subagents:
 
-### Event-Typ bestimmen (vor dem Workflow)
+- **`vision-creative`:** Visual interpretation, subject/action description, internal grouping, and creative image categorization. The configured limit is 10 images per call. It cannot edit files or run shell commands. Use it for what is visible, not for unverified facts.
+- **`vision-technical`:** Technical or classification work such as colors, equipment, insignia, uniforms, or visual group membership. The configured limit is 10 images per call. Request it only when that classification affects the article or metadata. It must return evidence and uncertainty, not polished copy.
+- **`author`:** Drafts or restructures the article from verified facts, approved image mappings, and the requested tone. It must not invent facts or silently resolve ambiguous image interpretations.
 
-Bestimme zu Beginn, ob es sich um ein **Sport-Event** oder ein **Nicht-Sport-Event** handelt:
+The main agent remains responsible for file discovery, repository inspection,
+EXIF extraction, context matching, fact checking, descriptions, filenames,
+renames, YAML/MDX changes, and verification. Do not refer to an undefined
+generic `vision` agent or delegate file operations to a vision subagent.
 
-- **Sport-Event:** Es liegt ein Liveticker/Spielverlauf vor oder die Bilder zeigen Sport-Action (Fußball, Eishockey, American Football ...). Ticker-Kontext und Zeitlogik werden aktiviert.
-- **Nicht-Sport-Event:** Kein Liveticker, z. B. Festivals, Konzerte, Lifestyle, Pflasterspektakel. Kein Ticker-Matching, die Bildanalyse läuft parallel.
+Run independent vision batches in parallel only when the results do not affect
+one another and the runtime permits it. Use sequential calls when an earlier
+result changes chronology, matching, or context for a later batch.
 
-| | Sport-Event | Nicht-Sport-Event |
-|---|---|---|
-| vision-Batches (Schritt 1) | **sequenziell** (strikt nacheinander) | **parallel** (alle gleichzeitig) |
-| Ticker-Zeitkontext, Ticker-Matching, Zeitlogik | **aktiv** | **entfällt** |
-| Context-Checkliste | gilt | gilt nicht |
+## Inputs and Discovery
 
-**Sport-spezifische Regeln** (Context-Checkliste, Zeitlogik, Ticker-Matching, Interaktions-Prompting) gelten **nur bei Sport-Events** – bei Nicht-Sport-Events werden sie übersprungen.
+Accept any of the following inputs:
 
-### Context-Checkliste (nur für Sport-Events)
+- an image directory or an explicit list of image paths;
+- an event description, notes, or an official event log;
+- a roster, participant list, glossary, or other identification aid;
+- optional preferences for article structure, audience, or SEO focus.
 
-Um die Intention hinter Sportbildern korrekt zu deuten, braucht es mehr als nur EXIF und Bild. Folgende Kontextinformationen helfen enorm – idealerweise aus dem Liveticker oder Notizen des Users:
+If the user gives only a directory, inspect that directory and its relevant
+parent directories for context files. Do not assume a filename or silently use
+unrelated notes. If no context is found, continue with visible facts and mark
+missing information instead of guessing.
 
-- **Sportart & Spielmodus:** Fußball? Eishockey? Testspiel oder Pflichtspiel? (bestimmt Pausenlogik und Brutto/Netto-Zeit)
-- **Anpfiffzeit:** Wann wurde das Spiel angepfiffen? (nicht zwingend die EXIF-Zeit des ersten Bildes – erste Bilder können vor Anpfiff entstanden sein)
-- **Halbzeitpause:** Länge der Pause (10, 12, 15 Min.? Testspiel vs. Pflichtspiel)
-- **Tore / Ereignisse mit Uhrzeit:** „54' Jörgensen, 79' Harakate" – idealerweise mit realen Uhrzeiten (z. B. aus Liveticker-App)
-- **Spieler-Namen + Trikotnummern:** Ohne Trikotnummern oder Bekanntschaft kann ich Spieler oft nur als „LASK-Spieler" beschreiben
-- **Aufstellung / Formation:** Hilft bei der Identifikation (Torwart, Abwehr, Mittelfeld, Sturm)
-- **Rote/ Gelbe Karten:** Verändert die Spielsituation und muss im Artikel erwähnt werden
-- **Zuschauerzahl / Stadion-Stimmung:** Für Atmosphäre-Bilder relevant
-- **Vorherige/ nachfolgende Bilder:** Gibt es g4, g3, g2 usw.? Artikel müssen sich nicht wiederholen – g4 kann sich auf andere Highlights konzentrieren als g3
+When context is available, include the complete relevant context in every
+vision prompt. Do not reduce it to team names or a short event label when it
+also contains lineups, numbers, colors, timing, locations, or other facts that
+can affect identification.
 
-**Minimal-Empfehlung:** Sportart, Anpfiffzeit und Torliste (Minute + Spielername) reichen für 80% der Fälle. Alles andere ist Bonus.
+Use the formats supported by the repository's image pipeline. Do not impose an
+arbitrary total-image limit. Split the work into batches of at most 10 images
+for each vision-agent call.
 
-## Workflow & Aufgaben
+## Event Classification
 
-### Schritt 0: EXIF-Erstellungsdaten sammeln (vor ALLER Analyse)
+Classify the work before analysis:
 
-Bevor irgendein Bild analysiert, benannt oder vorgeschlagen wird, müssen die EXIF-`captureDate`-Werte für **alle** Bilder erfasst sein.
+- **Timed event:** An official clock, period, round, or event log can be matched to image timestamps. This includes sports, but is not limited to sports.
+- **Untimed event:** Images are ordered by EXIF time and visual continuity; no official event clock is inferred.
+- **Mixed event:** Process separately timed and untimed sections when an event contains both, such as a competition and a staged programme.
 
-1. Lies die EXIF-Daten jedes Bildes mit `exiftool` aus:
-   ```bash
-   exiftool -DateTimeOriginal -Aperture -FocalLength -ShutterSpeed -ISO -Model -LensModel -ImageWidth -ImageHeight -Orientation -json <Bildordner>/*.jpg
-   ```
-2. Erstelle eine Übersichtstabelle aller Bilder mit ihren Erstellungsdaten:
+For a timed event, identify the actual timing model before matching images:
 
-| Original-Name | EXIF-captureDate |
-|---|---|
-| IMG_001.jpg | 2026-06-13T14:32:00 |
-| IMG_002.jpg | 2026-06-13T14:35:12 |
+- running clock or stopped clock;
+- periods, rounds, stages, or halves;
+- breaks, interruptions, overtime, or other timing offsets;
+- timezone and clock accuracy of the source data.
 
-3. Diese Tabelle ist die Grundlage für das Ticker-Matching (Sport-Events); bei Nicht-Sport-Events dient sie der chronologischen Sortierung und Szenen-Erkennung.
-4. **Ticker-Zeitkontext aufbauen (nur bei Sport-Events, vor der Bildanalyse):** Ordne jedem Bild anhand seines `captureDate` bereits eine grobe Ticker-Spielminute zu (siehe Zeitlogik unten). Prüfe, welche Ticker-Ereignisse jeweils **±5 Minuten vor und nach** dem `captureDate` liegen, und notiere sie als temporären Kontext. Diese Annahmen werden dem `vision`-Subagent in Schritt 1 mitgegeben – er darf sie korrigieren.
+Never apply a sport-specific formula by habit. If the timing model or break
+duration is unclear and exact matching matters, ask the user before assigning
+precise event times.
 
-**Regeln:**
-- EXIF-Daten werden NIE verändert oder gelöscht.
-- Fehlt das EXIF-Datum eines Bildes, wird es mit `unknown` markiert und beim Ticker-Matching per inhaltlicher Passung zugeordnet (nur bei Sport-Events).
+## Workflow
 
-### Schritt 1: Bild-Analyse & Kategorisierung (via `vision`-Subagent)
+### 0. Prepare the Workspace
 
-Jetzt, da die Zeitstempel aller Bilder vorliegen, wird die Bildanalyse an den `vision`-Subagent delegiert. **Maximal 10 Bilder pro Aufruf.**
+1. Locate the repository root and the relevant application/content root.
+2. Read the applicable schema and inspect nearby existing content before choosing a format.
+3. Check the working tree. Preserve user changes and do not overwrite unrelated files.
+4. Establish the input image list and exclude generated assets, thumbnails, and unrelated reference material.
 
-1. **Batches bilden:** Teile die Bilder in Gruppen von max. 10 (bei 25 Bildern → 3 Aufrufe: 10/10/5). Reihenfolge chronologisch nach EXIF-`captureDate`.
-   - **Ausführungsmodus je Event-Typ** (siehe „Event-Typ bestimmen"): **Nicht-Sport → parallel** – alle `vision`-Aufrufe gleichzeitig starten, Ergebnisse anschließend konsolidieren (keine Ticker-Abhängigkeiten). **Sport → strikt nacheinander** – jeder `vision`-Aufruf sequenziell, erst abschließen bevor der nächste beginnt; keine parallelen `task`-Aufrufe, da die Zeitkorrektur eines Batches die Ticker-Zuordnung späterer Batches verschieben kann.
-2. **Prompt je Batch:** Übergib dem `vision`-Subagent pro Batch:
-   - Die Batch-Bilddateien (absolute Pfade)
-   - Die Kategorien [A]/[B]/[C] inkl. Regeln (siehe unten)
-   - Das Sport-spezifische Prompting (siehe unten)
-   - Die EXIF-`captureDate`-Zeitstempel jedes Batch-Bildes
-   - **Serien-/Szenen-Erkennung:** Bilder mit dicht aufeinanderfolgenden `captureDate`s (kurz hintereinander) gehören meist zur **gleichen Szene** mit **gleichen Personen** → bitte als Serie markieren und Personen konsistent benennen
-   - **Spieler-Identifikation (verbindlich, Sport):** Der `vision`-Subagent muss bei jedem Bild **aktiv versuchen, Spieler beim Namen zu nennen** – anhand von Trikotnummer (→ Roster), Gesichtszügen, Frisur/Dreadlocks, Tätowierungen, Körperbau, Ticker-Zuordnung (wer war laut Ticker an der Szene beteiligt) und Serien-Kontext (gleiche Personen wie Nachbarbilder). Ergebnis je Person: **Name + Begründung + Konfidenz** (hoch/mittel/niedrig). Nur wenn keine belastbare Identifikation möglich ist, allgemein formulieren (z. B. „ein SV-Ried-Spieler").
-   - **Fokus-Priorisierung (verbindlich):** Der `vision`-Subagent beschreibt vorrangig die **scharf abgebildeten, im Fokus liegenden** Elemente einer Szene und priorisiert sie für Beschreibung und Personen-Identifikation. **Unschärfe-/Bokeh-Elemente** (unscharfe Vorder-/Hintergründe, stark verwischte Spieler) sind **nicht wichtig**: sie werden ignoriert bzw. nur beiläufig erwähnt, nie in den Vordergrund der Beschreibung gestellt und nie mit Spielernamen versehen. Bei Serien: aufeinanderfolgende Bilder dürfen verschiedene Fokus-Ebenen zeigen – jeweils den scharfen Teil beschreiben.
-   - **Nur bei Sport-Events zusätzlich:** Den **Ticker-Zeitkontext** (für jedes Batch-Bild die Ticker-Ereignisse ±5 Minuten um den Capture-Zeitpunkt aus Schritt 0.4) als Zuordnungshilfe für die Szene, sowie **Zeitkorrektur erlaubt** – der `vision`-Subagent darf die angenommene Ticker-Zuordnung korrigieren, wenn Bildinhalt und Ticker-Ereignis nicht zusammenpassen (Korrektur begründen)
-   - Fordere als Rückgabe je Bild: Original-Name, Kategorie [A]/[B]/[C], visuelle Beschreibung, erkennbare Personen/Nummern. **Nur bei Sport-Events zusätzlich:** bestätigte oder korrigierte Ticker-Zuordnung (inkl. Begründung)
-   - **Mehrdeutigkeit (wenn es Sinn macht):** Ist der Bildinhalt uneindeutig (z. B. Person/Szene nicht sicher identifizierbar, mehrere plausible Deutungen), gibt der `vision`-Subagent **mehrere Interpretationen** zurück – je Interpretation: Beschreibung, erkennbare Personen/Nummern und Begründung. Keine erzwungene Einzeldeutung bei unsicheren Bildern. Eindeutige Bilder liefern weiterhin genau eine Interpretation.
+Do not write published files during preparation. Scratch data may be kept only
+when the repository explicitly provides a place for it.
 
-**Kategorien (an den `vision`-Subagent weitergeben):**
+### 1. Build the Image Inventory First
 
-- **[A] Action/Sport:** Zweikämpfe, Fouls, Tore, Spielszenen. Analysiere hart: Wer foult wen? Wo ist der Ball? Welche Körperteile sind beteiligt? Bei Sport **immer** die Interaktion beschreiben: Wer macht was? Wer grätscht, wer weicht aus, wer blockt? Was ist die genaue Körperhaltung? Wo auf dem Feld findet die Aktion statt?
-- **[B] Beauty/Porträt:** Fokussierte Gesichter, Athleten in Ruhe, Fans, Emotionen, Lifestyle-Shots.
-- **[C] Atmosphäre/Stadion:** Tribünen, Trainerbank, Details wie Schuhe/Pokale, Stadionaufnahmen.
+Before any visual interpretation, collect capture metadata for every input
+image, regardless of whether a live ticker or other event log exists. Use
+`exiftool` or the repository's metadata utility and record:
 
-**Regeln für die Kategorisierung:**
-- Jedes Bild bekommt genau eine Kategorie.
-- Bei Unsicherheit: lieber [A] als [B], da Sport-Action-Bilder im Artikel höherwertig sind.
-- Porträts von Spielern vor/nach dem Spiel → [B].
-- Gruppenbilder von Fans → [C], es sei denn ein Gesicht ist klar im Fokus → [B].
+- full path and current filename;
+- `DateTimeOriginal` or the best available capture date;
+- dimensions and orientation;
+- relevant camera/lens data when the project uses it;
+- missing or ambiguous values.
 
-**Sport-spezifisches Prompting (verbindlich):**
-Bei Sport-Bildern muss die Analyse die Interaktion zwischen den Personen beschreiben. Nicht nur „zwei Spieler stehen nebeneinander" sondern „Spieler 7 grätscht von links gegen Spieler 12, Ball liegt 2 Meter neben dem Fuß des Verteidigers". Die Frage ist immer: **Wer macht was, an wem, wie, wo auf dem Bild?** Was ist sichtbar, nicht was könnte passieren.
+Example command shape, adapted to the discovered image paths:
 
-### Schritt 1a: Plausibilitäts-/Sanity-Check (verbindlich, nach der Vision-Analyse)
-
-Nach der Bildanalyse die Aussagen des `vision`-Subagents auf Plausibilität prüfen, BEVOR Beschreibungen geschrieben werden:
-
-- **Zeitliche Konsistenz:** Prüfen, ob die EXIF-Reihenfolge und der beschriebene Szenenverlauf zusammenpassen. Beispiel: Ein Fallschirmspringer kann nicht um 17:55 bereits gelandet sein und um 17:56 über der Tribüne schweben → beide Bilder zeigen dann den Sprung in der Luft (kein Bodenkontakt). Widersprüchliche Aussagen markieren und anhand des Bildinhalts auflösen (Re-Analyse durch `vision`).
-- **Verwechslungsgefahr:** Können Bilder verwechselt worden sein (z. B. Cheerdancerin vs. Spieler, Tarnmuster-Tanzoutfit vs. Trikot)? Bei Unsicherheit die betroffenen Einzelbilder erneut zur Analyse geben (mit korrigiertem Verständnis als Kontext).
-- **Serien-Konsistenz:** Bilder einer Serie (dichte `captureDate`s) müssen dieselben Personen/Szenen konsistent benennen.
-- **Sport-Logik:** Passt die Szene (z. B. Lauf, Pass, Tackle, TD-Jubel) zur Spielsituation laut Ticker? Nicht passende Zuordnungen korrigieren.
-- **Roster-Namen:** Liegt vom User eine Roster-Liste (Trikotnummern + Spielernamen) vor, werden erkennbare Nummern zusätzlich mit dem Namen benannt (z. B. „Karri Pajarinen (Nummer 24)"). Nicht belegbare Namen nicht erfinden. **Namen aktiv heraussuchen:** Der Hauptagent kombiniert erkannte Nummer, Roster, Ticker-Beteiligung und Serien-Kontext und benennt Spieler proaktiv beim Namen. Allgemeine Floskeln („ein LASK-Spieler") sind die Ausnahme, keine Voreinstellung – sie kommen nur, wenn die Identifikation wirklich unklar bleibt.
-- **Mehrdeutige Bilder markieren:** Liefert der `vision`-Subagent mehrere Interpretationen, werden diese **unverändert** übernommen und zur Klärung an den User gegeben (Schritt 4). Nicht eigenmächtig eine Deutung auswählen.
-
-### Schritt 2: Beschreibungen (Ticker-Matching nur bei Sport-Events)
-
-Erstelle für **JEDES** Bild:
-
-1. **Deutsche Beschreibung** (für YAML-Sidecar, max. 200 Zeichen):
-   - Beschreibe die Szene sachlich und präzise auf Deutsch.
-   - Nenne erkennbare Spieler **mit Namen**, sobald eine belastbare Identifikation vorliegt (Trikotnummer + Roster, Ticker-Beteiligung, Gesicht/Frisur/Tätowierungen, Serien-Kontext). Allgemeine Formulierungen („ein SV-Ried-Spieler") **nur** bei unklarer Identifikation – im Zweifel die erkannte Trikotnummer angeben.
-   - **Zeichensatz-Kontrolle (verbindlich):** Beschreibungen dürfen NUR deutsche Buchstaben (a-z, A-Z), Umlaute (äöüÄÖÜ), ß, Zahlen und Satzzeichen enthalten. Keine chinesischen, japanischen, arabischen oder anderen fremden Zeichen. Vor dem Schreiben IMMER explizit prüfen!
-   - Keine Umlaute im Slug (ä → ae, ö → oe, ü → ue, ß → ss).
-
-2. **Bild-Matching mit dem Ticker (nur bei Sport-Events):**
-   - Ordne jedes Bild dem nächsten passenden Ticker-Ereignis zu (basierend auf EXIF-`captureDate` oder inhaltlicher Passung).
-   - **Halbzeit-Pause berücksichtigen:** Bei 2x 45 min Spielen und Standard-Pause (15 min) verschiebt sich die reale Uhrzeit für jedes Bild der zweiten Halbzeit um die Pause nach hinten.
-   - Porträts ([B]) können als emotionale Auflockerung im Text platziert werden – sie müssen nicht zwingend einem Ticker-Ereignis zugeordnet werden.
-   - Atmosphärbilder ([C]) passen zu Einleitungs- oder Fazit-Abschnitten.
-   - Action-Bilder ([A]) sollten den Ticker-Ereignissen entsprechen, die sie illustrieren.
-
-   **Bei Nicht-Sport-Events:** kein Ticker-Matching. Die Bilder werden rein nach Bildinhalt beschrieben.
-
-#### Sport-spezifische Zeitlogik (essenziell für korrektes Matching – nur bei Sport-Events)
-
-**Fußball (Brutto-Spielzeit):**
-- 2 × 45 Minuten = 90 Minuten effektive Spielzeit.
-- Halbzeitpause: maximal 15 Minuten (im Testspiel oft 10–12 Minuten).
-- Die Uhr läuft durch – bei Ausbällen, Fouls, Verletzungen wird nicht gestoppt.
-- **Mapping-Formel:** Spielminute = (EXIF-Zeit − Anpfiffzeit − Pausendauer) ÷ 1
-
-**Eishockey (Netto-Spielzeit):**
-- 3 × 20 Minuten = 60 Minuten effektive Spielzeit.
-- Pausen zwischen den Dritteln: 15–18 Minuten (Eisschleppen).
-- Uhr wird bei jedem Spielstopp angehalten.
-
-**American Football (Netto-Spielzeit):**
-- 4 × 15 Minuten = 60 Minuten effektive Spielzeit.
-- Pausen: kurz nach Q1/Q3 (~2 Min.), Halbzeitpause ~12–15 Min.
-
-**Generelle Regel:** Bei Unklarheit über die Pausenlänge → nachfragen, bevor die Minute zugeordnet wird.
-
-**Zuordnungstabelle führen (Spalten wie die Verarbeitungsliste, Kategorie NIE ausgeben):**
-
-| Original-Name | Neuer Dateiname (SEO-Slug) | Beschreibung | EXIF-captureDate | Ticker-Zuordnung (nur Sport) |
-|---|---|---|---|---|
-
-### Schritt 3: Artikel-Schreiben (via `author`-Subagent)
-
-- **Du:** Sammelst alle Fakten (bei Sport: Spielverlauf laut Ticker; Bild-Zuordnungen aus Schritt 2, Kategorien, ggf. Zuschauerzahl/Stimmung) und die Artikelregeln (siehe unten) und übergibst sie als detaillierten Prompt an den `author`-Subagent.
-- **`author`-Subagent:** Verfasst den zusammenhängenden, dramaturgisch starken Artikel (Titel, Untertitel, Einleitung, Hauptteil, Fazit).
-- **Du:** Prüfst das Ergebnis auf Faktentreue, übernimmst es und stellst es dem User zur Freigabe vor (Schritt 4).
-
-**Vorgaben an den `author`-Subagent (in den Prompt aufnehmen):**
-- Setze sinnvolle Zwischenüberschriften.
-- Binde die Bilder strategisch perfekt in den Text ein:
-  - Action-Bilder für Spielbeschreibungen
-  - Beauty-Porträts für emotionale Momente nach entscheidenden Spielzügen
-  - Atmosphärbilder für Einleitung und Fazit
-- Syntax im Text: `![Alt-Tag](dateiname.jpg)`
-- **Keine Aufstellungen/Einwechslungslisten im Artikel** – die interessieren die Leser nicht. Die Mannschaftsnamen und ggf. Torschützen werden im Fließtext erwähnt.
-- **Wenige, längere Absätze statt vieler kurzer:** Je Abschnitt einen zusammenhängenden Fließtext schreiben, keine Ein-Satz-Absätze.
-- Sprache: Deutsch.
-
-### Schritt 3b: Gallerie-Platzierung (verbindlich)
-
-- Gilt, wenn **eine einzige Gallerie** verwendet wird: Sie steht **am Ende** des Artikels – **Text vorher, kein Text mehr nachher.** Auch Einleitungs-/Fazit-Teile gehören **vor** die Gallerie. Struktur: Einleitung → Hauptteil → Fazit → `<Gallery sorted={IMAGES}></Gallery>` (als letztes Element).
-- Wird dagegen entschieden, dass **mehrere Gallerien** den Artikel besser strukturieren (z. B. je ein Block pro Spielabschnitt), gilt diese Regel **nicht** – dann werden die Gallerien sinvoll in den Text eingebettet und Text steht davor und danach.
-
-### Schritt 3c: Gallerie-Struktur-Expertenberatung (bei Sondergalerien, verbindlich bei Abweichung)
-
-Bei Events mit **besonderen Bildgruppen** (z. B. Rahmenprogramm wie Bundesheer-Fallschirmsprung mit Spielball, Cheerleader-Show, Fan-Gruppen, Porträt-Reihen) entscheidet **nicht der Hauptagent allein**, wie die Gallerien strukturiert werden:
-
-1. **Kandidaten für Sondergalerien erkennen** (aus den `vision`-Ergebnissen): eigenständige Bildgruppen, die sich thematisch klar vom Spiel abheben und einen kurzen eigenen Textblock verdienen. Beispiel: 3+ Fotos einer Fallschirmspringer-Aktion mit Österreich-/EU-Flagge vor Anpfiff = eigene Galerie.
-2. **`author`-Subagent als Experte konsultieren** – vor dem eigentlichen Artikel-Schreiben. Übergib:
-   - Event-Kontext (Teams, Endstand, Event-Rahmen wie "Bundesheer-Spieltag")
-   - Die Bildgruppen (Vorprogramm/Bundesheer, Spiel-Action Q1-Q4, Cheerleader inkl. Team-Namen wie Millennium Dancers mit goldenen Poms, Spirit Squad violett/gold)
-   - Konkrete Fragen: Soll die Gruppe eine eigene Galerie mit Textblock bekommen? Reicht die Bildanzahl? Im Hauptartikel integrieren oder eigener Artikel (SEO-Abwägung)? Empfohlene Endstruktur?
-3. **Empfehlung dem User präsentieren** und freigeben lassen, bevor der Artikel geschrieben wird. Empfehlungen des `author`-Subagents (z. B. "Bundesheer-Galerie direkt nach der Einleitung, Cheerleader-Galerie mit kurzem Text als Kontrast am Ende") sind Richtwerte, nicht bindend – der User entscheidet.
-4. **Mehrere Gallerien → Schritt 3b-Regel (einzige Gallerie am Ende) entfällt.** Die Gallerien werden mit kurzen Textblöcken sinnvoll in den Artikel eingebettet (Text davor und danach).
-
-### Schritt 4: Freigabe einholen
-
-**WICHTIG: Keine Dateien schreiben ohne explizite Freigabe!**
-
-1. Zeige die **Bild-Verarbeitungsliste** und den **Artikel** dem User.
-   - **Mehrdeutige Bilder → interaktive Fragen statt Tabelle:** Bilder mit mehreren Interpretationen (aus Schritt 1) werden **nicht** in die Verarbeitungsliste/Tabelle aufgenommen. Stattdessen jede Interpretation einzeln als **interaktive Frage** über das `question`-Tool präsentieren (z. B. „IMG_042.jpg: Deutung A (…) oder Deutung B (…)?", ggf. mit Bildpfad). Der User wählt direkt eine Deutung – sie bestimmt Beschreibung **und** SEO-Dateinamen. Erst nach der Entscheidung wandert das Bild mit der gewählten Interpretation in die Verarbeitungsliste.
-2. Frage gezielt nach:
-   - Sind die Beschreibungen korrekt? **(Wichtigster Punkt:** eine falsche Beschriftung ist essentiell zu korrigieren**)
-   - Fehlen Bilder?
-   - Ticker-Matching inkorrekt? (nur Sport)
-   - Artikel-Inhalt ok?
-3. Wende Änderungen an und zeige die aktualisierte Version.
-4. **Erst nach expliziter Freigabe** durch den User werden Dateien geschrieben.
-
-### Schritt 4a: Interne User-Kommentare ≠ freigegebene Beschreibungen (verbindlich)
-
-User-Kommentare und Korrekturen während des Reviews (z. B. „das ist ein Torschuss", „kein Luftduell", „gleiche Szene wie 93", „Horvath Daumen nach oben") sind **interne Hinweise** zur Bildinterpretation. Sie dürfen **niemals 1:1** in die YAML-Beschreibung übernommen werden, sondern helfen nur, die Szene korrekt zu verstehen und die Beschreibung entsprechend umzuformulieren.
-
-Regeln:
-- **Interne Zusammenhänge** („gleiche Szene wie 90", „gleiche Personen wie 93") gehören **nicht** in die Beschreibung.
-- **Wertende/technische Meta-Info** („kein Ballkontakt", „Ball auf Kniehöhe", „nach meiner Anweisung") wird nicht wörtlich übernommen.
-- Die **Beschreibung** wird erst durch die **explizite Freigabe** des Users verbindlich – bis dahin immer als Vorschlag kennzeichnen.
-- **Dateinamen (SEO-Slugs)** richten sich nach dem tatsächlichen Bildinhalt und werden unabhängig von internen Kommentaren vergeben.
-- **Bei Bedarf einzeln nachanalysieren:** Wenn die Bildinterpretation nach einem internen Hinweis unsicher ist (z. B. falsche Personen-/Szenen-Einschätzung), kann der betroffene **einzelne Bild(er)** erneut an den `vision`-Subagent zur Analyse gegeben werden – mit dem korrigierten Verständnis als Zusatzkontext. Das Ergebnis wird wieder als Vorschlag präsentiert.
-
-### Schritt 4b: Zeichensatz-Check (vor dem Schreiben)
-
-**Vor dem Erstellen der YAML-Dateien MUSS jede Beschreibung erneut auf den erlaubten Zeichensatz geprüft werden** (siehe Regeln in Schritt 2.1):
-
-1. Lies jede Beschreibung nochmals durch.
-2. Erlaubt sind NUR: deutsche Buchstaben (a-z, A-Z), Umlaute (äöüÄÖÜ), ß, Zahlen (0-9), Satzzeichen (., ,:;!?-()) und Leerzeichen.
-3. Bei gefundenen fremden Zeichen (z.B. Chinesisch, Japanisch, Arabisch): **Sofort korrigieren und erneut prüfen.**
-4. Erst wenn alle Beschreibungen geprüft sind, mit dem Schreiben fortfahren.
-
-### Schritt 4c: HITL-Bildprüfung via review.html / review.json (verbindlich)
-
-Vor dem physischen Umbenennen (Schritt 5) MÜSSEN alle Umbenennungen und Beschreibungskorrekturen über die visuelle Review-Seite verifiziert werden. Das verhindert, dass Bildinhalte falsch benannt werden (z. B. Spieler verwechselt, Rauchfarbe falsch, Touchdown statt Tackle).
-
-**Datenquelle (einziges Source of Truth – NICHT committet):**
-- `review.json` im Projekt-Root: ein **Array** mit je einem Objekt pro Bild:
-  ```json
-  {
-    "id": "V-049 — hoeneckl-und-raffl.jpg",
-    "bild": "apps/reisinger.pictures/src/content/portfolio/.../hoeneckl-und-raffl.jpg",
-    "originalerDateiname": "hoeneckl-und-raffl.jpg",
-    "finalerDateiname": "hoeneckl-gegen-baltram.jpg",
-    "finaleDescription": "Der Eishockey-Goalie ..."
-  }
-  ```
-  - `bild`: relativer Pfad zum Originalbild (für `<img src>`).
-  - `originalerDateiname`: aktueller Dateiname **vor** dem Umbenennen.
-  - `finalerDateiname`: vorgeschlagener / finaler SEO-Dateiname nach Freigabe.
-  - `finaleDescription`: final freigegebene Beschreibung.
-  - `review.json` ist **lokal** und wird **nicht committet** (Eintrag in `.gitignore`). Es darf **nie** inline in die HTML dupliziert werden – die HTML lädt es per `fetch`.
-
-**Viewer (committet, fix):**
-- `review.html` im Projekt-Root: lädt `review.json` per `fetch` (Poll alle 2 s) und rendert pro Bild: **Bild + finaler Dateiname + originaler Dateiname + finale description**. Sie ist ein **fixer Viewer** – sie ändert sich NICHT, wenn sich die Bilddaten ändern. Neue Daten → einfach `review.json` anpassen; die Seite aktualisiert sich live (in der WebStorm-Live-Vorschau über http).
-- `review.html` wird **einmalig committet**, `review.json` **nie**.
-
-**Ablauf:**
-1. Während des Reviews (Schritt 4) werden mehrdeutige Bilder wie gewohnt interaktiv via `question`-Tool geklärt.
-2. Nach Abschluss aller Klärungen wird `review.json` mit den finalen Werten (Dateiname + Description) befüllt.
-3. Der User öffnet `review.html` (WebStorm-Live-Vorschau) und prüft visuell: Stimmt der finale Dateiname zum Bildinhalt? Stimmt die finale Beschreibung?
-4. **Erst nach dieser finalen Verifikation** wird physisch umbenannt (Schritt 5) und die YAMLs / `index.mdx` geschrieben.
-
-**`progress.md`:** Der Fortschritt der Bildprüfung (pro Bild: originaler / finaler Dateiname, finale Description, Status) wird in `progress.md` dokumentiert – konsistent mit den Feldern in `review.json`.
-
-### Schritt 5: Bilder & YAMLs physisch umbenennen (nach Freigabe)
-
-**Bilder und YAMLs MÜSSEN immer physisch umbenannt werden!**
-
-**Teilfreigabe (verbindlich):** Gibt der User nur einen Teil der Bilder frei (z. B. „ab Bild X noch nicht kontrolliert, bis 35 freigegeben"), werden **nur die freigegebenen Bilder** sofort physisch umbenannt. Die übrigen Bilder behalten ihren Originalnamen, bis sie freigegeben sind. Der Reststatus (welche Bilder noch ausstehen) wird transparent berichtet; eine erneute Analyse erfolgt nur auf Anforderung des Users. Artikel/`index.mdx` werden erst geschrieben, wenn alle Bilder freigegeben sind.
-
-1. Benenne jedes Bild in einen sprechenden, SEO-freundlichen Dateinamen um:
-   - Kleinbuchstaben, Bindestriche statt Leerzeichen, keine Umlaute (ä→ae, ö→oe, ü→ue, ß→ss)
-   - Format: `[team]-[aktion]-[gegner-details].jpg`
-   - Beispiel: `lask-jungwirth-faengt-ball.jpg`, `galatasaray-dribbling-monza-47.jpg`
-   - Max. 5-6 Wörter, präzise und aussagekräftig
-
-2. Benenne die zugehörige YAML-Datei exakt gleich um (nur `.yaml`-Endung):
-   - `24_Nero-Reisinger_01.jpg` → `galatasaray-luftzweikampf-monza-47.jpg`
-   - `24_Nero-Reisinger_01.yaml` → `galatasaray-luftzweikampf-monza-47.yaml`
-
-3. **Niemals Originalnamen beibehalten!** Kamera-Dateinamen (IMG_xxxx, 24_Nero-Reisinger_xx) sind unbrauchbar für SEO und Barrierefreiheit.
-
-4. Der `slug` in der YAML wird automatisch von `add-metadata.mjs` aus dem Dateipfad generiert – er muss nicht manuell gesetzt werden.
-
-5. **Slug-Prefix & Ordnername (verbindlich):** Der generierte Slug enthält den Ordnerpfad als Präfix (z.B. `events-2026-pflasterspektakel-…`). Den Namen des Event-Ordners daher **niemals** im Dateinamen wiederholen – sonst entstehen Dopplungen wie `…-pflasterspektakel-pflasterspektakel-…`. Datei `linz-pole-jungle-auftakt.jpg` im Ordner `pflasterspektakel/` → Slug `events-2026-pflasterspektakel-linz-pole-jungle-auftakt`. Event-spezifische, suchbare Begriffe (Ort, Sportart, Studio, Motiv) im Dateinamen sind erwünscht.
-
-### Schritt 5a: Slug-Referenzen aktualisieren & Kollisionsprüfung (verbindlich)
-
-Nach dem Umbenennen MÜSSEN alle Referenzen auf geänderte Slugs aktualisiert werden (`index.mdx`-Galerien/`heroImage`, `areas/**/*.mdx`, Feeds). Dabei gelten harte Regeln – aus einem echten Vorfall gelernt, bei dem der Build brach:
-
-1. **Kein globales Suchen-Ersetzen über nackte Basisnamen!** Derselbe Dateiname kann in MEHREREN Event-Ordnern existieren und dort ein **vollkommen anderes Bild** bezeichnen. Realbeispiele: `portrait-sean-collins.jpg` existierte in `s8-bwl-rbs/gallery/` UND `s13-bwl-g99/gallery/` (zwei verschiedene Fotos, eines davon `favorite: true`); `logan-roe-am-puck.jpg` in `s8` UND `s16`. Nur der `bild`-Pfad aus `review.json` definiert, WELCHE Datei umbenannt wird – alle gleichnamigen Dateien in anderen Ordnern bleiben unangetastet.
-2. **Nur den vollen Slug ersetzen** (Ordner-Präfix + Dateiname): `sport-eishockey-ice-2025-26-s8-bwl-rbs-gallery-portrait-sean-collins` → `…-portrait-logan-roe`. Niemals den Basisnamen alleine ersetzen.
-3. **Zielordner-Kollision vor dem Umbenennen prüfen:** Existiert `finalerDateiname` (jpg ODER yaml) bereits im Zielordner, darf NICHT umbenannt werden (Überschreiben!) – stattdessen kollisionsfreien, ebenso sprechenden Namen wählen und `review.json` aktualisieren. Realbeispiel: `linz-pole-dance-leopard.jpg` war ein anderes, bereits vorhandenes Foto → `linz-pole-dance-leopardenkostuem.jpg`.
-4. **Verifikation nach jeder Ersetzung:** Alle Slug-Referenzen der betroffenen `.mdx`-Dateien gegen die tatsächlich vorhandenen YAML-Slugs auf Disk prüfen (alle quotierten slug-artigen Strings extrahieren und gegen die aus `src/**` berechnete Slug-Menge matchen). Jeder Treffer ohne YAML ist ein garantiert Build-Fehler; zusätzlich auf Duplikate innerhalb einer Galerie-Liste prüfen (falsche Ersetzung erzeugt sonst still doppelte Einträge).
-5. **Voller Prebuild ist Pflicht:** `pnpm run prebuild` (add-metadata UND process-images) ausführen. Wird nur `add-metadata.mjs` ausgeführt, fehlen die neuen Slugs in `.imagedist/manifest.json` und der Build bricht ab mit `ResponsiveImage: "<slug>" nicht in .imagedist/manifest.json gefunden`.
-6. **Abschließend bauen und erst dann deployen:** `pnpm run build` muss inklusive `check_links.mjs` mit „No missing links found!" durchlaufen, bevor `sync.sh` / `pnpm run publish` läuft. Cache-Verzeichnisse (`.cache/`, `.astro/`, `.imagedist/`) dabei niemals löschen – die Skripte arbeiten inkrementell.
-
-### Schritt 6: YAML-Sidecars erstellen (nach Freigabe)
-
-Nach Freigabe durch den User:
-
-1. Erstelle für **JEDES** Bild eine YAML-Datei mit **nur** dem `description`-Feld:
-   ```yaml
-   description: >-
-     Beschreibungstext auf Deutsch.
-   ```
-
-2. **Nur `description` schreiben!** Slug, metadata und categories werden automatisch von `add-metadata.mjs` generiert.
-
-3. Nach dem Erstellen der YAMLs das Script laufen lassen:
-   ```bash
-   pnpm run prebuild
-   ```
-   Dieses Script:
-   - Liest alle YAML-Dateien
-   - Extrahiert EXIF-Daten aus den zugehörigen JPGs
-   - Generiert `slug` aus dem Dateipfad
-   - Füllt `metadata` (captureDate, aperture, focalLength, shutter, iso, camera, lens, orientation)
-   - Erstellt `categories` basierend auf dem Aufnahmedatum
-
-### Schritt 7: index.mdx schreiben (nach Freigabe)
-
-1. **Hero-Bild auswählen (INTERAKTIV):**
-   - Schlage 2-3 Bilder als Hero-Kandidaten vor (Atmosphäre, Schlüsselmoment, Portrait)
-   - **Orientierung beachten:** Nenne bei jedem Kandidaten die Orientierung (square, horizontal, vertikal – aus den EXIF-Abmessungen oder der YAML `metadata.orientation`). **Horizontale (landscape) Bilder für das Hero bevorzugen**, da sie als Banner eingesetzt werden.
-   - Frage den User nach seiner Wahl
-   - **Erst nach Entscheidung** die Title/Description-Varianten formulieren
-
-2. **Title & Description Varianten vorschlagen (INTERAKTIV):**
-   - Erstelle **2-3 Varianten** für Title + Description als Tabelle
-   - Jede Variante hat einen anderen Fokus (emotional, sachlich, SEO-optimiert)
-   - **SEO-Regel:** Event-Name + beide Teams im Title, Stadion/Details in der Description
-   - Frage den User explizit nach seiner Wahl (z.B. "Variante A Titel + Variante B Description mischen")
-   - **Erst nach Freigabe** mit dem Artikel fortfahren
-
-3. Erstelle eine `index.mdx` im Bildordner mit:
-   - Frontmatter: `title`, `description`, `keywords`, `date` (als String!), `heroImage`
-   - Galerie-Array mit allen Slugs
-   - Import des Gallery-Components
-   - Artikeltext, Gallerie ans Ende (siehe Schritt 3b)
-   - `heroImage` = Slug des gewählten Hero-Bildes (im Dev-Build als `data-name`-Attribut am `<img>` sichtbar)
-
-   **Slug-Format für heroImage und Galerie:**
-   - Wird vom `add-metadata.mjs` generiert aus dem Dateipfad
-   - Format: `sport-fussball-nero2026-g4-bildname` ( Beispiel)
-   - Immer kleingeschrieben, ohne Umlaute, Bindestriche statt Leerzeichen
-   - Der Ordnerpfad (inkl. Event-Ordner) ist automatisch Teil des Slug-Prefixes – Event-/Ordnernamen nicht im Dateinamen wiederholen (siehe Schritt 5.5)
-
-   **YAML-Frontmatter-Typen (strikt einhalten):**
-   - `title`: String
-   - `description`: String
-   - `keywords`: Array von Strings
-   - `date`: **String** (in Anführungszeichen, z.B. `"2026-07-24"` – NICHT ohne Anführungszeichen!)
-   - `heroImage`: String (Slug)
-
-   **SEO-Keywords (verbindlich):**
-   - Keywords müssen suchbar sein – was geben User in Google ein?
-   - **Gut:** Teamspieler (`Galatasaray SK`, `AC Monza`), Wettbewerb (`Summer Series Upper Austria`), Stadion (`Raiffeisen Arena`), Suchbegriffe (`Freundschaftsspiel`, `Testspiel Fußball`)
-   - **Schlecht:** Generische Begriffe wie `Sommer 2026`, `2026`, `Linz` (zu breit, kein Suchvolumen)
-   - Immer Both Teams + Event + Stadion + Sportartspezifische Begriffe
-
-## Ausgabe-Format (strikt einhalten)
-
-### Bild-Verarbeitungsliste (zur Freigabe durch User)
-
-Die Kategorie `[A]`/`[B]`/`[C]` ist eine interne Klassifikation – sie wird **niemals** in der Verarbeitungsliste ausgegeben. Stattdessen wird der **vorgeschlagene neue Dateiname** (SEO-Slug) angezeigt.
-
+```bash
+exiftool -DateTimeOriginal -Aperture -FocalLength -ShutterSpeed -ISO -Model -LensModel -ImageWidth -ImageHeight -Orientation -json <image-paths>
 ```
-| Original-Name | Neuer Dateiname (SEO-Slug) | Beschreibung (für YAML) | EXIF-Zeit | Ticker-Zuordnung (nur Sport) |
+
+Preserve the original EXIF data. An absent timestamp is `unknown`; it is not a
+reason to invent a time. Sort timestamped images chronologically and retain a
+stable fallback order for images without timestamps. For untimed events, use
+the EXIF sequence together with visual continuity to detect moments that belong
+to the same situation. EXIF is not only for ticker matching.
+
+For timed events, create a provisional time mapping only after the timing model
+is understood. Use at least two trustworthy anchors where possible and prefer a
+time range or relative position over false precision. The image itself can
+correct a provisional match, but cannot prove an event fact that is not visible.
+
+### 2. Read and Normalize Context
+
+Read the supplied event context directly. Extract only facts that can be
+supported by the source and keep the source distinction clear:
+
+- **Observed:** directly visible in the image;
+- **Documented:** stated in the event context or supplied reference data;
+- **Inferred:** plausible combination of observations and documentation;
+- **Unknown:** not sufficiently supported.
+
+For identification, use a supplied roster or participant list together with
+visible numbers, names, clothing, role, sequence, and event context. Never
+identify a person from facial resemblance alone. Do not turn an uncertain name
+into a fact merely because it is the only plausible candidate.
+
+### 2.1 Handling User Comments About Images
+
+User comments about an image are internal evidence, corrections, or hypotheses;
+they are never publishable copy. Never transfer a comment verbatim into an
+image description, filename, gallery text, or article paragraph.
+
+Process every comment in this order:
+
+1. Extract the semantic correction or observation from the comment.
+2. Compare it with the pixels, EXIF sequence, event context, and available roster.
+3. If the main model is vision-capable, it must read and inspect the affected
+   image itself before changing the interpretation. Do not delegate that single
+   image to a vision subagent.
+4. If the main model is not vision-capable and the correction changes the
+   action, identity, or scene interpretation, re-read a larger coherent batch
+   with `vision-creative` (for example the complete series or neighbouring
+   scene), never an isolated single-image correction call.
+5. Rewrite the affected description and filename from scratch as standalone,
+   factual German copy.
+6. Remove conversational wording, internal references, instructions, and
+   uncertainty notes that belong only to the working process.
+
+This applies even when the comment is precise or phrased as a ready-made
+caption. A comment such as a scene correction may change the final wording, but
+the final wording must be newly composed from the validated meaning. Preserve
+only the underlying fact that is supported by the image or context.
+
+### 3. Analyse Images with `vision-creative`
+
+Split the inventory into chronological or thematically coherent batches of no
+more than 10 images. The batch plan must ensure:
+
+- all images that belong to one recognizable situation or continuous series in
+  the same batch, even when that batch contains fewer than 10 images;
+- no unrelated images merely to fill the remaining batch capacity;
+- neighbouring images when they are needed to understand the sequence or
+  distinguish the moment from a similar adjacent moment.
+
+Send each batch with:
+
+- absolute image paths;
+- event type and relevant context;
+- EXIF capture times and known sequence information;
+- roster or participant mapping, if supplied;
+- the output contract below;
+- timed-event context only when it is applicable.
+
+Ask for one result per image containing:
+
+- current filename;
+- one internal category;
+- visible subjects, action, setting, and composition;
+- visible names or numbers and the evidence for each identification;
+- confidence for non-obvious identifications;
+- series or scene membership;
+- ambiguity flags and alternative interpretations when more than one reading is credible;
+- a timed-event reference and reasoning, only for timed events.
+
+Prioritize sharp, central, relevant content. Treat strongly blurred foregrounds,
+backgrounds, and incidental people as secondary. Describe what is visible, not
+what might have happened immediately before or after the exposure.
+
+Use these internal categories consistently, without exposing them in the user
+approval table:
+
+- **[A] Main action:** the central performance, interaction, movement, or event;
+- **[B] People and emotion:** a portrait, reaction, participant, or personal moment;
+- **[C] Context and atmosphere:** venue, audience, environment, equipment, or detail.
+
+Every image gets exactly one category. The category is editorial metadata, not a
+claim about importance or quality.
+
+### 4. Add Technical Classification When Needed
+
+Use `vision-technical` for questions that require visual classification rather
+than creative wording, for example a color-based group distinction or an
+equipment/insignia classification. Batch no more than 10 images per call.
+
+The output must state the observation, the resulting classification, the
+confidence, and any limitation. Do not use a technical classification to
+override a clear visible fact or to fabricate a person's identity.
+
+### 5. Reconcile and Sanity-Check
+
+Before writing descriptions or an article, the main agent checks:
+
+- EXIF order versus the claimed scene progression;
+- consistency of people, clothing, numbers, and group membership across a series;
+- duplicate or near-duplicate images;
+- timed-event matches against the source context and the actual timing model;
+- contradictions between agent outputs and source facts;
+- whether a name is supported strongly enough to publish;
+- whether each ambiguity is resolved or must be presented to the user.
+
+For the initial analysis, keep every recognizable situation or continuous series
+together, even when doing so creates smaller batches. Never split a situation
+only to reach the maximum batch size.
+
+When a contradiction can be resolved by a more focused inspection, the
+vision-capable main model performs that inspection itself. If the main model
+cannot read images, re-run a larger coherent batch through `vision-creative`
+with the correction as context. Avoid isolated single-image subagent calls for
+corrections because they lose series context and create inconsistent naming.
+Do not silently choose between credible interpretations.
+
+### 5.1 Result and Tone Guard
+
+Keep three kinds of statements separate:
+
+- **Image observation:** what the photograph visibly shows;
+- **Source fact:** a result, statistic, event detail, or quote stated in the supplied context;
+- **Editorial interpretation:** a conclusion about dominance, momentum, importance, or emotional meaning.
+
+A final score proves the result and, depending on the sport, may indicate a
+large margin. It does not by itself prove that one side dominated every phase,
+that the opponent was without a chance, or that every pictured action reflects
+the overall match. Do not infer those claims from a single image or from the
+score alone.
+
+Before publishing a strong result-related statement, require explicit support
+in the event context, such as period scores, statistics, a documented match
+report, or a direct quote. Otherwise use a neutral factual formulation or omit
+the claim. Treat wording such as `deklassiert`, `chancenlos`, `jederzeit im
+Griff`, `nichts entgegenzusetzen`, `ließ nichts anbrennen`, `klar überlegen`,
+`Sinnbild für den gesamten Abend`, or similar victory praise as a warning for
+manual verification, not as automatically valid copy.
+
+This is an editorial warning, not a schema error. Do not reject a complete
+review because one description is too promotional. Flag the affected entries,
+verify each claim against the context, and revise only the unsupported or
+excessive wording. A strong formulation may remain when the source clearly
+supports it, but it should not be repeated mechanically across the gallery.
+
+Do not repeat the final result in every image description. Include it only when
+it adds useful, source-backed context; the article introduction or match
+summary is usually the right place for the overall result. Descriptions should
+remain primarily about the pictured subject and action.
+
+### 6. Prepare Image Descriptions and Filename Proposals
+
+Create one proposal per unambiguous image. Each German description must be:
+
+- factual, concise, and understandable without neighbouring images;
+- based on visible content and verified context;
+- explicit about a clearly identifiable main person when the identity is supported;
+- newly formulated from validated observations; never copied from a user comment;
+- free of internal review notes, references to other images, and speculative claims;
+- free of unsupported victory praise, superlatives, or claims about the complete event;
+- phrased positively rather than describing absent objects or failed possibilities;
+- suitable for the repository's SEO and accessibility conventions.
+
+For this project, keep sidecar descriptions within 200 characters and use only
+the permitted German letters, ASCII letters, digits, standard punctuation, and
+spaces. Do not include emoji or accidental non-Latin output. Apply the same
+check again immediately before writing YAML files.
+
+Propose filenames that are:
+
+- lowercase, descriptive, and separated with hyphens;
+- free of umlauts and `ß` (`ae`, `oe`, `ue`, `ss`);
+- concise, normally no more than five or six meaningful words;
+- based on the image content, not internal comments or an invented identity;
+- free of a repeated event-folder name when the generated slug already includes that folder path.
+
+Do not expose the internal category in the approval table. Use this format:
+
+```text
+| Current filename | Proposed filename | German description | EXIF time | Event reference |
 | :--- | :--- | :--- | :--- | :--- |
-| IMG_1234.jpg | lask-jungwirth-faengt-ball.jpg | Spieler XYZ grätscht gegen Spieler ABC | 20:15 | ~15. Minute |
+| <current-file> | <proposed-file> | <description> | <timestamp-or-unknown> | <reference-or-not-applicable> |
 ```
 
-**Bei Nicht-Sport-Events:** Die Spalte „Ticker-Zuordnung" entfällt in der Verarbeitungsliste.
+Omit the event-reference column for untimed events. Keep ambiguous images out
+of the table until the user has selected an interpretation.
 
-**Mehrdeutige Bilder (NICHT in der Tabelle):** Bilder mit mehreren Interpretationen erscheinen nicht in der Verarbeitungsliste, sondern werden als **interaktive Fragen** (`question`-Tool) präsentiert (siehe Schritt 4). Erst nach der User-Entscheidung wird das Bild mit der gewählten Interpretation in die Liste aufgenommen.
+### 7. Propose the Article Structure, Then Draft with `author`
 
-### Artikel (Vorschau)
+After image analysis and reconciliation, the main agent must derive a rough
+article structure from the material itself. Do not let `author` invent the
+structure from a flat image list. The main agent identifies:
 
+- the dominant story or visual theme;
+- chronological or thematic image groups and their boundaries;
+- a possible opening image, hero image, climax, transition, and conclusion;
+- which groups deserve a gallery and which are supporting material;
+- the facts and images that belong to each article section;
+- gaps, uncertain identifications, and facts that must not be stated.
+
+The structure is an editorial plan, not a second source of facts. It must be
+based on the reconciled image analysis, EXIF order, and verified context. It
+should remain useful for any event type and must not force a sports-style
+narrative onto a portrait, cultural, travel, or lifestyle event.
+
+When the material allows more than one reasonable editorial treatment, prepare
+two or three concrete structure proposals before requesting the final article
+draft. Each proposal states:
+
+- whether one article or multiple articles are recommended;
+- the proposed article focus and search intent;
+- the number of galleries and the image group assigned to each gallery;
+- the section order and the role of the hero image;
+- which facts and images are shared or deliberately excluded;
+- the advantages, risks, and likely thin-content or duplication problems;
+- the recommended option and the reason for that recommendation.
+
+Do not split an event merely because there are many images. Multiple articles
+make sense only when the groups have independent topics, audiences, narratives,
+or search intents and each resulting article can stand on its own. Multiple
+galleries make sense when groups have a clear editorial distinction or change
+of scene, phase, perspective, or subject. Avoid galleries that exist only to
+divide a long list without improving navigation or storytelling.
+
+The main agent presents these options to the user and records the selected
+option before asking `author` for the final article draft. The user decides
+the number of articles and galleries. The agent's recommendation is advisory,
+not an automatic approval.
+
+Use this structure for the decision material:
+
+```text
+## Structure option <A/B/C>
+Articles: <one or more>
+Focus: <distinctive editorial focus and search intent>
+Hero: <candidate and reason>
+Galleries: <number and image group for each>
+Sections: <ordered section list>
+Benefits: <why this helps the reader>
+Risks: <thin content, duplication, weak transitions, or SEO risks>
+
+Recommendation: <option and concise reason>
 ```
-# [Packender Titel des Artikels]
-## [Spannender Untertitel]
 
-[Absatz 1: Einleitung]
+If multiple articles are selected, each article needs its own coherent focus,
+title, description, hero image, gallery plan, and search intent. Do not reuse
+the same image in several articles unless there is a deliberate editorial
+reason. Avoid near-duplicate articles that differ only by headline or gallery
+selection; merge them or leave the weaker topic unpublished.
 
-[Absatz 2: Spielverlauf / Text]
+Give `author` the verified facts, this article structure, image mapping,
+intended audience, tone, SEO requirements, and the repository's content
+constraints. If an event context file exists, pass its direct path as well as
+the fact summary; a summary must not replace the source document.
 
-... (Fortsetzung mit Bildplatzierungen) ...
+Call `author` only after the user has selected the article and gallery
+structure and after the image mapping has passed the viewer review. The draft
+must use the reviewed filenames and descriptions, not an earlier provisional
+mapping.
 
----
+Require the article to:
+
+- be written in German;
+- use only supported facts and clearly mark uncertainty for the main agent;
+- begin with a concise newspaper-style lead paragraph in bold Markdown (`**...**`). The lead summarizes the central event, subject, or result and must add information beyond the title;
+- have a meaningful title, optional subtitle, introduction, coherent sections,
+  and a conclusion appropriate to the event;
+- use longer, connected paragraphs instead of a stream of one-sentence paragraphs;
+- place images where they strengthen the narrative;
+- use the repository's Gallery/component conventions, never raw `<img>` tags;
+- avoid line-up, substitution, or technical lists unless the user explicitly requests them.
+
+If the material contains clearly separate image groups and the best gallery
+structure is uncertain, `author` may comment on the selected proposal after
+receiving it. This is a secondary editorial opinion; the main agent must keep
+the alternatives, trade-offs, and user decision explicit.
+
+Gallery rule for this project:
+
+- one gallery: place it after the complete text, including the conclusion;
+- multiple galleries: group them by meaningful scene or editorial section, with
+  explanatory text before and after where appropriate.
+
+Also prepare two or three title/description options when the final SEO framing
+is not already approved. Prefer specific event, participant, location, and
+activity terms supported by the source over generic keyword stuffing.
+
+### 8. Visual Review via `review.json` and `review.html`
+
+The visual review happens outside the chat. `review.json` is the local source
+of truth for the proposed/final image filename and description; `review.html`
+is the fixed viewer. Do not replace this workflow with a chat table or a chat
+questionnaire.
+
+1. After analysis and reconciliation, write one object per reviewable image to
+   the root `review.json`. Do this before the final article draft so the draft
+   cannot drift away from the reviewed image mapping.
+2. Each object contains at least `id`, `bild`, `originalerDateiname`,
+   `finalerDateiname`, and `finaleDescription`. Keep `bild` relative to the
+   project root. Preserve optional technical fields only when the viewer or
+   workflow supports them.
+3. Keep `review.html` fixed. It loads `review.json` and must not be regenerated
+   for individual events. Open it through an HTTP server, not `file://`.
+4. Validate the data against `schemas/review.schema.json` before opening the
+   viewer:
+   ```bash
+   pnpm run review:validate
+   ```
+5. The user checks the actual image against its proposed/final filename and
+   description in the viewer. A short approval signal is sufficient; detailed
+   caption discussion does not take place in the chat.
+6. If a correction is needed, update the corresponding `review.json` entry,
+   reload the viewer, and repeat the visual check.
+
+An image with unresolved interpretations must not be silently assigned a
+specific person, action, or event. Either resolve it through a focused
+re-analysis before adding it to `review.json`, use a genuinely neutral
+description and filename, or exclude it from the article. Do not add fields
+for alternatives, approval status, or comments unless `review.html` has been
+updated to render and support those fields.
+
+`review.json` is local and must not be committed. `review.html` is the shared,
+committed viewer. Do not create additional review UIs or progress files.
+The committed `schemas/review.schema.json` is the data contract for all
+`review*.json` files; IntelliJ is configured to associate that schema with the
+review files in this project.
+
+The article structure and article draft are produced from the reconciled image
+analysis and are not part of the image-caption table. The main agent must still
+verify factual consistency before writing the article. The selected article and
+gallery structure is the user's editorial decision, not an implicit result of
+the visual viewer. Once the viewer review and structure decision are complete,
+the main agent passes the final mapping and structure to `author` and then
+writes the approved deliverables.
+
+No published image, YAML sidecar, `index.mdx`, rename, or reference update may
+be written before the viewer-based review has been completed. If the workflow
+supports partial approval, process only the reviewed images and leave the
+remaining work pending.
+
+### 9. Rename and Write Only After Approval
+
+Before changing files:
+
+1. Build a complete rename plan from full paths, not bare filenames.
+2. Check each target image and companion YAML for collisions in the target directory.
+3. Resolve collisions with another descriptive filename and obtain approval for the changed proposal.
+4. If renames form a cycle, use temporary names so no file is overwritten.
+5. Update references using the full generated slug, including its folder prefix. Never perform a global replacement of a bare image basename.
+6. Preserve all unrelated user changes.
+
+Run `pnpm run review:validate` again after every correction to `review.json` and
+before applying the rename plan. Schema validity does not replace the visual
+review: it only proves that the data has the expected shape and references
+existing image files. The result-and-tone guard is a separate semantic check by
+the main agent and is intentionally not encoded as a hard JSON-Schema failure.
+
+For each published image, create or update the companion YAML with only the
+fields allowed by the repository workflow. In this project, the agent writes
+only `description`; `slug`, `metadata`, and `categories` are generated by
+`add-metadata.mjs`. Never copy EXIF values into YAML manually.
+
+For each portfolio article, write `index.mdx` according to the discovered
+content schema. In the current portfolio collection, the frontmatter must
+contain `title`, `date`, and `heroImage`; `description`, `keywords`, and
+`updated` are optional according to the schema. Use image slugs in `heroImage`
+and gallery arrays, import the existing Gallery component, and keep each
+article's gallery list free of duplicates.
+
+### 10. Generate Metadata and Verify the Build
+
+Run commands from `apps/reisinger.pictures/` unless the repository scripts say
+otherwise:
+
+```bash
+node ../../packages/tools/scripts/add-metadata.mjs
 ```
 
-## Technische Hinweise
+Inspect the generated slug and metadata before processing images. Then run the
+complete prebuild, which also creates the image manifest:
 
-- **Subagents für Bild & Text:** Die Bildanalyse (Schritt 1) läuft über den `vision`-Subagent in Batches von **max. 10 Bildern** – **parallel bei Nicht-Sport-Events, sequenziell bei Sport-Events**; der Artikeltext (Schritt 3) über den `author`-Subagent. Alles andere (EXIF, Matching, Beschreibungen, YAML, index.mdx) macht der Hauptagent selbst. Kein zusätzlicher Subagent, kein Task-Tool für die restlichen Schritte.
-- **EXIF zuerst:** Bevor irgendwelche Vorschläge, Kategorisierungen oder Alt-Tags erstellt werden, müssen die EXIF-`captureDate`-Werte aller Bilder erfasst sein (Schritt 0).
-- **Kein `<img>`-Tag:** Bilder werden als Markdown-Syntax referenziert. Die spätere Einbindung in Astro-Templates (ResponsiveImage, Gallery) erfolgt beim Build.
-- **YAML-Frontmatter:** Nur `description` wird vom Agent geschrieben. `slug`, `metadata` und `categories` kommen von `add-metadata.mjs` (Prebuild-Hook). **Niemals manuell EXIF-Daten in YAML kopieren!**
-- **Nicht löschen:** `.cache/`, `.astro/`, `dist/` nie anfassen. Originalbilder NICHT löschen.
-- **Sprache:** Artikeltext = Deutsch, technische Begriffe/Code = Englisch. Beschreibungen = Deutsch.
-- **pnpm** verwenden, nicht npm.
-- **Keine chinesischen oder fremdsprachigen Zeichen** in Beschreibungen oder Slugs.
+```bash
+pnpm run prebuild
+```
+
+Verify that:
+
+- every generated slug has the expected folder prefix;
+- metadata and categories contain no undefined values;
+- orientation and capture dates are plausible;
+- every `heroImage` and gallery reference resolves to an existing generated slug;
+- no gallery contains an accidental duplicate;
+- the final descriptions pass the character and length checks.
+
+Run the project build after reference changes:
+
+```bash
+pnpm run build
+```
+
+Do not run publishing or deployment commands unless the user explicitly asks
+for publication. Report failed checks with the relevant file and cause.
+
+## Repository-Specific Guardrails
+
+- Use `pnpm`, not `npm`.
+- Do not delete `.cache/`, `.astro/`, `dist/`, or `.imagedist/`. Run `astro sync` for content-index changes instead of deleting caches.
+- Do not delete published source images. After all approved deliverables are complete, remove temporary event-context files and reference-only images according to the repository's `AGENTS.md`; preserve anything explicitly marked as permanent.
+- Keep article text and image descriptions in German. Keep code, filenames, frontmatter keys, and technical documentation in English unless an existing project convention requires otherwise.
+- Use the project's `ResponsiveImage` and Gallery mechanisms. Never add a standard `<img>` tag to published site content. The standalone `review.html` viewer is an intentional technical exception because it loads local review images directly.
+- Follow the naming and full-slug reference rules in `rules/01-naming-conventions.md`.
+- Follow the content schema rather than assuming frontmatter types. In the current portfolio collection, `title` and `heroImage` are required, `date` is coerced to a date, and `description`, `keywords`, and `updated` follow the schema's optionality.
+
+## Completion Criteria
+
+The task is complete only when:
+
+- all processed images have approved descriptions and filenames;
+- all ambiguities have been resolved by the user or remain explicitly excluded;
+- the user-selected article and gallery structure is documented in the working context;
+- renames and full-slug references are consistent;
+- generated metadata and image manifests are valid;
+- `review.json` passes `schemas/review.schema.json` validation;
+- the build and link checks pass;
+- no temporary review UI or unapproved deliverable remains;
+- the final response states what was changed and which checks were run.

@@ -149,4 +149,4 @@ playwright-report
 playwright/.cache
 
 # Lokales Review-Artefakt (Bild-Metadaten-Review) – wird NICHT committet; review.html lädt es per fetch
-review.json
+/review*.json

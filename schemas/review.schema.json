@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "review.schema.json",
+  "title": "Image review data",
+  "description": "Review data consumed by the project's review.html viewer.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "bild",
+      "originalerDateiname",
+      "finalerDateiname",
+      "finaleDescription"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "bild": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Repository-relative path to the current image."
+      },
+      "originalerDateiname": {
+        "type": "string",
+        "minLength": 1
+      },
+      "finalerDateiname": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*\\.(?:avif|gif|jpe?g|png|svg|webp)$"
+      },
+      "finaleDescription": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "patternProperties": {
+      "^_": {}
+    },
+    "additionalProperties": false
+  }
+}
