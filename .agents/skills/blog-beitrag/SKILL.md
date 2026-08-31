@@ -211,6 +211,17 @@ approval table:
 Every image gets exactly one category. The category is editorial metadata, not a
 claim about importance or quality.
 
+**Incremental `review.json` updates (mandatory).** Convert each returned vision
+batch immediately: derive the German description and the filename proposal for
+every image in that batch, and insert the entries into the root `review.json`
+in chronological order (contract in Section 8). Never wait until all batches
+have returned before writing. Check each proposed filename against the entries
+already present so no name collides, and revise affected entries as soon as new
+context (a later batch, a user comment, or the reconciliation pass) corrects or
+disambiguates an interpretation. The viewer polls `review.json` live, so a
+human can start reviewing the approved images while the remaining batches are
+still in flight.
+
 ### 4. Add Technical Classification When Needed
 
 Use `vision-technical` for questions that require visual classification rather
@@ -288,12 +299,19 @@ Create one proposal per unambiguous image. Each German description must be:
 - free of internal review notes, references to other images, and speculative claims;
 - free of unsupported victory praise, superlatives, or claims about the complete event;
 - phrased positively rather than describing absent objects or failed possibilities;
-- suitable for the repository's SEO and accessibility conventions.
+- suitable for the repository's SEO and accessibility conventions;
+- free of generic filler tails such as “am Spielfeldrand”, “an der Seitenlinie”, “im Bild zu sehen” or a bare stadium name when they add no distinguishing information — end on the action, emotion or relevant context instead.
 
-For this project, keep sidecar descriptions within 200 characters and use only
-the permitted German letters, ASCII letters, digits, standard punctuation, and
-spaces. Do not include emoji or accidental non-Latin output. Apply the same
-check again immediately before writing YAML files.
+For this project, aim for concise sidecar descriptions around 200 characters as a
+soft target (not a hard limit) and use only the permitted German letters, ASCII
+letters, digits, standard punctuation, and spaces. Do not include emoji or
+accidental non-Latin output. **Never truncate a description to meet the length**
+— rewrite it from scratch as a complete, grammatically closed German sentence
+(ending with a period). If a description naturally needs more than 200
+characters for clarity, a slightly longer complete sentence is preferable to an
+abruptly cut one; avoid orphaned phrases (e.g. "der Wiener."). Before writing
+and before the review, run a soft check: `python3 -c "import json; [print(e['id'], len(e['finaleDescription'])) for e in json.load(open('review.json')) if len(e['finaleDescription'])>220 or not e['finaleDescription'].endswith('.')]"` — long
+descriptions are a warning for concise rewriting, not an automatic rejection.
 
 Propose filenames that are:
 
@@ -421,9 +439,13 @@ of truth for the proposed/final image filename and description; `review.html`
 is the fixed viewer. Do not replace this workflow with a chat table or a chat
 questionnaire.
 
-1. After analysis and reconciliation, write one object per reviewable image to
-   the root `review.json`. Do this before the final article draft so the draft
-   cannot drift away from the reviewed image mapping.
+1. Write one object per reviewable image to the root `review.json`. Fill the
+   file **incrementally and immediately**: after every returned vision batch,
+   insert its entries (chronologically) without waiting for the remaining
+   batches. Correct entries right away when a later batch, a user comment, or
+   the reconciliation pass changes an interpretation. Do this before the final
+   article draft so the draft cannot drift away from the reviewed image
+   mapping.
 2. Each object contains at least `id`, `bild`, `originalerDateiname`,
    `finalerDateiname`, and `finaleDescription`. Keep `bild` relative to the
    project root. Preserve optional technical fields only when the viewer or
