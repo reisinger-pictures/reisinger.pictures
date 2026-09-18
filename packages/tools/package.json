@@ -5,9 +5,9 @@
   "type": "module",
   "dependencies": {
     "ajv": "^8.20.0",
-    "exifreader": "^4.44.0",
-    "js-yaml": "5.2.2",
-    "jsdom": "^30.0.1",
-    "sharp": "^0.35.3"
+    "exifreader": "^4.45.0",
+    "js-yaml": "5.4.2",
+    "jsdom": "^30.1.0",
+    "sharp": "^0.35.4"
   }
 }
