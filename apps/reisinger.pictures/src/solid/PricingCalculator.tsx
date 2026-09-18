@@ -2,8 +2,6 @@ import { roundToPsychologicalValue } from "@reisinger/shared/utils";
 import { flexBasePrice, flexImagePrice, flexImagesIncluded, flexPrivacyBase, flexPrivacyPerImage, flexSetupSurcharge } from "@reisinger/shared/utils/pricing";
 import { createEffect, createMemo, createSignal, onMount, Show } from "solid-js";
 
-import { trackEvent } from "../tracking";
-
 export default function PricingCalculator() {
   const [shootingType, setShootingType] = createSignal("portrait");
   const [setupType, setSetupType] = createSignal("outdoor");
@@ -155,7 +153,7 @@ export default function PricingCalculator() {
         </div>
 
         <div class="card-actions pt-2 flex flex-col items-center gap-1">
-          <a href={contactLink()} data-contact-open="pricing" onClick={() => trackEvent("pricing_inquiry", { tariff: "flex", price: finalPrice() })} class="btn btn-primary btn-block btn-lg text-white font-black uppercase tracking-wider text-sm shadow-lg border-none">
+          <a href={contactLink()} data-contact-open="pricing" class="btn btn-primary btn-block btn-lg text-white font-black uppercase tracking-wider text-sm shadow-lg border-none">
             Anfrage absenden
           </a>
           <span class="text-[10px] opacity-60 font-semibold uppercase tracking-wider mt-1 text-center">

@@ -52,8 +52,6 @@ const today = new Date();
 )}
 
 <script>
-  import { trackEvent } from "../tracking";
-
   document.addEventListener("astro:page-load", () => {
     const form = document.getElementById("reisinger-contact-form") as HTMLFormElement;
     const modal = document.getElementById("contact_modal") as HTMLDialogElement;
@@ -93,11 +91,6 @@ const today = new Date();
 
     if (modal) {
       modal.addEventListener("close", () => {
-        // Programmatic close after a successful AJAX submit must not count as abort.
-        if (modal.dataset.contactAutoClose !== "true") {
-          trackEvent("contact_abort");
-        }
-        delete modal.dataset.contactAutoClose;
         if (window.location.hash === "#kontakt" || window.location.search !== "") {
           history.replaceState(null, "", window.location.pathname);
         }

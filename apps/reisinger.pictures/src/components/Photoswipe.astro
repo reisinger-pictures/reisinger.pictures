@@ -4,8 +4,6 @@
 <script>
   import PhotoSwipeLightbox from "photoswipe/lightbox";
 
-  import { trackEvent } from "../tracking";
-
   type ExifData = {
     alt?: string;
     camera?: string;
@@ -65,20 +63,6 @@
         pswpModule: () => import("photoswipe")
         });
 
-      let lastTrackedIndex = -1;
-
-      lightbox.on("firstUpdate", () => {
-        trackEvent("gallery_open");
-      });
-
-      lightbox.on("change", () => {
-        const pswp = (lightbox as Record<string, any>).pswp;
-        const index = pswp?.currIndex;
-        if (typeof index !== "number" || index === lastTrackedIndex) return;
-        lastTrackedIndex = index;
-        trackEvent("gallery_slide", { index, total: pswp.getNumItems() });
-      });
-
       lightbox.addFilter("domItemData", (itemData, element) => {
         const imgElement = element as HTMLImageElement;
         itemData.src = imgElement.src;
@@ -108,7 +92,6 @@
             if (!caption) return;
             const isVisible = caption.classList.toggle("pswp-caption--visible");
             el.setAttribute("aria-pressed", String(isVisible));
-            trackEvent("gallery_info_toggle", { visible: isVisible });
           }
         });
 

@@ -9,8 +9,6 @@ import {
 } from "@reisinger/shared/utils/pricing";
 import { createEffect, createMemo, createSignal, onCleanup, onMount, Show } from "solid-js";
 
-import { trackEvent } from "../tracking";
-
 export default function PricingCalculatorProfi() {
   const [hours, setHours] = createSignal(1);
   const [images, setImages] = createSignal(15);
@@ -170,7 +168,7 @@ export default function PricingCalculatorProfi() {
       </div>
 
       <div class="pt-2 flex flex-col items-center gap-1">
-        <a href={contactLink()} data-contact-open="pricing" onClick={() => trackEvent("pricing_inquiry", { tariff: "profi", price: finalPrice() })} class="btn btn-primary btn-block btn-lg text-white font-black uppercase tracking-wider text-sm shadow-lg border-none">
+        <a href={contactLink()} data-contact-open="pricing" class="btn btn-primary btn-block btn-lg text-white font-black uppercase tracking-wider text-sm shadow-lg border-none">
           Angebot anfragen
         </a>
         <span class="text-[10px] opacity-60 font-semibold uppercase tracking-wider mt-1 text-center">

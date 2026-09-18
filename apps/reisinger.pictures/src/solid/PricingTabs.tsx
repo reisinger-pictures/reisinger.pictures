@@ -1,7 +1,6 @@
 import { flexImagesIncluded } from "@reisinger/shared/utils/pricing";
 import { createSignal, Show } from "solid-js";
 
-import { trackEvent } from "../tracking";
 import PricingCalculator from "./PricingCalculator";
 import PricingCalculatorProfi from "./PricingCalculatorProfi";
 
@@ -24,7 +23,6 @@ export default function PricingTabs() {
       window.history.replaceState({}, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
     }
     setActiveTab(tab);
-    trackEvent("pricing_tab", { tab });
   };
 
   return (

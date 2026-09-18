@@ -24,16 +24,3 @@ const { infoId, title, equipment, exifCompact } = Astro.props;
     {exifCompact && <p class="text-base-content/70 m-0 mt-0.5">{exifCompact}</p>}
   </div>
 </div>
-
-<script>
-  import { trackEvent } from "../tracking";
-
-  document.addEventListener("astro:page-load", () => {
-    document.querySelectorAll(".info-overlay").forEach((el) => {
-      const checkbox = el.querySelector<HTMLInputElement>("input[type=checkbox]");
-      checkbox?.addEventListener("change", () => {
-        trackEvent("image_info_toggle", { open: checkbox.checked });
-      });
-    });
-  });
-</script>

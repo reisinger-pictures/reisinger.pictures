@@ -1,7 +1,5 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 
-import { trackEvent } from "../tracking";
-
 const ACTION_URL = "https://form.reisinger.pictures";
 const HONEYPOT_VALUE = "6786c25a-b4fc-800d-b3c6-fa0d36f41154";
 
@@ -69,13 +67,6 @@ export default function ContactForm() {
     const subject = name ? `Neue Nachricht von ${name}` : "Allgemeine Anfrage";
     formData.set("subject", subject);
 
-    const prefix = formData.get("subject_prefix");
-    const subjectPrefix = typeof prefix === "string" ? prefix : "";
-    trackEvent("contact_form_submit", {
-      subject,
-      ...(subjectPrefix ? { subject_prefix: subjectPrefix } : {})
-    });
-
     setPending(true);
     try {
       const res = await fetch(ACTION_URL, {
@@ -87,14 +78,10 @@ export default function ContactForm() {
         throw new Error(`Unexpected response status: ${res.status}`);
       }
 
-      trackEvent("contact_form_success");
       form.reset();
 
       const modal = document.getElementById("contact_modal") as HTMLDialogElement | null;
-      if (modal) {
-        modal.setAttribute("data-contact-auto-close", "true");
-        modal.close();
-      }
+      modal?.close();
 
       setToast({ type: "success" });
     } catch {

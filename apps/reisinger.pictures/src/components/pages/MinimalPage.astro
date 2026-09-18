@@ -7,7 +7,6 @@ import "photoswipe/style.css";
 import { ClientRouter } from "astro:transitions";
 
 import ScrollProgress from "../../solid/ScrollProgress";
-import Analytics from "../Analytics.astro";
 import Breadcrumbs from "../Breadcrumbs.astro";
 import Footer from "../Footer.astro";
 import Header from "../Header.astro";
@@ -41,6 +40,6 @@ const footerProps = Astro.props;
 <Footer {...footerProps}>
   <slot name="postContact" />
 </Footer>
-<Analytics />
+
 </body>
 </html>
