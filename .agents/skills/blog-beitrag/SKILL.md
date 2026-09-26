@@ -28,8 +28,14 @@ skill when they are more specific.
 
 The global OpenCode configuration defines these relevant subagents:
 
-- **`vision-creative`:** Visual interpretation, subject/action description, internal grouping, and creative image categorization. The configured limit is 10 images per call. It cannot edit files or run shell commands. Use it for what is visible, not for unverified facts.
-- **`vision-technical`:** Technical or classification work such as colors, equipment, insignia, uniforms, or visual group membership. The configured limit is 10 images per call. Request it only when that classification affects the article or metadata. It must return evidence and uncertainty, not polished copy.
+- **`vision-creative`:** Visual interpretation, subject/action description, internal grouping, creative image categorization, and second-opinion reads of ambiguous or fine-grained visual detail. The configured limit is 10 images per call. It cannot edit files or run shell commands. Use it for what is visible, not for unverified facts. It must return evidence and uncertainty, not polished copy.
+
+The main agent is itself vision-capable (every configured model must have image
+input), so it reads images directly. Do not delegate routine reading — technical
+detail such as colors, equipment, insignia, uniforms, or visual group membership is
+the main agent's own work; escalate to `vision-creative` only when a classification
+is ambiguous, affects the article or metadata, and you cannot settle it yourself.
+
 - **`author`:** Drafts or restructures the article from verified facts, approved image mappings, and the requested tone. It must not invent facts or silently resolve ambiguous image interpretations.
 
 The main agent remains responsible for file discovery, repository inspection,
@@ -149,13 +155,13 @@ Process every comment in this order:
 
 1. Extract the semantic correction or observation from the comment.
 2. Compare it with the pixels, EXIF sequence, event context, and available roster.
-3. If the main model is vision-capable, it must read and inspect the affected
-   image itself before changing the interpretation. Do not delegate that single
-   image to a vision subagent.
-4. If the main model is not vision-capable and the correction changes the
-   action, identity, or scene interpretation, re-read a larger coherent batch
-   with `vision-creative` (for example the complete series or neighbouring
-   scene), never an isolated single-image correction call.
+3. The main model is vision-capable, so it reads and inspects the affected image
+   itself before changing the interpretation. Do not delegate that single image to a
+   vision subagent.
+4. If the correction changes the action, identity, or scene interpretation and your
+   own read does not settle it, re-read a larger coherent batch with
+   `vision-creative` (for example the complete series or neighbouring scene), never
+   an isolated single-image correction call.
 5. Rewrite the affected description and filename from scratch as standalone,
    factual German copy.
 6. Remove conversational wording, internal references, instructions, and
@@ -224,9 +230,11 @@ still in flight.
 
 ### 4. Add Technical Classification When Needed
 
-Use `vision-technical` for questions that require visual classification rather
-than creative wording, for example a color-based group distinction or an
-equipment/insignia classification. Batch no more than 10 images per call.
+Classify technical detail yourself — colors, equipment, insignia, uniforms, and
+visual group membership are ordinary image reading, not a delegation. Escalate to
+`vision-creative` only when the classification is ambiguous or contested, it affects
+the article or metadata, and a second read is what will settle it. Batch no more
+than 10 images per call.
 
 The output must state the observation, the resulting classification, the
 confidence, and any limitation. Do not use a technical classification to
@@ -249,8 +257,8 @@ together, even when doing so creates smaller batches. Never split a situation
 only to reach the maximum batch size.
 
 When a contradiction can be resolved by a more focused inspection, the
-vision-capable main model performs that inspection itself. If the main model
-cannot read images, re-run a larger coherent batch through `vision-creative`
+vision-capable main model performs that inspection itself. If that inspection
+stays inconclusive, re-run a larger coherent batch through `vision-creative`
 with the correction as context. Avoid isolated single-image subagent calls for
 corrections because they lose series context and create inconsistent naming.
 Do not silently choose between credible interpretations.

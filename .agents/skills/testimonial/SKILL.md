@@ -1,6 +1,6 @@
 ---
 name: testimonial
-description: Erstellt neue Kunden-Testimonials (Bewertungen) für reisinger.pictures, bindet sie in Blog-Beiträge ein und aktualisiert Blog-Beiträge mit einem Testimonial. Deckt ab: ID-Namenskonvention (`sarahfrick3`), Frontmatter-Schema der Testimonial-Collection, Small-/Large-Bild-Logik (Small = Quadrat-Crop im Testimonial-Bildordner, Large = Hero-Image des Blog-Beitrags via Slug-Referenz), Datum = Shooting-Datum (Konvention), Einbindung per `TestimonialBlock`-Komponente im Portfolio-`index.mdx`. TRIGGER when ein neues Testimonial angelegt, ein Testimonial in einen Blog-Beitrag integriert oder ein bestehender Blog-Beitrag mit einem Testimonial aktualisiert werden soll.
+description: Erstellt neue Kunden-Testimonials (Bewertungen) für reisinger.pictures, bindet sie in Blog-Beiträge ein und aktualisiert Blog-Beiträge mit einem Testimonial. Deckt ab — ID-Namenskonvention (`sarahfrick3`), Frontmatter-Schema der Testimonial-Collection, Small-/Large-Bild-Logik (Small = Quadrat-Crop im Testimonial-Bildordner, Large = Hero-Image des Blog-Beitrags via Slug-Referenz), Datum = Shooting-Datum (Konvention), Einbindung per `TestimonialBlock`-Komponente im Portfolio-`index.mdx`. TRIGGER when ein neues Testimonial angelegt, ein Testimonial in einen Blog-Beitrag integriert oder ein bestehender Blog-Beitrag mit einem Testimonial aktualisiert werden soll.
 ---
 
 # Testimonial: Anlegen, in Blog-Beitrag integrieren, Blog-Beitrag aktualisieren
