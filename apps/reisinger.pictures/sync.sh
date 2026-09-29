@@ -49,6 +49,9 @@ SSH_OPTS="-o ControlMaster=auto -o ControlPath=/tmp/ssh-sync-%r@%h:%p -o Control
 # D2777 = Verzeichnisse rwxrwsrwx, F666 = Dateien rw-rw-rw-.
 
 # Argumente durchreichen, damit ./sync.sh --dry-run funktioniert.
+# Achtung: macOS liefert bash 3.2, dort bricht "${arr[@]}" bei leerem Array unter
+# `set -u` mit "unbound variable" ab. Die Expansion unten daher per ${arr[@]+...}
+# absichern, sonst schlaegt der Deploy ohne Argumente (Normalfall) immer fehl.
 RSYNC_EXTRA=("$@")
 
 # --- 1. Bild-CDN ------------------------------------------------------------
@@ -60,7 +63,7 @@ echo "Synchronisiere .imagedist (Bild-CDN) via rsync/ssh..."
   --chmod=D2777,F666 \
   --info=progress2 \
   --rsh="ssh $SSH_OPTS" \
-  "${RSYNC_EXTRA[@]}"
+  ${RSYNC_EXTRA[@]+"${RSYNC_EXTRA[@]}"}
 
 # --- 2. Website -------------------------------------------------------------
 echo "Synchronisiere reisinger.pictures via rsync/ssh..."
@@ -71,6 +74,6 @@ echo "Synchronisiere reisinger.pictures via rsync/ssh..."
   --chmod=D2777,F666 \
   --info=progress2 \
   --rsh="ssh $SSH_OPTS" \
-  "${RSYNC_EXTRA[@]}"
+  ${RSYNC_EXTRA[@]+"${RSYNC_EXTRA[@]}"}
 
 echo "Upload fuer reisinger.pictures erfolgreich abgeschlossen!"
