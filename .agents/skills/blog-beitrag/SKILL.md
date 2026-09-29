@@ -143,7 +143,12 @@ supported by the source and keep the source distinction clear:
 For identification, use a supplied roster or participant list together with
 visible numbers, names, clothing, role, sequence, and event context. Never
 identify a person from facial resemblance alone. Do not turn an uncertain name
-into a fact merely because it is the only plausible candidate.
+into a fact merely because it is the only plausible candidate. Read the jersey
+number from a full-frame crop before naming a player; never identify a player by
+body type, build, hair, or skin colour — several players of one squad can look
+alike (real case 09/2026: Danso/Adamu/Chukwuemeka). If the number is not readable
+with certainty, fall back to a team-level or neutral description instead of a
+name.
 
 ### 2.1 Handling User Comments About Images
 
@@ -188,7 +193,9 @@ Send each batch with:
 - absolute image paths;
 - event type and relevant context;
 - EXIF capture times and known sequence information;
-- roster or participant mapping, if supplied;
+- roster or participant mapping, if supplied, including shirt numbers and kit
+  colours. Collect it before the analysis whenever the event provides lineups:
+  without that mapping every person-level identification is guesswork;
 - the output contract below;
 - timed-event context only when it is applicable.
 
