@@ -91,6 +91,19 @@ precise event times.
 
 ## Workflow
 
+**HARTE REGEL – `review.json` sofort fortschreiben (nicht am Ende):**
+Nach **jeder** analysierten Bild-Charge (Blick des Hauptagenten oder Batch vom
+`vision-creative`-Subagenten) **unverzüglich** `review.json` fortschreiben:
+deutsche Beschreibung + Dateiname-Vorschlag pro Bild, Einträge in chronologischer
+Reihenfolge einfügen (Vertrag in Abschnitt 8). Es ist **nicht** erlaubt, die
+Bildanalyse aller Chargen erst im Kopf/Notizen zu sammeln und `review.json` am
+Ende zu schreiben — auch nicht bei 5, 15 oder 30 Bildern. Danach jede weitere
+Charge sofort ergänzen. Erst wenn alle Chargen in `review.json` stehen, folgen
+Strukturvorschlag, `author`-Entwurf und das Schreiben veröffentlichter Dateien.
+Der Grund: Der Viewer pollt `review.json` live (alle 2 s), damit der Mensch die
+bereits freigegebenen Bilder prüfen kann, während die restlichen Chargen noch
+analysiert werden.
+
 ### 0. Prepare the Workspace
 
 1. Locate the repository root and the relevant application/content root.
@@ -224,16 +237,17 @@ approval table:
 Every image gets exactly one category. The category is editorial metadata, not a
 claim about importance or quality.
 
-**Incremental `review.json` updates (mandatory).** Convert each returned vision
-batch immediately: derive the German description and the filename proposal for
-every image in that batch, and insert the entries into the root `review.json`
-in chronological order (contract in Section 8). Never wait until all batches
-have returned before writing. Check each proposed filename against the entries
-already present so no name collides, and revise affected entries as soon as new
-context (a later batch, a user comment, or the reconciliation pass) corrects or
-disambiguates an interpretation. The viewer polls `review.json` live, so a
-human can start reviewing the approved images while the remaining batches are
-still in flight.
+**Incremental `review.json` updates (mandatory hard rule).** Convert each
+returned vision batch **before you continue with any further reading or
+analysis**: derive the German description and the filename proposal for every
+image in that batch, and write the entries into the root `review.json`
+immediately (chronological order, contract in Section 8). Never wait until all
+batches have returned, and never accumulate the pending entries across batches.
+Check each proposed filename against the entries already present so no name
+collides, and revise affected entries as soon as new context (a later batch, a
+user comment, or the reconciliation pass) corrects or disambiguates an
+interpretation. The viewer polls `review.json` live, so a human can start
+reviewing the approved images while the remaining batches are still in flight.
 
 ### 4. Add Technical Classification When Needed
 
@@ -575,6 +589,7 @@ for publication. Report failed checks with the relevant file and cause.
 - Keep article text and image descriptions in German. Keep code, filenames, frontmatter keys, and technical documentation in English unless an existing project convention requires otherwise.
 - Use the project's `ResponsiveImage` and Gallery mechanisms. Never add a standard `<img>` tag to published site content. The standalone `review.html` viewer is an intentional technical exception because it loads local review images directly.
 - Follow the naming and full-slug reference rules in `rules/01-naming-conventions.md`.
+- Never write per-article material into `AGENTS.todo.md`: no article protocol, no decision log, no "Verworfen"/discarded-variant list, no completion status. That file lists open work only. One-off article decisions stay in the working context; a rule that generalizes beyond the article belongs in the skill or in `rules/`.
 - Follow the content schema rather than assuming frontmatter types. In the current portfolio collection, `title` and `heroImage` are required, `date` is coerced to a date, and `description`, `keywords`, and `updated` follow the schema's optionality.
 
 ## Completion Criteria

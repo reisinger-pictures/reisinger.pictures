@@ -6,6 +6,11 @@
 - **Logos:** Es werden **keine** Vereinslogos mehr verwendet (Markenrecht).
 - **KISS-Prinzip:** Keine komplexen Resolver-Funktionen in `utils.ts`. Frontmatter-Titel und klare Area-Pfade (`/sport/bwl` vs `/sport/skv`) reichen aus.
 
+## Personennamen: Aufstellungsdaten schlagen die Ticker-Schreibweise
+- Weichen offizielle Aufstellungsdaten und Live-Ticker in der Schreibweise eines Namens voneinander ab, gilt die **Aufstellung** als Quelle; im Artikel, in Bildbeschreibungen und in Dateinamen wird **nur eine Form** verwendet (nie gemischt).
+- Realfall 2026-10-15 (`aut-kos-2026-2`): Aufstellung „Kirchberger" vs. Ticker „Kirchberger-Prohaska" → durchgehend „Kirchberger".
+- Die abweichende Form nicht als Fehler „korrigieren" und nicht erneut abwägen: Sobald die Aufstellung die Form belegt, bleibt sie gesetzt.
+
 ## Ablage: Bilder und `index.mdx` im selben Ordner (kein `gallery/`-Unterordner mehr)
 - Jeder Event-/Trips-Ordner enthält `index.mdx` **und** alle Bilder samt YAML-Sidecars direkt nebeneinander. Ein zusätzlicher `gallery/`-Unterordner wie in älteren Events (z.B. `trips/2025/prag/gallery/`) ist **veraltet** und wird nicht mehr angelegt.
 - Der Slug ergibt sich aus dem Ordnerpfad: `portfolio/trips/2026/prag/<name>.jpg` → `trips-2026-prag-<name>`.
