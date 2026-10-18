@@ -36,6 +36,10 @@
       "finaleDescription": {
         "type": "string",
         "minLength": 1
+      },
+      "reviewComment": {
+        "type": "string",
+        "description": "Internal review note only. Never copy it verbatim into published content."
       }
     },
     "patternProperties": {

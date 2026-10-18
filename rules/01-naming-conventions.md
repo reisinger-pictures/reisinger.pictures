@@ -22,6 +22,11 @@
 - `pnpm run review:validate` prüft `review.json` gegen `schemas/review.schema.json`, bevor etwas angewendet wird.
 - `pnpm run review:apply <ziel-ordner> [review-datei]` (Zielordner relativ zum Repo-Root, Standard-Datei `review.json`) benennt `bild` → `<ziel-ordner>/<finalerDateiname>` um und schreibt/aktualisiert im Sidecar **nur** `description`; `slug`, `metadata` und `categories` erzeugt weiterhin `add-metadata.mjs`. Das Skript ist idempotent und aktualisiert `bild` in der Review-Datei auf den neuen Pfad.
 - `review*.json` ist lokal und wird nicht committet; `review.html` bleibt der feste Viewer.
+- `reviewComment` is an optional per-image field in `review.json`. It is internal evidence only: it never reaches published text, filenames, YAML sidecars, or articles.
+- `review-viewer.js` must be served alongside `review.html` over HTTP (never `file://`), because the viewer is now an ES module.
+- The viewer only reads `review.json`: it loads the file and polls it every 2 s, and it never writes it. Saving stays an explicit `Download aktualisierte review.json` plus manually replacing the local, ignored `review.json`; the static page cannot overwrite its own source.
+- Unresolved comment conflicts (a local comment edited while the remote file changed, or an entry removed remotely) block the export until the reviewer decides which version wins.
+- `pnpm run review:unit` runs the viewer helper tests (`node --test tests/review-viewer.test.mjs`).
 
 ## Gleicher Dateiname in mehreren Event-Ordnern (Slug-Kollision)
 - Derselbe Basisname kann in unterschiedlichen Galerien ein **verschiedenes Bild** bezeichnen. Realfälle aus dem Audit 08/2026: `portrait-sean-collins.jpg` in `s8-bwl-rbs/gallery/` UND `s13-bwl-g99/gallery/` (zwei verschiedene Spieler-Fotos); `logan-roe-am-puck.jpg` in `s8-bwl-rbs/gallery/` UND `s16-bwl-vic/`.

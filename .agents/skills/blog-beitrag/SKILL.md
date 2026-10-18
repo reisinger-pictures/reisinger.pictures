@@ -165,9 +165,11 @@ name.
 
 ### 2.1 Handling User Comments About Images
 
-User comments about an image are internal evidence, corrections, or hypotheses;
-they are never publishable copy. Never transfer a comment verbatim into an
-image description, filename, gallery text, or article paragraph.
+The optional `reviewComment` field in a `review.json` image record contains an
+internal reviewer comment, correction, or hypothesis. Treat it as internal
+evidence only, never as publishable copy. Never transfer it verbatim into a
+published image description/caption, filename, gallery text, or article
+paragraph.
 
 Process every comment in this order:
 
@@ -480,7 +482,11 @@ questionnaire.
    project root. Preserve optional technical fields only when the viewer or
    workflow supports them.
 3. Keep `review.html` fixed. It loads `review.json` and must not be regenerated
-   for individual events. Open it through an HTTP server, not `file://`.
+   for individual events. Open it through an HTTP server, not `file://`. The
+   viewer polls for new entries and lets the reviewer edit `reviewComment` per
+   image. Browser edits are not written back to the source file: download the
+   updated `review.json` and replace the local ignored file explicitly. Resolve
+   any concurrent-comment conflicts in the viewer before exporting.
 4. Validate the data against `schemas/review.schema.json` before opening the
    viewer:
    ```bash
@@ -488,7 +494,9 @@ questionnaire.
    ```
 5. The user checks the actual image against its proposed/final filename and
    description in the viewer. A short approval signal is sufficient; detailed
-   caption discussion does not take place in the chat.
+   caption discussion does not take place in the chat. Process each
+   `reviewComment` under Section 2.1's validation workflow; never copy its
+   wording verbatim into a description, caption, or article.
 6. If a correction is needed, update the corresponding `review.json` entry,
    reload the viewer, and repeat the visual check.
 
@@ -496,8 +504,9 @@ An image with unresolved interpretations must not be silently assigned a
 specific person, action, or event. Either resolve it through a focused
 re-analysis before adding it to `review.json`, use a genuinely neutral
 description and filename, or exclude it from the article. Do not add fields
-for alternatives, approval status, or comments unless `review.html` has been
-updated to render and support those fields.
+for alternatives or approval status unless `review.html` has been updated to
+render and support those fields. `reviewComment` is the supported internal
+comment field; it is evidence for validation, not a source of publishable copy.
 
 `review.json` is local and must not be committed. `review.html` is the shared,
 committed viewer. Do not create additional review UIs or progress files.
