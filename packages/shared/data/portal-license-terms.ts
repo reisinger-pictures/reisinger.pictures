@@ -7,7 +7,7 @@
 
 export const portalLicenseTerms = {
   source: "https://portal.reisinger.pictures/api/settings/license-terms",
-  fetchedAt: "2026-10-18T08:12:25.661Z",
+  fetchedAt: "2026-10-18T10:06:27.829Z",
   units: { money: "cents", counts: "count", multiplier: "dimensionless" },
   terms: {
     calc_base_price: "5000",
@@ -15,7 +15,7 @@ export const portalLicenseTerms = {
     calc_images_per_hour: "6",
     calc_outdoor_images_per_hour: "10",
     calc_flatrate_multiplier: "1.2",
-    srp_base_price: "8000",
+    srp_base_price: "14900",
     srp_setup_fee: "5000",
     srp_extra_image_fee: "1500",
     srp_privacy_fee: "20000"

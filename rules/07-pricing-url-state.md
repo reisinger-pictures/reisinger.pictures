@@ -44,8 +44,8 @@ Pure parsing/serialization lives in `src/solid/pricing-url-state.ts`.
 
 ## Price examples and inquiry boundary
 - `/preise/?tarif=standard&h=1&img=15&location=outdoor`: **249 €**.
-- `/preise/?tarif=flex`: **79 €**.
-- `/preise/?tarif=flex&type=akt&private=true`: **279 €**.
+- `/preise/?tarif=flex`: **149 €**.
+- `/preise/?tarif=flex&type=akt&private=true`: **349 €**.
 - These are selected inputs to the existing shared formulas, not new formulas.
 - Calculator inquiry links include the current tariff/configuration and the
   configuration-aware message/price. The shared contact modal must preserve all

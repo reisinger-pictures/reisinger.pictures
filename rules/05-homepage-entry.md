@@ -88,7 +88,7 @@ prefills and the real modal behavior remain intact; browser tests mock form POST
 - Main/Standard price links serialize that same configuration:
   `/preise/?tarif=standard&h=1&img=15&location=outdoor`.
 - Flex's central homepage example is the default creative private portrait,
-  outdoor, zero extra images, no online-prohibition option. It yields **79 EUR**
+  outdoor, zero extra images, no online-prohibition option. It yields **149 EUR**
   with 15 edited images. The owner-requested public link is
   `/preise/?tarif=flex`. The redundant inline `Bedingungen` link was removed;
   `Flex berechnen` is the single pricing-section link to that calculator.
@@ -110,13 +110,17 @@ Only approved existing image slugs are used:
 The unique existing source was inspected at
 `src/content/portfolio/akt/boudoir-fine-art/fa-02.jpg`; its existing sidecar
 resolves the exact slug. No new photos, sidecars, crops or renames.
-`src/content/areas/akt.mdx` is gitignored: its only change is `heroImage`.
+`src/content/privateAreas/akt.mdx` is gitignored: its only change is `heroImage`.
+(The file lived at `src/content/areas/akt.mdx` before the 2026-10-18 collection
+split — see `rules/09-shooting-areas.md`; the path in this section is the
+historical one.)
 The dynamic shooting page derives HeroBanner, SocialImage and schema image from
 this same field, keeping them consistent without changing shared rendering.
 Its entire `images` gallery, article text and all other references are unchanged.
 
 Development note (observed 2026-10-18): in the long-running `dev` daemon on port
-4325 a change to the gitignored `areas/akt.mdx` was **not** picked up — the page
+4325 a change to the gitignored private-offer `akt.mdx` (the file lived at
+`areas/akt.mdx`, now `privateAreas/akt.mdx`) was **not** picked up — the page
 kept the previous hero while Vite HMR for `.astro` components worked in the same
 process, `astro sync` reported `Synced content` without changing the served page,
 and the on-disk `.astro/data-store.json` kept its pre-edit timestamp. A

@@ -56,9 +56,10 @@ a later legal alignment is pending.
   discount to that rounded package, then psychologically round the final**.
   Examples: 1 h / 15 / outdoor = **249 €**, 1 h / 15 / indoor = **329 €**,
   90 min / 15 / outdoor = **289 €**.
-- **Flex:** base 80 €, setup 50 €, +15 € per extra image, privacy option 200 €.
-  Intended rule: **round once, on the raw total** (80 → 79, 130 → 129,
-  280 → 279); setup/extra/privacy amounts stay raw.
+- **Flex:** base 149 €, setup 50 €, +15 € per extra image, privacy option 200 €.
+  Intended rule: **round once, on the raw total** (e.g. 164 → 165); setup/extra/
+  privacy amounts stay raw. The 149 € base already ends in 9, so the plain setup
+  totals are psychologically round as-is (**149 €**, 199 €, 349 €).
 - The single source of truth is `packages/shared/utils/pricing.ts`
   (`calculateStandardPrice`, `calculateFlexPrice`); the Solid islands delegate to
   it. `apps/reisinger.pictures/src/pricing-parity.test.ts` pins the public result
@@ -74,6 +75,11 @@ a later legal alignment is pending.
   fetches `https://portal.reisinger.pictures/api/settings/license-terms` (public,
   no auth) and writes the checked-in snapshot
   `packages/shared/data/portal-license-terms.ts`.
+- The importer authenticates **optionally**: with both `PORTAL_ADMIN_EMAIL` and
+  `PORTAL_ADMIN_PASSWORD` set it logs in and forwards the super-admin `rp_jwt`
+  cookie; with neither set it reads the endpoint anonymously (it is not protected
+  yet). Setting only one of the two fails loudly — no silent downgrade. Strict
+  validation of the nine fields is identical in both modes.
 - **Only these nine fields** are ever persisted: `calc_base_price`,
   `calc_hourly_rate`, `calc_images_per_hour`, `calc_outdoor_images_per_hour`,
   `calc_flatrate_multiplier`, `srp_base_price`, `srp_setup_fee`,
@@ -88,7 +94,7 @@ a later legal alignment is pending.
   rewritten.
 - `packages/shared/utils/pricing.ts` **consumes the snapshot** and derives every
   constant from it — the numbers are never duplicated by hand. Raw values are
-  stored unchanged (e.g. Flex base 80 € = `"8000"` cents); the display rounds.
+  stored unchanged (e.g. Flex base 149 € = `"14900"` cents); the display rounds.
 - The pure boundary logic lives in `packages/shared/utils/portal-license-terms.ts`
   and is unit-tested in `apps/reisinger.pictures/src/portal-terms-import.test.ts`
   (units, missing/malformed fields, HTTP failure, no-overwrite).

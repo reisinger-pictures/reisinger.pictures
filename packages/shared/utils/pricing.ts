@@ -149,7 +149,8 @@ export interface FlexPriceInput {
  *
  * Intended shared rule (owner-confirmed 2026-10-18): the raw sum is
  * psychologically rounded ONCE — on the final total. Setup, extra-image and
- * privacy amounts stay raw; only the sum is rounded (80 → 79).
+ * privacy amounts stay raw; only the sum is rounded (e.g. 164 → 165). With the
+ * current 149 € base the plain setup totals are already round (149, 199, 349).
  *
  * Note: the portal's `calculateB2CFlexPrice` currently returns the raw sum
  * WITHOUT this rounding. That is a known portal defect awaiting its own fix —

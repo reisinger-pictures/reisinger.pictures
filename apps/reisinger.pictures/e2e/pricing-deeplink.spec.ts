@@ -40,12 +40,12 @@ test("canonical Flex link never renders the Standard total and survives reload",
     }).observe(document, { subtree: true, childList: true, characterData: true });
   });
   await openPricing(page, "?tarif=flex");
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
   await page.waitForTimeout(350); // Old Standard serializer wrote after 250 ms.
   expect(new URL(page.url()).search).toBe("?tarif=flex");
   expect(await page.evaluate(() => (window as unknown as InstrumentedWindow).observedPricingTotals)).not.toContain("249 €");
   await page.reload();
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
 });
 
 for (const example of [
@@ -54,8 +54,8 @@ for (const example of [
   { query: "?h=1.5&img=15&location=outdoor", tariff: "Standard", price: 289 },
   { query: "?student=true", tariff: "Standard", price: 165 },
   { query: "?friend=true&code=friend", tariff: "Standard", price: 125 },
-  { query: "?tarif=flex&setup=indoor", tariff: "Flex", price: 129 },
-  { query: "?private=true&type=akt&tarif=flex", tariff: "Flex", price: 279 }
+  { query: "?tarif=flex&setup=indoor", tariff: "Flex", price: 199 },
+  { query: "?private=true&type=akt&tarif=flex", tariff: "Flex", price: 349 }
 ] as const) {
   test(`keeps ${example.price} € and settings on reload: ${example.query}`, async ({ page }) => {
     await openPricing(page, example.query);
@@ -140,7 +140,7 @@ test("invalid enums and NaN fall back to valid selections and finite prices", as
   await expect(page.getByRole("slider", { name: "Anzahl bearbeiteter Bilder" })).toHaveValue("15");
   await expect(page.getByRole("button", { name: "Outdoor", exact: true })).toHaveAttribute("aria-pressed", "true");
   await openPricing(page, "?tarif=flex&extra=NaN&type=garbage&setup=moon&private=true");
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
   await expect(page.getByRole("button", { name: /Portrait & Beauty/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: /Natürliches Licht/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("checkbox", { name: /Online-Verbot/ })).toHaveCount(0);
@@ -176,10 +176,10 @@ test("out-of-range inputs are clamped to matching slider/price values", async ({
   await expect(page.getByRole("slider", { name: "Anzahl bearbeiteter Bilder" })).toHaveValue("1");
   await expect(page.getByTestId("pricing-total")).toHaveText("139 €");
   await openPricing(page, "?tarif=flex&extra=-30");
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
   await expect(page.getByRole("slider", { name: "Zusätzliche Bilder" })).toHaveValue("0");
   await openPricing(page, "?tarif=flex&extra=9999");
-  await assertConfiguration(page, "Flex", 529);
+  await assertConfiguration(page, "Flex", 599);
   await expect(page.getByRole("slider", { name: "Zusätzliche Bilder" })).toHaveValue("30");
 });
 
@@ -194,15 +194,15 @@ test("interactive location/discount and Flex privacy changes persist immediately
   await page.reload();
   await assertConfiguration(page, "Standard", 219);
   await page.getByRole("tab", { name: "Flex", exact: true }).click();
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
   await page.getByRole("button", { name: /Akt & Boudoir/ }).click();
   await page.getByRole("checkbox", { name: /Online-Verbot/ }).check();
-  await assertConfiguration(page, "Flex", 279);
+  await assertConfiguration(page, "Flex", 349);
   expect(new URL(page.url()).searchParams.get("private")).toBe("true");
   await page.reload();
-  await assertConfiguration(page, "Flex", 279);
+  await assertConfiguration(page, "Flex", 349);
   await page.getByRole("button", { name: /Portrait & Beauty/ }).click();
-  await assertConfiguration(page, "Flex", 79);
+  await assertConfiguration(page, "Flex", 149);
   expect(new URL(page.url()).searchParams.has("private")).toBe(false);
 });
 
@@ -223,7 +223,7 @@ test("configured Flex inquiry opens/closes without losing tariff, config or pric
   let posts = 0;
   page.on("request", request => { if (request.method() === "POST") posts += 1; });
   await openPricing(page, "?tarif=flex&type=akt&private=true&utm_source=inquiry#details");
-  await assertConfiguration(page, "Flex", 279);
+  await assertConfiguration(page, "Flex", 349);
   await page.evaluate(() => {
     const trackedWindow = window as unknown as InstrumentedWindow;
     trackedWindow.modalPageLoads = 0;
@@ -232,7 +232,7 @@ test("configured Flex inquiry opens/closes without losing tariff, config or pric
   await page.getByRole("link", { name: "Anfrage absenden" }).click();
   await expect(page.locator("#contact_modal")).toBeVisible();
   const message = await page.locator("#form_msg").inputValue();
-  expect(message).toContain("279 €");
+  expect(message).toContain("349 €");
   expect(message).toContain("Akt & Boudoir");
   expect(message).toContain("keine Online-Veröffentlichung");
   expect(message).toContain("eigenen Geräten");
@@ -248,7 +248,7 @@ test("configured Flex inquiry opens/closes without losing tariff, config or pric
   expect.soft(url.hash).toBe("#details");
   expect(await page.evaluate(() => (window as unknown as InstrumentedWindow).modalPageLoads)).toBe(0);
   await page.reload();
-  await assertConfiguration(page, "Flex", 279);
+  await assertConfiguration(page, "Flex", 349);
   await expect(page.getByRole("checkbox", { name: /Online-Verbot/ })).toBeChecked();
   expect(posts).toBe(0);
 });

@@ -50,7 +50,8 @@ export const flexEntryHref = `/preise/?${new URLSearchParams({
  * Private use only and subordinate to the Standard tariff.
  *
  * The Flex price is a final total and is psychologically rounded like the
- * Standard price: a raw base of 80 is displayed as 79.
+ * Standard price: a raw total that lands on a ten is displayed one euro lower
+ * (e.g. 164 is displayed as 165).
  */
 export function flexEntryPrice(): string {
   return formatExactPrice(calculateFlexPrice(flexEntry));

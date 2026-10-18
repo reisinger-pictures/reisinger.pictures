@@ -138,7 +138,7 @@ test("shows the centrally derived pricing card without a hardcoded minimum", asy
   await expect(intro.getByText(/Online-Verzicht bei Akt & Boudoir/)).toBeVisible();
 
   await expect(intro.getByText(/€\s?249(?:,00)?$/)).toBeVisible();
-  await expect(intro.getByRole("heading", { name: /Flex.*€\s?79(?:,00)?$/ })).toBeVisible();
+  await expect(intro.getByRole("heading", { name: /Flex.*€\s?149(?:,00)?$/ })).toBeVisible();
 
   await expect(
     page.locator('main a[href="/preise/?tarif=standard&h=1&img=15&location=outdoor"]').first(),
@@ -152,7 +152,7 @@ test("shows the centrally derived pricing card without a hardcoded minimum", asy
 
 for (const { link, tariff, amount } of [
   { link: "Standard berechnen", tariff: "Standard", amount: "249 €" },
-  { link: "Flex berechnen", tariff: "Flex", amount: "79 €" }
+  { link: "Flex berechnen", tariff: "Flex", amount: "149 €" }
 ]) {
   test(`reproduces the advertised ${tariff} amount through its homepage link`, async ({ page }) => {
     await page.goto("/");
@@ -166,8 +166,13 @@ for (const { link, tariff, amount } of [
 }
 
 // The owner explicitly selected this existing slug for the homepage Boudoir
-// offer and for the /shootings/akt/ hero. In dev the hero `src` is an
-// `/@fs/…fa-02.jpg…` URL, in production it is the CDN hash path.
+// offer and for the /shootings/akt/ hero. The selection is pinned to the stable
+// rendered output so the check is meaningful in development *and* in the
+// production preview: the development `src`/`srcset` point at the source file
+// (`…/fa-02.jpg`), the production ones are the CDN paths built from this image's
+// manifest hash. `data-name` is a development-only attribute (ResponsiveImage
+// emits it solely for `import.meta.env.MODE === "development"`) and is therefore
+// not asserted here — it is `null` in the built output.
 const ACTIVE_BOUDOIR_SLUG = "akt-boudoir-fine-art-fa-02";
 const activeBoudoirPattern = (() => {
   const manifest = JSON.parse(readFileSync(new URL("../.imagedist/manifest.json", import.meta.url), "utf8"));
@@ -179,8 +184,10 @@ test("uses the owner's selected Boudoir image for the homepage offer", async ({ 
   const card = page.locator("main figure").filter({
     has: page.getByRole("heading", { name: "Boudoir & Fine Art", exact: true })
   });
+  // `src` is the rendered largest variant, `srcset` all responsive variants of
+  // that one image — both must resolve to the owner's chosen file in every mode.
   await expect(card.locator("img")).toHaveAttribute("src", activeBoudoirPattern);
-  await expect(card.locator("img")).toHaveAttribute("data-name", ACTIVE_BOUDOIR_SLUG);
+  await expect(card.locator("img")).toHaveAttribute("srcset", activeBoudoirPattern);
 });
 
 test("uses the owner's selected Boudoir image as the Akt page hero and social preview", async ({ page }) => {
@@ -188,7 +195,7 @@ test("uses the owner's selected Boudoir image as the Akt page hero and social pr
   const title = await page.getByRole("heading", { level: 1 }).innerText();
   const hero = page.getByRole("img", { name: title, exact: true });
   await expect(hero).toHaveAttribute("src", activeBoudoirPattern);
-  await expect(hero).toHaveAttribute("data-name", ACTIVE_BOUDOIR_SLUG);
+  await expect(hero).toHaveAttribute("srcset", activeBoudoirPattern);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", activeBoudoirPattern);
   await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", activeBoudoirPattern);
   expect(await hero.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
