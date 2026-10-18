@@ -160,7 +160,7 @@ export default function PricingTabs() {
                     eine klare, verständliche Galerie-Regelung:
                   </p>
                   <div class="p-4 rounded-xl border border-base-300 bg-base-100 space-y-2">
-                    <span class="badge badge-success bg-success/15 border-success/30 text-success-content font-black text-[11px] uppercase px-2.5 py-2">
+                    <span class="badge badge-success font-black text-[11px] uppercase px-2.5 py-2">
                       &#x1F7E2; Online-Portfolio-Modus
                     </span>
                     <p class="text-sm leading-relaxed opacity-90 m-0">
@@ -175,7 +175,7 @@ export default function PricingTabs() {
                     </p>
                   </div>
                   <div class="p-4 rounded-xl border border-base-300 bg-base-100 space-y-2">
-                    <span class="badge badge-error bg-error/15 border-error/30 text-error-content font-black text-[11px] uppercase px-2.5 py-2">
+                    <span class="badge badge-error font-black text-[11px] uppercase px-2.5 py-2">
                       &#x1F534; Absolutes Online-Verbot
                     </span>
                     <p class="text-sm leading-relaxed opacity-90 m-0">

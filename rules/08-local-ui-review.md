@@ -13,12 +13,20 @@ Chromium must already be available through the project's Playwright setup.
 
 ## Scope and filters
 
-`tests/screenshots/ui-review.config.ts` is the route/state manifest. Existing
-portfolio, pagination, content, testimonials, shooting and TFP routes remain.
-The homepage, Standard example, Flex default and configured Akt/Boudoir private
-Flex view are included. Direct URL loads deliberately review the public entry
-points/deep links. Static SSR content has no meaningful empty state: do not
-duplicate filled pages under a fictional `empty` label.
+`tests/screenshots/ui-review.config.ts` is the route/state manifest. Owner
+decision 2026-10-18: **one page per page type is enough, plus every `simple`
+page in full**. The manifest therefore keeps one representative per type
+(homepage, blog post, portfolio overview and its pagination, a testimonial
+detail page, a private and a sport shooting area, an area testimonials page,
+the TFP overview plus one idea, and the calculator's Standard, Flex and
+configured states) and covers all `simple` routes completely (preise, agb, dsb,
+impressum, ueber-mich, personal-branding, eventfotografie, share, portal,
+akt/ablauf, tfp) together with the 404 page. Direct URL loads deliberately
+review the public entry points and deep links. Redirects (`/live`,
+`/privat/preise`, the removed Resident Model URL) and the machine-readable feeds
+are not captured: a redirect only duplicates its target under a wrong name, and
+a feed has no reviewable UI. Static SSR content has no meaningful empty state:
+do not duplicate filled pages under a fictional `empty` label.
 
 Every route runs in these six projects:
 
@@ -58,6 +66,23 @@ the normal filtered dev command and the image manifest's relative paths.
 It never invokes Astro's global `dev stop`, kills a shared process,
 deletes caches, or writes environment files. The public Astro JS API is marked
 experimental by Astro; check it when upgrading Astro.
+
+The functional E2E suite has the same problem and the same solution. The Astro 7
+CLI auto-backgrounds `astro preview` when it detects an agent environment
+(`am-i-vibing`) and then exits immediately, which is why
+`webServer.command: "pnpm preview …"` failed with
+`Process from config.webServer exited early`. `apps/reisinger.pictures/playwright.config.ts`
+therefore starts `apps/reisinger.pictures/e2e/preview-server.mjs`, which serves
+the production `dist/` through Astro's public `preview()` API (also marked
+experimental by Astro). It binds strictly (`vite.preview.strictPort`) so a
+partially-available port fails loudly instead of silently serving something
+else, owns only its own server and calls that server's `stop()` on SIGTERM or
+SIGINT. `reuseExistingServer` keeps an already running server on 4322 reusable
+and is never stopped by the suite. The port can be overridden with
+`E2E_PREVIEW_PORT` (1024–65535); the config and the wrapper share that one
+resolver so `baseURL` and the bound port cannot drift apart. The suite still
+requires a prior build (`pnpm --filter reisinger.pictures build`), which
+`test:e2e` performs itself.
 
 For an isolated local port, including cold-start verification without disturbing
 someone else's dev/preview server:
@@ -123,3 +148,28 @@ findings block visual approval. Do not introduce pixel-baseline CI gates.
 Keep calculator URL/price behavior in the separate functional E2E suite. Review
 screenshots from a stable final working tree; captures taken while concurrent
 app edits are landing are intermediate evidence, not final design approval.
+
+## Automated contrast matrix
+
+Checklist item 11 (colour contrast) is covered by a focused, separate Playwright
+spec; it is not part of the screenshot harness and adds no pixel baseline:
+
+```sh
+pnpm test:contrast                        # light + dark, all checked combinations
+pnpm test:contrast --project contrast-dark
+pnpm test:contrast --grep pricing-standard-student
+UI_CONTRAST_PORT=44327 pnpm test:contrast # isolated dev server
+```
+
+`playwright.contrast.config.ts` drives `tests/contrast/contrast.spec.ts`. It
+checks the colour combinations that the reviewed routes actually render (flow
+text, links, primary/outline buttons, price and hint text, badges) and a theme
+token matrix built from the class strings the components really use. Colours are
+read from the live document and resolved through a canvas, so `oklch` and
+`color-mix()` are measured exactly as the browser composites them; transparent
+backgrounds are composited through the ancestor chain. Normal text must reach
+WCAG AA 4.5:1, large text 3:1. A failing combination is a real finding — record
+it and fix the token or the usage deliberately, never by widening the threshold.
+Classes the project does not render (e.g. `alert-info`, `link-primary`) are
+deliberately not probed: Tailwind emits only used classes, so probing them would
+measure unstyled markup instead of a theme token.
