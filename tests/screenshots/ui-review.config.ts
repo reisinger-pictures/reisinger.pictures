@@ -3,7 +3,16 @@
 // generic spec picks the changes up automatically.
 
 export type UiReviewState = "filled" | "empty";
-export type UiReviewViewport = "desktop" | "mobile";
+export type UiReviewViewport = "desktop" | "intermediate" | "mobile";
+export type UiReviewTheme = "light" | "dark";
+
+export const reviewViewports = {
+  desktop: { width: 1920, height: 950 },
+  intermediate: { width: 1024, height: 900 },
+  mobile: { width: 480, height: 1040 },
+} satisfies Record<UiReviewViewport, { width: number; height: number }>;
+
+export const reviewThemes: UiReviewTheme[] = ["light", "dark"];
 
 export interface UiReviewRoute {
   name: string;
@@ -13,6 +22,8 @@ export interface UiReviewRoute {
   note?: string;
   /** Static <title> of the app — guards against capturing a foreign server on the port. */
   expectedTitle: string;
+  /** Readiness/identity only; calculator behavior belongs to functional E2E. */
+  calculatorTab?: "Standard" | "Flex";
 }
 
 export interface UiReviewConfig {
@@ -30,6 +41,30 @@ export const uiReviewConfig: UiReviewConfig = {
       states: ["filled"],
       note: "Startseite mit Portfolio-Übersicht — statisch beim Build aus den Content-Collections gerendert, kein sinnvoller Empty-State.",
       expectedTitle: "Florian Reisinger Fotografie",
+    },
+    {
+      name: "pricing-standard",
+      path: "/preise/?tarif=standard&h=1&img=15&location=outdoor",
+      states: ["filled"],
+      note: "Direct calculator deep link; static content has no meaningful empty state.",
+      expectedTitle: "Meine Tarife – Fair, transparent, flexibel",
+      calculatorTab: "Standard",
+    },
+    {
+      name: "pricing-flex",
+      path: "/preise/?tarif=flex",
+      states: ["filled"],
+      note: "Direct Flex deep link; capture after the requested tab has hydrated.",
+      expectedTitle: "Meine Tarife – Fair, transparent, flexibel",
+      calculatorTab: "Flex",
+    },
+    {
+      name: "pricing-flex-private",
+      path: "/preise/?tarif=flex&type=akt&private=true",
+      states: ["filled"],
+      note: "Configured Akt/Boudoir privacy view, not an invented empty state.",
+      expectedTitle: "Meine Tarife – Fair, transparent, flexibel",
+      calculatorTab: "Flex",
     },
     {
       name: "portfolio",

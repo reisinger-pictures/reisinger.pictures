@@ -8,6 +8,8 @@
     "build": "pnpm --filter reisinger.pictures build",
     "build:reisinger.pictures": "pnpm --filter reisinger.pictures exec astro check && pnpm --filter reisinger.pictures build",
     "test:screenshots": "pnpm exec playwright test -c playwright.screenshots.config.ts",
+    "test:ui": "pnpm exec playwright test -c playwright.screenshots.config.ts",
+    "test:ui:unit": "node --test tests/screenshots/ui-review.helpers.test.ts",
     "review:validate": "node packages/tools/scripts/validate-review.mjs",
     "review:apply": "node packages/tools/scripts/apply-review.mjs"
   },

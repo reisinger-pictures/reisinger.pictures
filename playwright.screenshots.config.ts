@@ -1,33 +1,44 @@
-// Playwright config for the UI-review screenshot set.
-//
-// Deliberately SEPARATE from any functional E2E suite: this set only captures
-// screenshots and never asserts behavior. Screenshots land under
-// `test-results/ui-screenshots/<state>/<viewport>/<name>.png`.
+// Local pixel capture only; deliberately separate from functional E2E and CI.
 import { defineConfig, devices } from "@playwright/test";
+import { reviewViewports, uiReviewConfig } from "./tests/screenshots/ui-review.config";
+import { reviewPort, reviewTargets } from "./tests/screenshots/ui-review.helpers";
+
+const port = reviewPort();
+const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./tests/screenshots",
-  testMatch: "**/*.spec.ts",
+  testMatch: "**/ui-screenshots.spec.ts",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : 2,
+  forbidOnly: true,
+  retries: 0,
+  workers: 2,
   timeout: 120000,
   reporter: [["html", { open: "never", outputFolder: "playwright-report/ui-screenshots" }]],
   use: {
-    baseURL: "http://localhost:4325",
+    baseURL,
+    reducedMotion: "reduce",
+    locale: "de-AT",
     trace: "off",
     video: "off",
   },
   webServer: {
-    command: "pnpm dev --port 4325 --strictPort",
-    url: "http://localhost:4325",
+    command: "node tests/screenshots/dev-server.mjs",
+    env: { UI_REVIEW_PORT: String(port) },
+    url: baseURL,
     reuseExistingServer: true,
     timeout: 120000,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 15000 },
   },
-  outputDir: "test-results/ui-screenshots",
-  projects: [
-    { name: "Desktop Chrome", use: { ...devices["Desktop Chrome"], viewport: { width: 1920, height: 950 } } },
-    { name: "Mobile Chrome", use: { ...devices["Galaxy A55"] } },
-  ],
+  outputDir: uiReviewConfig.outputDir,
+  projects: reviewTargets.map((target) => ({
+    name: `${target.viewport}-${target.theme}`,
+    metadata: { uiReview: target },
+    use: {
+      ...(target.viewport === "mobile" ? devices["Galaxy A55"] : devices["Desktop Chrome"]),
+      viewport: reviewViewports[target.viewport],
+      deviceScaleFactor: 1,
+      colorScheme: target.theme,
+    },
+  })),
 });
