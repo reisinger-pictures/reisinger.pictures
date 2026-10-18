@@ -72,7 +72,7 @@ Severity follows `ui-review/references/findings-report.md`:
 | medium | n/a | `light/desktop/impressum-sec2.png` | Inconsistent vertical rhythm: the gap between the end of a paragraph and the next H2 varies between roughly 60 px and 200 px on the same page. | Normalise the heading margins (`prose` heading spacing) on the legal pages. |
 | medium | `apps/reisinger.pictures/src/content/simple/share.mdx:2` | `light/desktop/share-sec0.png`, `light/mobile/share-sec0.png` | The share page's H1 is English ("Love it? Share it.") while everything below it is German; the campaign names ("Friends of Friends", "Extra Creative") are brand art, but the page title is UI copy. | Confirm as a deliberate slogan, or use a German H1 and keep the English line as a tag line. |
 | behoben 2026-10-18 | n/a | `light/desktop/share-sec0.png`, `light/mobile/share-sec0.png` | The orientation text is very faint: "DU FEIERST DEINE BILDER? ERZÄHL ES WEITER." and the three "SCHRITT 01/02/03" labels are light grey on white and are the page's main structure. (Deliberately *not* covered by the automated badge finding — this is a different element.) | Raise the muted colour one step (e.g. `text-base-content/70`) for the hint line and the step labels. **Fixed 2026-10-18** in `share.mdx`: hint `text-base-content/60` → `/70`, step labels `opacity-50` → `opacity-70`. |
-| medium | n/a | `light/mobile/impressum-sec0.png` | The contact block is written as inline runs, so on 480 px labels and values interleave: "Web: https://reisinger.pictures WhatsApp:" followed by the wa.me URL on its own line. Hard to scan. | Put each entry on its own line (`<dl>`/block list) instead of relying on wrapping. |
+| behoben 2026-10-18 | `apps/reisinger.pictures/src/content/simple/impressum.md` (gitignored content) | `impressum-mobile` | The contact block was written as inline runs, so on 480 px labels and values interleaved: "Web: https://reisinger.pictures WhatsApp:" followed by the wa.me URL on its own line. Hard to scan. | Put each entry on its own line (`<dl>`/block list) instead of relying on wrapping. **Fixed 2026-10-18:** each contact entry is now terminated with an explicit `<br>` (the "Web:" line was the only one missing a hard break); wording unchanged. The file is gitignored, so the fix is local-only and will not be part of a commit. |
 | low | `apps/reisinger.pictures/src/components/HeroBanner.astro:28-35` | `light/desktop/personal-branding-sec0.png`, `-sec1.png` | The HeroBanner band puts a ~500 px-wide photo inside a full-bleed 1920 px band above the H1, and the EXIF info badge floats at the band's top-right, i.e. outside the photo. | See the badge finding in §9; the band itself is the same issue as the sport hero. |
 | low | n/a | `dark/desktop/impressum-sec0.png` | The WKO logo keeps its white logo background, which shows as a bright box on the dark surface. | Accept (official asset) or place the logo on a neutral `bg-base-100` chip in dark theme. |
 | low | n/a | `light/desktop/akt-ablauf-sec19.png` | `/akt/ablauf/` ends with a single half-width image and an empty right half of the row before the footer. | Accept as a grid orphan, or balance the last row. |
@@ -83,7 +83,7 @@ Severity follows `ui-review/references/findings-report.md`:
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/content/portfolioOverviews/index.md:7,9` | `light/desktop/portfolio-sec1.png`, `light/mobile/portfolio-sec1.png` | Copy bug: the H2 "Eine Idee oder Lust auf ein Shooting?" is repeated verbatim as the first paragraph line directly below it, so the text reads twice in a row. | Delete the duplicated line 9 (or turn it into real body copy). **Fixed 2026-10-18:** duplicate paragraph removed; the section keeps its H2, intro sentence, three-item list and closing line. |
-| low | n/a | `light/desktop/portfolio-sec0.png`, `light/desktop/portfolio-page-mid-sec0.png`, `light/desktop/portfolio-page-last-sec5.png` | All paginated portfolio URLs share the same browser title and the same H1 ("Mehr Einblicke & Bilder - Willkommen in meiner Fotowelt"), which also duplicates the breadcrumb parent label; the title uses a hyphen instead of an en dash. | Give page 2…n a distinguishing suffix ("… – Seite 4") and unify the dash. |
+| behoben 2026-10-18 | `apps/reisinger.pictures/src/pages/portfolio/[...overview]/[...page].astro:64` | `portfolio-page-mid.png`, `portfolio-page-last.png` | All paginated portfolio URLs shared the same browser title and the same H1 ("Mehr Einblicke & Bilder - Willkommen in meiner Fotowelt"), which also duplicates the breadcrumb parent label. | Give page 2…n a distinguishing suffix. **Fixed 2026-10-18:** `pageTitle = currentPage > 1 ? \`${title} – Seite ${currentPage}\` : title` feeds both `<title>` and `<h1>`; page 1 is unchanged, URLs and breadcrumbs are untouched. The hyphen in the base title itself is content (`portfolioOverviews/index.md`) and was deliberately left as-is. |
 | low | n/a | `light/desktop/portfolio-page-last-sec5.png`, `light/desktop/content-example-sec12.png` | The last portfolio row ends with a lone tile (two columns), and the blog article's closing gallery mixes portrait and landscape photos without captions. Cosmetic only. | Accept. |
 | — | n/a | `light/desktop/portfolio-sec1.png`, `light/desktop/portfolio-page-last-sec5.png` | Pagination renders above *and* below the grid; "Vorherige Seite" is correctly greyed on page 1 and both buttons are enabled on the last page. | none |
 
@@ -104,14 +104,14 @@ Severity follows `ui-review/references/findings-report.md`:
 | medium | n/a | `light/desktop/tfp-idea-sec0.png` vs `light/desktop/tfp-sec0.png` | The idea detail page renders its H1 in the green brand colour while every other page (including the TFP overview) uses the dark base colour. | Use the standard H1 colour; if the green is wanted as a brand accent, use it consistently. |
 | low | n/a | `light/desktop/tfp-sec0.png`, `light/mobile/tfp-sec0.png` | In the idea cards there is a large empty gap between the centred card title and the left-aligned body text; title centred, body left — two alignments inside one small card. | Tighten the gap and pick one alignment for the card. |
 | — | n/a | `light/desktop/tfp-sec0.png` | The TFP content is written as "Vorschläge, keine Zusage", unpaid and mutually creative — wording and framing match the intended positioning (TFP only in the footer, no stronger promotion). No change suggested. | none |
-| low | `apps/reisinger.pictures/src/pages/404.astro:38` | `light/desktop/not-found-sec0.png` | The 404 page links "TFP Shootings" in its closing link row, i.e. TFP appears outside the footer, and that row uses `text-base-content/60` (faint grey). | Move the TFP link out of the 404 row (keep footer only) and raise the row's contrast. |
+| behoben 2026-10-18 | `apps/reisinger.pictures/src/pages/404.astro:38` | `not-found-sec0.png` | The 404 page linked "TFP Shootings" in its closing link row, i.e. TFP appeared outside the footer, and that row used `text-base-content/60` (faint grey). | Move the TFP link out of the 404 row (keep footer only) and raise the row's contrast. **Fixed 2026-10-18:** the TFP link is removed from the row (the footer still links `/tfp/` as "TFP"); the remaining four links moved from `text-base-content/60` to `/70` in line with the share-page fix. |
 | — | n/a | `light/desktop/not-found-sec0.png` | Otherwise the 404 page is solid: one H1, readable copy, primary + outline button pair, secondary link row, footer present. | none |
 
 ## 9. Cross-cutting observations
 
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
-| low | `apps/reisinger.pictures/src/components/ExifInfoOverlay.astro` (via `HeroBanner.astro:35`, `ReviewCard.astro:78`, `ContentCard.astro:47`) | `light/desktop/personal-branding-sec0.png`, `light/desktop/shootings-couples-sec8.png` | The EXIF info control is an icon-only circle anchored to the wrapper, not the photo. Wherever the image is `object-contain` inside a wider box or band, the badge floats in the empty letterbox area outside the picture. | Anchor the badge to the rendered image (or place it in a static meta row) so it cannot detach. |
+| behoben 2026-10-18 | `apps/reisinger.pictures/src/components/HeroBanner.astro:28` (via `HeroBanner.astro:35`; the `ResponsiveImage` contain-branch wrapper already matches its image) | `personal-branding.png`, `shootings-sport.png` (measured) | The EXIF info control is an icon-only circle anchored to the wrapper, not the photo. Wherever the image is `object-contain` inside a wider box or band, the badge floats in the empty letterbox area outside the picture. | Anchor the badge to the rendered image (or place it in a static meta row) so it cannot detach. **Fixed 2026-10-18:** the band wrapper now caps its width at `min(100%, 80vh·W/H)`, so the wrapper is exactly the contained image box and the badge sits on the picture; the image itself keeps the same size. Measured on `/personal-branding/` (1920): image 507×760, label inside; `/shootings/sport/` (1920): image 1140×760, label inside. The `showInfo` containers in `ReviewCard`/`ContentCard` already matched their image. |
 | low | n/a | all routes | The floating chat bubble (bottom-right) overlaps the last card or the footer band on every route and viewport captured. | Accept, or hide it while the footer is in view. |
 | — | n/a | all routes | Header (logo, nav, active item highlighted, `btn btn-primary` CTA), footer (legal links + copyright) and one `h1` per page are present and consistent on every route looked at; no missing/duplicate branding, no horizontal overflow, no broken/missing images in the captured light/dark/mobile variants. | none |
 
@@ -125,17 +125,25 @@ Measured on 2026-10-18 against the running dev server, in a real browser, on `/p
 
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
-| high | `src/middleware/toc.ts:42` (anchor href) + no `scroll-margin-top` anywhere (the only offset in the project is `scroll-mt-24` on `[...page].astro:74`) | `toc-desktop-jump.png`, `toc-mobile-jump.png` (temp evidence) | Clicking a table-of-contents entry scrolls the target heading to `top: 0`, i.e. **directly under the sticky header** (`sticky top-0 z-50`, 69 px at 1440, 73 px at 390). Measured result: `headingTop 0`, `headerBottom 69/73`, so the heading is fully covered — the reader arrives without seeing the heading they clicked. Applies to every ToC entry on all 65 posts and the `simple` pages that show a ToC. | Give the generated headings `scroll-margin-top` (e.g. `scroll-mt-24` matching the header, or `html { scroll-padding-top: 5rem }`). One CSS rule fixes all entries and also benefits any future anchor link. |
-| medium | `src/middleware/toc.ts:115-118` | — (65 of 136 posts carry a ToC; 7 have exactly one entry, 12 have two) | The ToC is rendered whenever at least one heading exists. A "Inhaltsverzeichnis" heading above a **single** entry is pure noise; 19 of 65 posts are in that range. | Suppress the ToC below a threshold (e.g. fewer than three entries) or require two levels of nesting. |
-| low | `src/middleware/toc.ts:118` | `toc-desktop.png`, `toc-mobile.png` (temp evidence) | The injected markup is a bare `<h2>` plus `<ul>`: no `<nav>`, no `aria-label`, so assistive technology does not announce it as a navigation region and the heading is not programmatically tied to the list. Visually it is fine (bullet list, `text-left` wins over the global centring rule — measured `text-align: left` on both viewports). | Wrap it in `<nav aria-labelledby="…">` with an id on the heading. |
-| low | `src/middleware/toc.ts:32,89` | — | Two robustness smells: the heading selector parses the **whole page** and excludes only `footer *`, so any later `h2[id]` outside the article body would silently join the ToC (harmless today, the related-posts heading has no id); and `node.children?.length ?? 0 > 0` relies on `??` binding looser than `>`, so the guard only works by accident. | Restrict the parse to the article container and write the guard explicitly. |
+| behoben 2026-10-18 | `apps/reisinger.pictures/src/styles/global.css` (`:is(h2, h3, h4, h5, h6)[id] { @apply scroll-mt-24 }`) | `content-toc-*` after a jump (measured) | Clicking a table-of-contents entry scrolled the target heading to `top: 0`, i.e. **directly under the sticky header** (`sticky top-0 z-50`, 69 px at 1440, 73 px at 390), so the reader arrived without seeing the heading they clicked. Applies to every ToC entry on all posts and the `simple` pages that show a ToC. | One central rule now gives every `h2–h6` anchor target `scroll-margin-top: 6rem`. **Fixed 2026-10-18** in `global.css`; measured after a real click on `/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/`: heading top 96.5 px vs header bottom 69 px (1440), 96.1 px vs 73 px (390) — visible below the header on both. Headings only, so the homepage's `#portfolio-blog` jump (`scroll-mt-24` on a `<div>`) is not offset twice (measured 96.1 px, not 192 px). |
+| **offen** | `src/middleware/toc.ts:115-118` | — (65 of 136 posts carry a ToC; 7 have exactly one entry, 12 have two) | The ToC is rendered whenever at least one heading exists. A "Inhaltsverzeichnis" heading above a **single** entry is pure noise; 19 of 65 posts are in that range. **Deliberately not decided in the B1–B8 fix round:** whether a ToC is wanted at all (and at what threshold) is the open fundamental question this log keeps open. | Suppress the ToC below a threshold (e.g. fewer than three entries) or require two levels of nesting — **owner decision, still open**. |
+| behoben 2026-10-18 | `src/middleware/toc.ts:118` | `content-toc-*` (sequential, ~~temp evidence~~) | The injected markup was a bare `<h2>` plus `<ul>`: no `<nav>`, no `aria-label`, so assistive technology did not announce it as a navigation region and the heading was not programmatically tied to the list. Visually fine (bullet list, `text-left` wins over the global centring rule). | Wrap it in `<nav aria-labelledby="…">` with an id on the heading. **Fixed 2026-10-18:** the generator now emits `<nav aria-labelledby="toc-heading"><h2 id="toc-heading" class="text-left">…`; the nested lists already sit inside their parent `<li>`. Optics unchanged. |
+| behoben 2026-10-18 | `src/middleware/toc.ts:32,36-37,89` | — | Two robustness smells: the heading selector parsed the **whole page** and excluded only `footer *`, so any later `h2[id]` outside the article body would silently join the ToC; and `node.children?.length ?? 0 > 0` relied on `??` binding looser than `>`, so the guard only worked by accident. | Restrict the parse to the article container and write the guard explicitly. **Fixed 2026-10-18:** the query is scoped to the ToC placeholder's parent element (`[data-toc]` → `<article>`/`.content-measure`), the footer exclusion stays, and the guard reads `(node.children?.length ?? 0) > 0`. Equivalence checked against the built output — 72 pages carry a ToC and the before/after entry-and-level sequences are identical (0 mismatches); the `content-example` post still has none. |
 | — | n/a | — | Anchor targets with umlauts work: the href is percent-encoded (`#…f%C3%BCr…`) while the `id` keeps the raw character, and the browser resolves it (measured: the click landed on the element). | none |
-| — | n/a | — | **Coverage gap, now closed for review only:** the manifest's `content-example` route renders a post **without** headings, so no capture has ever shown the ToC — which is why the earlier visual pass did not report it. A ToC-bearing post (e.g. `s1-bwl-pvb`) should be added to the manifest. | Add one ToC post to `tests/screenshots/ui-review.config.ts`. |
+| behoben 2026-10-18 | n/a | — | **Coverage gap, now closed:** the manifest's `content-example` route renders a post **without** headings, so no capture had ever shown the ToC — which is why the earlier visual pass did not report it. | A ToC-bearing post (`s1-bwl-pvb`) was added to the manifest as `content-toc`. **Fixed 2026-10-18**, with `leadingSections: 6` so the ToC and the headings its entries jump to stay in the sampled images. |
 
 
 
 **Status 2026-10-18:** points 1, 2, 4, 5 and 7 fixed, point 3 resolved by owner decision
 (signed PDF kept, presentation improved), point 6 deliberately out of this scope (homepage hero).
+
+**Status 2026-10-18 (defect-fix round B1–B8):** the eight unambiguous defects were fixed and
+re-verified: §10 ToC anchor jump / nav landmark / parse scope / manifest coverage, §6 paginated
+portfolio title/H1, §9 EXIF badge, §8 404 TFP link and contrast, §5 `/impressum/` contact
+structure. The open fundamental question — *whether a table of contents is wanted at all, and at
+what entry threshold* — is deliberately **still open** (§10, first row) and was not decided here.
+The remaining `medium`/`low` rows (homepage hero weight, review-grid unification, testimonial
+detail band, TFP-idea H1 colour, vertical rhythm, share H1, sport pages) are unchanged.
 
 ## Top-Verbesserungen (ranked by impact)
 
@@ -143,9 +151,10 @@ Measured on 2026-10-18 against the running dev server, in a real browser, on `/p
 stretched review card, gallery image, portfolio duplicate) is **done** — see the per-row status in the
 sections above and the fix round commit. What remains, ranked:
 
-1. **Table of contents hides its own target.** Clicking a ToC entry scrolls the heading under the
+1. ~~**Table of contents hides its own target.** Clicking a ToC entry scrolls the heading under the
    sticky header on every post and on the `simple` pages that show a ToC (§10, `high`) — a one-rule
-   CSS fix with a large effect across 65 posts.
+   CSS fix with a large effect across 65 posts.~~ **Done 2026-10-18** (`scroll-margin-top` on
+   anchored headings). The open question about whether a ToC is needed at all remains open (§10).
 2. **Homepage hero primary action lacks weight.** The primary hero action is an underlined text link
    next to a nearly identical secondary link, while the header owns the only real button.
    (§1, `medium`)
@@ -160,9 +169,10 @@ sections above and the fix round commit. What remains, ranked:
    wording. All three are handled by the separately commissioned sport redesign
    (`rules/11-sport-area-redesign-proposal.md`), not here.
 
-Immediately after those: the paginated portfolio URLs sharing one title and H1 (§6), the TFP idea H1
-in brand green while every other H1 uses the base colour (§8), the EXIF badge detaching from
-`object-contain` images and the floating chat bubble overlapping the last card (§9).
+Immediately after those: the paginated portfolio URLs sharing one title and H1 (§6 — **done
+2026-10-18**), the TFP idea H1 in brand green while every other H1 uses the base colour (§8 — open),
+the EXIF badge detaching from `object-contain` images (§9 — **done 2026-10-18**) and the floating
+chat bubble overlapping the last card (§9 — open).
 
 ## Bewusst nicht geändert / keine Beanstandung
 
@@ -240,3 +250,54 @@ in brand green while every other H1 uses the base colour (§8), the EXIF badge d
   HTML. Only the presentation changed (open-in-new-tab link, signed-original note, bounded height).
 * **`share` H1 / sport CTA wording** (§5, §3): both need an owner decision on whether the English
   slogan and the "Event-Begleitung" label are intended.
+
+---
+
+## Coverage — defect-fix round B1–B8 (2026-10-18)
+
+Capture basis: the **sampled** screenshot run (`rules/08-local-ui-review.md`), 33 routes × 6
+projects = 198 captures, 10.9 min. Per capture only the page top (`leadingSections`, `content-toc`
+6) and the footer (last 2 screens) are written; **the image gallery in between is deliberately not
+captured**. The reviews below are therefore based on the page top and the footer, not on the
+gallery. Ten images were opened for the eight defects (desktop unless noted):
+
+* **B1/B2/B3 — ToC and anchor jump** (`content-toc` = `/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/`):
+  `content-toc-sec1` (light/desktop + light/mobile) and two targeted jump captures
+  (`/tmp/toc-jump-{desktop,mobile}.png`, click on the first ToC entry). The target heading sits in
+  **section index 2** of the sequence (measured `headingDocTop` 1597 desktop / 1808 mobile), which is
+  inside the captured `[0,1,2,3,4,5,7,8]`; after the click the heading top is 96 px vs a 69/65 px
+  header, i.e. visible below the header. This is the one route whose top window is widened to 6 so
+  the target cannot be sampled away.
+* **B4 — paginated portfolio titles**: `portfolio-page-mid-sec1` and `portfolio-page-last-sec1`
+  (light/desktop) show the H1 "… – Seite 4" / "… – Seite 8"; `<title>` confirmed identical to the H1
+  in the built output.
+* **B5 — EXIF badge over `object-contain`**: `personal-branding-sec0` (light/desktop, portrait
+  letterboxed in a wider band) and `shootings-sport-sec0` (light/desktop, the sport band). The green
+  badge sits on the image's top-right corner, not in the empty band.
+* **B6 — 404**: `not-found-sec0` (light/desktop): the closing row is "Beauty & Portrait · Akt &
+  Boudoir · Pärchen · Über mich" (no TFP); the footer still links `TFP`.
+* **B7 — `/impressum/` contact block**: `impressum-sec0` (light/mobile): E-Mail, Web, WhatsApp and
+  Telefon each on their own line. The file is gitignored.
+  **Observed but not fixed (outside B7):** the "Unternehmensdaten" block on the same page still joins
+  the GISA line with "Zuständige Aufsichtsbehörde:" (same missing hard-break mechanism) — left
+  untouched because B7 scoped the contact block only.
+
+### Page coverage (one page per route family + all twelve simple pages)
+
+Looked at (light/desktop `sec0` unless noted): `home`; the private areas `shootings`
+(`/shootings/akt/`), `shootings-beauty`, `shootings-couples`; the sport overview `shootings-sport`,
+the hub `shootings-sport-hub` (`/shootings/sport/eishockey/`) and the team page
+`shootings-sport-team` (`/shootings/sport/lask/`); the six pricing states `pricing-default`,
+`pricing-standard`, `pricing-flex`, `pricing-flex-private`, `pricing-standard-student`,
+`pricing-standard-friend`; the portfolio overview `portfolio`; `content-example`; `content-toc`;
+`testimonials`; `testimonial-detail`; `shootings-akt-testimonials`; `tfp`; `tfp-idea`; `not-found`.
+Simple pages individually: `agb`, `dsb`, `eventfotografie`, `impressum` (mobile), `personal-branding`,
+`portal`, `preise` (= `pricing-default`), `share`, `testimonials`, `tfp`, `ueber-mich`, Startseite
+(= `home`), plus `akt-ablauf`.
+
+**Not looked at in this round** (stated plainly, no claim is made about them): the other **135
+portfolio posts** (only the five manifest representatives were opened), the other **87 testimonial
+detail pages**, the other **14 TFP ideas**, the other **14 sport sub-areas**, every `dark/*` and
+`intermediate/*` capture, gallery and page-end screens of every route, and every page of the site
+outside the 33-route manifest. No horizontal overflow, cut-off content or branding defect was
+assessed beyond the images listed above.

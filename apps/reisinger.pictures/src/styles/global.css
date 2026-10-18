@@ -31,6 +31,16 @@
         @apply text-center break-words;
     }
 
+    /* Anchor jumps (e.g. every table-of-contents entry) must land the target
+       heading *below* the sticky header instead of at `top: 0`, where the
+       69–73 px header fully covers it (rules/10-ui-review-findings.md §10).
+       Applied to headings only: the homepage's `#portfolio-blog` jump is a
+       <div> that already carries its own `scroll-mt-24`, so it is not offset
+       twice. */
+    :is(h2, h3, h4, h5, h6)[id] {
+        @apply scroll-mt-24;
+    }
+
     .avatar, .card-title {
         @apply items-center justify-center;
     }

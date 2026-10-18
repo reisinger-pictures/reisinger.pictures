@@ -39,6 +39,10 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { page, title, entry } = Astro.props;
 const id = entry.id;
+// Pages 2…n share the collection title; add a suffix so browser title and H1
+// stay distinguishable (see rules/10-ui-review-findings.md §6). URLs,
+// breadcrumbs and the noIndex logic below are unaffected.
+const pageTitle = page.currentPage > 1 ? `${title} – Seite ${page.currentPage}` : title;
 const { description: overviewDescription } = entry.data;
 const { Content } = await render(entry);
 const { data: posts } = page;
@@ -56,12 +60,12 @@ const createData: SchemaCreationFunction = (_, __, df) => createCollectionPageSc
 });
 ---
 <MinimalPage>
-  <BaseHead title={title} description={description} noIndex={!(id === "/" && page.url.prev === undefined)} feeds={feeds} slot="head">
+  <BaseHead title={pageTitle} description={description} noIndex={!(id === "/" && page.url.prev === undefined)} feeds={feeds} slot="head">
     {heroImage && <SocialImage name={heroImage} />}
     <SchemaOrg createData={createData} />
   </BaseHead>
   {heroImage && <HeroBanner slot="hero" name={heroImage} alt={title} />}
-  <h1>{title}</h1>
+  <h1>{pageTitle}</h1>
   <Content />
   <Portfolio page={page} />
 </MinimalPage>

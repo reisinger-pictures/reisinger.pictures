@@ -129,6 +129,44 @@ through the footer. Lazy content is visited before the final full-page shot.
 The JSON records viewport, theme, actual rendered title/URL, surface color and
 section count. Theme and viewport directories prevent overwrites across all six
 combinations. The HTML report lives in `playwright-report/ui-screenshots/`.
+
+### Section sampling (2026-10-18)
+
+The unbounded run produced ~1900 PNGs / 1.5 GB, and the 198 full-page PNGs alone
+were 858 MB (a ~92-screen `/testimonials/` capture is ~35 MB). A UI review wears
+the eyes once, not repeatedly: the **page top** (hero, first content) and the
+**footer** carry the review value, while the **image gallery in between** is bulk
+the owner explicitly declared unimportant. The harness therefore
+
+- does a reconnaissance scroll to the page end (no screenshots) to learn the
+  section geometry, prove the "scroller must advance" check and assert the page
+  height does not grow — lazy images are forced eager and awaited before it, so
+  any growth is a real failure (`HEIGHT_GROWTH_TOLERANCE` only absorbs sub-pixel
+  rounding); the tail offsets are re-anchored from a fresh measurement after
+  arriving at the bottom;
+- then runs **one capture pass** over the sampled offsets only
+  (`sampledSectionIndexes`, `tests/screenshots/ui-review.helpers.ts`):
+  - the first `leadingSections` screens (default 4, page top); `content-toc`
+    raises this to 6 so the table of contents and the headings its entries jump
+    to stay in the sample,
+  - the last `trailingSections` screens (default 2 — the **footer**, which must
+    not fall out of the sample),
+  - and nothing in between (short pages collapse into a complete capture because
+    the windows overlap). A page at or below `FULL_PAGE_MAX_SECTIONS` (8; the
+    owner's guideline is ~10, lowered to 8 to keep the tree under the 500 MB
+    budget) gets the single full-page overview PNG; longer, gallery-dominated
+    pages get none.
+- writes the `.json` for **every** capture, recording `sections` (total screens),
+  `capturedSectionIndexes`, `capturedSections`, `footerSectionIndex`
+  (`sections - 1`) and `fullPageOverview`.
+
+Coverage limit, stated plainly: **the page top and the footer are captured; the
+image gallery in between is deliberately not** — one page per route family and
+all twelve `simple` pages individually (rules/10-ui-review-findings.md holds the
+per-finding evidence). `secN` filenames are **not contiguous** (`sec0`…`sec4`,
+then the last two, e.g. `sec90`, `sec91`). Sampling reduces file count, not the
+honesty of the coverage statement: every non-sampled screen is explicitly not
+looked at.
 Both artifact trees are local/ignored. **Playwright clears its output directory
 at the next run**, including filtered runs; copy evidence elsewhere first if it
 must be retained. Never keep source/user files in that directory.

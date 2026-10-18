@@ -29,7 +29,12 @@ export function parseHeadings(htmlString: string): HeadingNode[] {
   });
   const dom = new JSDOM(htmlString, { virtualConsole });
   const doc = dom.window.document;
-  const headings = doc.querySelectorAll(":is(h2, h3, h4, h5, h6)[id]:not(footer *)");
+  // Restrict the search to the element that wraps the ToC placeholder (the
+  // article/content container). Parsing the whole document let any later
+  // `h2[id]` outside the article silently join the ToC; the footer stays
+  // excluded as well (see rules/10-ui-review-findings.md §10).
+  const scope = doc.querySelector("[data-toc]")?.parentElement ?? doc.body;
+  const headings = scope.querySelectorAll(":is(h2, h3, h4, h5, h6)[id]:not(footer *)");
 
   const tree: HeadingNode[] = [];
   // Ein Stack, um den Überblick über den aktuellen übergeordneten Knoten zu behalten.
@@ -86,7 +91,7 @@ function createTocItems(nodes?: HeadingNode[]): string {
   // Use reduce to build the HTML string for the current level.
   return nodes.reduce((html, node) => {
     // Recursively generate the HTML for any children.
-    const childrenHtml = node.children?.length ?? 0 > 0 ? `${createTocItems(node.children)}` : "";
+    const childrenHtml = (node.children?.length ?? 0) > 0 ? `${createTocItems(node.children)}` : "";
 
     // Append the current item and its nested children list (if any).
     return html + `<li><a href="${node.link}">${node.name}</a>${childrenHtml}</li>`;
@@ -115,7 +120,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (nodes.length === 0) {
       return "";
     }
-    return `<h2 class="text-left">Inhaltsverzeichnis</h2><ul>${createTocItems(nodes)}</ul>`;
+    // Mark the block up as a navigation landmark tied to its heading; the
+    // nested lists already sit inside their parent <li> (rules/10 §10).
+    return `<nav aria-labelledby="toc-heading"><h2 id="toc-heading" class="text-left">Inhaltsverzeichnis</h2><ul>${createTocItems(nodes)}</ul></nav>`;
   }
 
   const processedString = html.replace(tocRegex, generateTableOfContents);

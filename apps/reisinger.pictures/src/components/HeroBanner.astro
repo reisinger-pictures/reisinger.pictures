@@ -23,9 +23,16 @@ const infoId = `hero-info-${imageName.replaceAll("/", "-")}`;
 
 const equipment = formatEquipment(metadata);
 const exifCompact = formatExifCompact(metadata);
+
+// The EXIF control is positioned against this wrapper, so the wrapper must
+// match the *rendered* image box. Capping the width at the point where the
+// height would hit 80vh removes the horizontal letterboxing that made the
+// badge float in the empty band next to an `object-contain` image
+// (see rules/10-ui-review-findings.md §9). The image itself keeps its size.
+const containedMaxWidth = `min(100%, calc(80vh * ${imgInfo.width} / ${imgInfo.height}))`;
 ---
 <div class="w-full bg-base-200 border-b border-base-200 mb-8 shadow-sm overflow-hidden">
-  <div class="relative mx-auto max-h-[80vh]" style={`aspect-ratio: ${aspectRatio};`}>
+  <div class="relative mx-auto max-h-[80vh]" style={`aspect-ratio: ${aspectRatio}; max-width: ${containedMaxWidth};`}>
     <ResponsiveImage
       name={imageName}
       alt={alt}
