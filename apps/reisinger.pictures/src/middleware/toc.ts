@@ -3,6 +3,11 @@ import { extname } from "node:path";
 import { defineMiddleware } from "astro:middleware";
 import { JSDOM, VirtualConsole } from "jsdom";
 
+// No template emits the ToC placeholder any more: a page gets a table of
+// contents only where the author wrote `<TableOfContents />` (which renders
+// `<div data-toc>`) — see `src/components/TableOfContents.astro` and
+// `rules/12-table-of-contents.md`. This middleware stays the single generator.
+
 /**
  * Definiert die rekursive Struktur für einen Überschriftenknoten.
  */
@@ -91,9 +96,12 @@ function createTocItems(nodes?: HeadingNode[]): string {
   // Use reduce to build the HTML string for the current level.
   return nodes.reduce((html, node) => {
     // Recursively generate the HTML for any children.
-    const childrenHtml = (node.children?.length ?? 0) > 0 ? `${createTocItems(node.children)}` : "";
+    const childrenHtml = (node.children?.length ?? 0) > 0 ? `<ul>${createTocItems(node.children)}</ul>` : "";
 
-    // Append the current item and its nested children list (if any).
+    // Append the current item and its nested children list (if any). The
+    // children need their own <ul>: without it the markup was
+    // `<li><a>…</a><li>…</li></li>`, which no parser accepts — the browser
+    // flattened the hierarchy (rules/10-ui-review-findings.md §10).
     return html + `<li><a href="${node.link}">${node.name}</a>${childrenHtml}</li>`;
   }, "");
 }
@@ -120,8 +128,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (nodes.length === 0) {
       return "";
     }
-    // Mark the block up as a navigation landmark tied to its heading; the
-    // nested lists already sit inside their parent <li> (rules/10 §10).
+    // Mark the block up as a navigation landmark tied to its heading; child
+    // entries are wrapped in their own <ul> so the nesting is real
+    // (rules/10-ui-review-findings.md §10).
     return `<nav aria-labelledby="toc-heading"><h2 id="toc-heading" class="text-left">Inhaltsverzeichnis</h2><ul>${createTocItems(nodes)}</ul></nav>`;
   }
 

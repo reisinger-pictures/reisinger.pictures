@@ -1,21 +1,42 @@
-# Table of contents on portfolio posts — options paper
+# Table of contents on portfolio posts — decision record
 
-**Status: PROPOSAL, NOT DECIDED.** The owner asked to reconsider whether the table of contents is
-needed at all, how it could be genuinely user-friendly, and whether it should be placed by hand per
-post instead. This document answers that with measurements and options. It commissions nothing; the
-parallel bug fix (jump offset, navigation semantics, parse scope) is a separate, already-running
-task and does not answer the question here.
+**Status: DECIDED 2026-10-18 — Option C, manual placement only.** The owner's wording:
+*"Meine Idee war eher das Inhaltsverzeichnis ganz zu entfernen und nur ausgewählt manuell hinzuzufügen.
+Also dieses 'jeder Portfolio-Eintrag hat automatisch ein Inhaltsverzeichnis' — davon möchte ich weg."*
+and *"das gleiche für alle templates wo das immer dabei ist."* So no template emits a table of contents
+any more; an author places it explicitly. The recommendation from the analysis below was Option A; the
+owner chose C, and this document now records that decision. The option sections are kept as the
+rationale the decision was weighed against — read them as the argument, not as the state; where the
+implementation differs from the original sketch, a note says so.
 
 - **Date:** 2026-10-18
-- **Author:** main agent (analysis), not the owner, not the implementer
-- **Question to decide:** keep it automatic and gated, keep it automatic and unconditional, place
-  it manually per post, or drop it?
-- **Out of scope:** the jump bug, the missing `nav` semantics, the parse scope (all three are being
-  fixed independently); the sport pages (`rules/11`); prices, rights and legal wording.
+- **Author of the analysis:** main agent, not the owner, not the implementer
+- **Decision:** the automatic trigger is removed from every template; the generator stays
+  (`src/middleware/toc.ts` still fills a placeholder), so a page gets a table of contents only where
+  `<TableOfContents />` was written by hand.
+- **Out of scope:** the jump bug, the missing `nav` semantics, the parse scope (all three fixed
+  independently); the sport pages (`rules/11`); prices, rights and legal wording.
 
-## 1. How it works today
+## 0. What was implemented for Option C
 
-There is no component. `src/middleware/toc.ts` post-processes the finished HTML of every page, looks
+| Item | Before | After |
+|---|---|---|
+| `src/components/pages/BlogPost.astro:60` | `<div data-toc />` — **every** portfolio post got a ToC as soon as it had one heading | placeholder removed; nothing is emitted automatically |
+| `src/pages/[...simple].astro:55` | `{showToc && <div data-toc />}` — `simple` pages got one by default, switchable per page | placeholder removed |
+| `src/content.config.ts` | `showToc: z.boolean().default(true)` on the `simple` schema | field removed (it only switched the automatic placeholder) |
+| `src/components/TableOfContents.astro` | did not exist | new component: renders the placeholder at the author's position |
+| `src/pages/portfolio/[...slug].astro` + `src/pages/[...simple].astro` | `<Content />` | `<Content components={{ TableOfContents }} />`, so `<TableOfContents />` works in MDX without an import |
+| `src/middleware/toc.ts` | generator, triggered by the templates | unchanged trigger logic, **kept**: it still replaces `<div data-toc>` wherever it appears |
+| `createTocItems` (same file) | child entries appended without a wrapping `<ul>` (`<li><a>…</a><li>…</li></li>`) | children are wrapped in their own `<ul>`, so the nesting is real HTML |
+
+Measured after the change on the built site: **0 of 283 built pages** contain a table of contents
+(before: 65 of 136 portfolio posts plus 4 of 12 `simple` pages, §2). `showToc: false` in five
+gitignored `simple` content files is now an inert key: Astro's zod schema strips unknown frontmatter
+keys, so those files stay valid and the build is green (verified with `astro sync` and a full build).
+
+## 1. How it worked before the decision
+
+Back then there was no component. `src/middleware/toc.ts` post-processes the finished HTML of every page, looks
 for the placeholder `<div data-toc></div>` and replaces it with
 
 ```html
@@ -26,15 +47,15 @@ for the placeholder `<div data-toc></div>` and replaces it with
 built from all `h2`–`h6` elements that carry an `id` (headings inside `<footer>` are excluded,
 `h2` is the deepest supported top level, nesting is preserved).
 
-The placeholder exists in two places:
+The placeholder existed in two places:
 
 | Place | Guard | Consequence |
 |---|---|---|
 | `src/components/pages/BlogPost.astro:60` | none | **every** portfolio post gets one, as soon as it has at least one heading |
 | `src/pages/[...simple].astro:55` | `showToc` (frontmatter, default `true`) | the `simple` pages get one, and the author can switch it off per page |
 
-So the mechanism is automatic, per-page controllable only on `simple` pages, and invisible in the
-content: an author never writes it.
+So the mechanism was automatic, per-page controllable only on `simple` pages, and invisible in the
+content: an author never wrote it.
 
 ## 2. What the numbers say
 
@@ -59,7 +80,9 @@ Measured against the built site (`apps/reisinger.pictures/dist`, 2026-10-18):
 - On the `simple` pages the built output carries one on **4 of 12** pages (`/agb/`, `/akt/ablauf/`,
   `/portal/`, `/eventfotografie/`); the rest have too few headings.
 - **Review coverage:** the screenshot manifest's post example has no headings, so no capture has
-  ever shown the table of contents. That is being closed in parallel by adding a post that has one.
+  ever shown the table of contents. It was closed by adding a post that has one (`content-toc`); that
+  manifest entry was removed again when the automatic trigger went away (§0), so today no route
+  captures a table of contents.
 
 ## 3. What "user-friendly" would mean here
 
@@ -96,10 +119,12 @@ Only the three running bug fixes, no threshold, no switch.
 - Cheapest, but ships a known noise case on 19 posts and leaves no per-post way out.
 - Defensible only if the owner values absolute predictability over signal.
 
-### Option C — place it manually per post
+### Option C — place it manually per post (**chosen 2026-10-18**)
 
-The middleware goes away; an MDX component is imported and positioned in each post that should
-have one.
+The automatic trigger goes away; a component is positioned by hand in each post that should have one.
+As implemented (see §0) the middleware did **not** go away: it stays the single generator and only
+stops being wired into every template, so the heading data, anchors and nesting still come from one
+central place.
 
 - Buys: exact placement, individual wording, per-post decision by construction, nothing rendered
   where nobody asked.
@@ -108,7 +133,8 @@ have one.
   here; and switching later means touching ~25–46 posts. It also invites exactly the drift this
   project otherwise avoids by generating structures centrally.
 - Slugs, headings and anchors would still have to come from the same heading data, so the middleware
-  logic would not disappear — it would move into the component.
+  logic would not disappear — it would move into the component. (In the implementation it did not
+  even move: it stayed where it was.)
 
 ### Option D — drop it
 
@@ -119,7 +145,7 @@ No table of contents anywhere.
   sections is a real reading aid, and the generated table can only ever be as long as the article's
   own headings.
 
-## 5. Recommendation
+## 5. Recommendation at the time (not followed)
 
 **Option A.** The measurements say the automatic mechanism is right and only over-triggers: two
 thirds of all posts never render one, and of those that do, the bottom third render a list that costs
@@ -132,21 +158,33 @@ Manual placement (C) is the option that sounds tidiest and ages worst here: the 
 this repository, so the effort is permanently per-post, and the longest lists are exactly the ones
 that would be maintained by hand.
 
-## 6. Open decisions for the owner
+**The owner decided for Option C anyway**, on the ground that a table of contents should be a
+deliberate choice of the author, not a template default. The cost named above (per-post maintenance)
+is accepted knowingly; the trigger is gone for every template.
 
-- **D1 — threshold.** Four entries (recommended), three, or none.
+## 6. Decisions the owner was asked for (superseded by §0)
+
+- **D1 — threshold.** Four entries (recommended), three, or none. — *moot with Option C: there is no
+  automatic trigger left to threshold.*
 - **D2 — per-post switch on portfolio posts.** Add `showToc` to the portfolio schema (recommended,
-  mirrors `simple`), or leave posts without a switch.
+  mirrors `simple`), or leave posts without a switch. — *moot: the switch would only have controlled
+  the automatic placeholder; with placement by hand there is nothing to switch, and `showToc` was
+  removed from the `simple` schema instead.*
 - **D3 — `simple` pages.** Keep the default `true` there (recommended; only 4 pages are affected),
-  or invert the default so a page has to ask for it.
-- **D4 — wording.** "Inhaltsverzeichnis" stays (no change proposed).
+  or invert the default so a page has to ask for it. — *moot: no default remains.*
+- **D4 — wording.** "Inhaltsverzeichnis" stays (no change proposed). — *unchanged; the generator's
+  wording was not touched.*
 
-## 7. Effort and verification if D1/D2 are approved
+## 7. Effort and verification if D1/D2 had been approved (superseded by §0)
 
 Small: one condition around the placeholder, one optional boolean in `content.config.ts` for the
 portfolio collection, one line in `rules/08-local-ui-review.md`. Verification is a build plus a
 count of the rendered lists before and after (65 → expected 25) and a look at one gated post, one
 kept post and the switch turned off on a post. No URL, no heading and no content changes.
+
+What Option C actually cost is in §0: two template deletions, one schema field removed, one new
+component, two `components` props, one nesting fix. Verified by a build plus a count of the rendered
+lists (65 posts and 4 `simple` pages → 0 pages) and one page with a hand-placed component.
 
 ## 8. Honest limits
 
@@ -155,3 +193,7 @@ kept post and the switch turned off on a post. No URL, no heading and no content
 - The word counts are whole-page text, not article body, so they are an upper bound.
 - No claim is made here about search engines, rankings or reader behaviour; no such measurement
   exists in this project. The argument is made from page structure alone.
+- The opt-in path is proven with a temporary, uncommitted `<TableOfContents />` in one page's content
+  (`/akt/ablauf/`, which has `h3` under `h2`) plus the built HTML and a DOM parse; the content itself
+  is gitignored and was restored afterwards. No committed page currently carries a table of contents,
+  so the everyday state of the site is "none anywhere" — until the owner places one.

@@ -1,0 +1,18 @@
+---
+/**
+ * Places a table of contents exactly where the author writes it.
+ *
+ * No template emits this placeholder on its own any more: a page only gets a
+ * table of contents if its content asks for one. Inside MDX content the
+ * component is available without an import, because the page templates pass it
+ * to the `Content` renderer via the `components` prop, e.g.
+ *
+ *   <TableOfContents />
+ *
+ * `src/middleware/toc.ts` replaces this placeholder at build time with the list
+ * of the surrounding article's own `h2`–`h6` headings (the same generator as
+ * before, now only triggered on request).
+ */
+---
+
+<div data-toc />

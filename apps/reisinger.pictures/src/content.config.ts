@@ -83,7 +83,6 @@ const simple = defineCollection({
     description: z.string().optional(),
     keywords: z.array(z.string()).optional(),
     showContact: z.boolean().optional(),
-    showToc: z.boolean().default(true),
     index: z.boolean().optional(),
     heroImage: z.string().optional(),
     date: z.coerce.date().optional(),

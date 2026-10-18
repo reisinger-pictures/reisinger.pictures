@@ -146,9 +146,9 @@ the owner explicitly declared unimportant. The harness therefore
   arriving at the bottom;
 - then runs **one capture pass** over the sampled offsets only
   (`sampledSectionIndexes`, `tests/screenshots/ui-review.helpers.ts`):
-  - the first `leadingSections` screens (default 4, page top); `content-toc`
-    raises this to 6 so the table of contents and the headings its entries jump
-    to stay in the sample,
+  - the first `leadingSections` screens (default 4, page top); a route may raise
+    this in the manifest (e.g. when a block and the headings it links to must
+    stay in the sample),
   - the last `trailingSections` screens (default 2 — the **footer**, which must
     not fall out of the sample),
   - and nothing in between (short pages collapse into a complete capture because
@@ -167,6 +167,12 @@ per-finding evidence). `secN` filenames are **not contiguous** (`sec0`…`sec4`,
 then the last two, e.g. `sec90`, `sec91`). Sampling reduces file count, not the
 honesty of the coverage statement: every non-sampled screen is explicitly not
 looked at.
+**Table-of-contents coverage limit (2026-10-18):** no template emits a table of contents any more
+(`rules/12-table-of-contents.md`), so no manifest route carries one and no capture shows one. The
+former `content-toc` entry (with `leadingSections: 6`) was removed again for that reason. If a page
+gets a hand-placed `<TableOfContents />` and is worth reviewing, add it as a route and give it
+enough `leadingSections` for the block and its target headings — otherwise the sampled top window is
+simply not evidence about the table of contents.
 Both artifact trees are local/ignored. **Playwright clears its output directory
 at the next run**, including filtered runs; copy evidence elsewhere first if it
 must be retained. Never keep source/user files in that directory.

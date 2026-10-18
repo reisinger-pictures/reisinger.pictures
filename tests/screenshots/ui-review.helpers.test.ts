@@ -69,7 +69,7 @@ test("section sampling keeps the page top and the footer tail, skips the middle"
   assert.ok(sampled.every((value, index) => index === 0 || value > sampled[index - 1]), "unique and ascending");
   // The footer section is always the last index and always sampled.
   assert.equal(sampled.at(-1), 139);
-  // content-toc widens the top window; the footer tail is unaffected.
+  // A manifest route can widen the top window; the footer tail is unaffected.
   const widened = sampledSectionIndexes(20, { leadingSections: 6 });
   assert.deepEqual(widened, [0, 1, 2, 3, 4, 5, 18, 19]);
   assert.throws(() => sampledSectionIndexes(10, { leadingSections: -1 }), /windows/);

@@ -10,6 +10,7 @@ import type { SchemaCreationFunction } from "../components/SchemaOrg";
 import SchemaOrg from "../components/SchemaOrg.astro";
 import { createWebPageSchema } from "../components/SchemaOrg.factory";
 import SocialImage from "../components/SocialImage.astro";
+import TableOfContents from "../components/TableOfContents.astro";
 import { loadImage } from "../images/image-service";
 
 export async function getStaticPaths() {
@@ -23,7 +24,7 @@ type Props = CollectionEntry<"simple">;
 
 const post = Astro.props;
 const { data } = post;
-const { title, description, heroImage, showContact, showToc, index = true, ...dates } = data;
+const { title, description, heroImage, showContact, index = true, ...dates } = data;
 const { Content } = await render(post);
 
 const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
@@ -52,9 +53,6 @@ const createData: SchemaCreationFunction = (o, p, df, url) => createWebPageSchem
     <h1>{title}</h1>
     <Published {...dates} />
 
-    {showToc &&
-      <div data-toc />}
-
-    <Content />
+    <Content components={{ TableOfContents }} />
   </div>
 </MinimalPage>

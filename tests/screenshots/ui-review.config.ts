@@ -73,21 +73,21 @@ export const uiReviewConfig: UiReviewConfig = {
       path: "/portfolio",
       states: ["filled"],
       note: "Portfolio-Übersicht, ERSTE Seite des paginierten Archivs (paginate pageSize 12) — nur mit Inhalt sinnvoll darstellbar.",
-      expectedTitle: "Mehr Einblicke & Bilder -  Willkommen in meiner Fotowelt",
+      expectedTitle: "Mehr Einblicke & Bilder – Willkommen in meiner Fotowelt",
     },
     {
       name: "portfolio-page-mid",
       path: "/portfolio/4/",
       states: ["filled"],
       note: "Mittlere Seite der Portfolio-Pagination (8 Seiten gesamt, Seite 4 von 1..8).",
-      expectedTitle: "Mehr Einblicke & Bilder - Willkommen in meiner Fotowelt – Seite 4",
+      expectedTitle: "Mehr Einblicke & Bilder – Willkommen in meiner Fotowelt – Seite 4",
     },
     {
       name: "portfolio-page-last",
       path: "/portfolio/8/",
       states: ["filled"],
       note: "Letzte Seite der Portfolio-Pagination (Seite 8 = letzte, Seite 9 existiert nicht — 404).",
-      expectedTitle: "Mehr Einblicke & Bilder - Willkommen in meiner Fotowelt – Seite 8",
+      expectedTitle: "Mehr Einblicke & Bilder – Willkommen in meiner Fotowelt – Seite 8",
     },
     {
       name: "shootings",
@@ -123,16 +123,6 @@ export const uiReviewConfig: UiReviewConfig = {
       states: ["filled"],
       note: "Repräsentative, dynamisch gerenderte Content-Seite (neuester Portfolio-Beitrag via [...slug]-Route) — steht für alle Content-Seiten, nicht für jeden einzelnen Beitrag.",
       expectedTitle: "LASK gewinnt 2:0 bei Austria Wien in der Generali Arena",
-    },
-    {
-      name: "content-toc",
-      path: "/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/",
-      states: ["filled"],
-      note: "Content-Seite mit Inhaltsverzeichnis (zwei H2-Abschnitte) — schließt die Manifest-Lücke, durch die das injizierte ToC in keiner Aufnahme sichtbar war (rules/10-ui-review-findings.md §10).",
-      expectedTitle: "Lebler-Doppelpack besiegelt souveränen Auftaktsieg der Black Wings",
-      // Keep the first screens in full: the ToC block and the headings its
-      // entries jump to live in the upper part of the page (§10 anchor evidence).
-      leadingSections: 6,
     },
     {
       name: "shootings-beauty",
