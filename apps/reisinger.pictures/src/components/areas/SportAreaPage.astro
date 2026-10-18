@@ -1,0 +1,59 @@
+---
+import { type CollectionEntry, render } from "astro:content";
+
+import { loadImage } from "../../images/image-service";
+import BaseHead from "../BaseHead.astro";
+import FeaturedTestimonials from "../FeaturedTestimonials.astro";
+import Gallery from "../Gallery.astro";
+import HeroBanner from "../HeroBanner.astro";
+import MinimalPage from "../pages/MinimalPage.astro";
+import { type SchemaCreationFunction } from "../SchemaOrg";
+import SchemaOrg from "../SchemaOrg.astro";
+import { createWebPageSchema } from "../SchemaOrg.factory";
+import SocialImage from "../SocialImage.astro";
+import AreaRelatedPosts from "./AreaRelatedPosts.astro";
+
+interface Props {
+  entry: CollectionEntry<"sportAreas">;
+  reviews: CollectionEntry<"testimonials">[];
+  relatedPosts: CollectionEntry<"portfolio">[];
+  portfolioPrefix: string | null;
+}
+
+// Sport composition, kept as-is: the sport pages are redesigned in a later,
+// separately commissioned step (see rules/09-shooting-areas.md). Only the data
+// source moved from `areas` to `sportAreas`; the markup is unchanged.
+
+const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix } = Astro.props;
+const { id: slug, data: { name, description, testimonials, images, heroImage } } = entry;
+const reviewSlugs: string[] | undefined = testimonials?.map(e => e.id);
+const { Content } = await render(entry);
+
+const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
+
+const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchema({
+  url,
+  name,
+  description,
+  image: imageInfo?.src,
+  author: me,
+  publisher: o
+});
+---
+<MinimalPage>
+  <BaseHead title={name} description={description} slot="head">
+    <SocialImage name={heroImage} />
+    <SchemaOrg createData={createData} />
+  </BaseHead>
+  {heroImage && <HeroBanner slot="hero" name={heroImage} alt={name} />}
+
+  <h1>{name}</h1>
+
+  <Content />
+
+  <FeaturedTestimonials slug={slug} categoryTestimonials={categoryReviews} featuredTestimonials={reviewSlugs} />
+  {images.length > 0 &&
+    <div class="mt-16"><Gallery sorted={images} /></div>}
+
+  <AreaRelatedPosts posts={relatedPosts} portfolioPrefix={portfolioPrefix} />
+</MinimalPage>

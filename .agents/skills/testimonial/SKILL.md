@@ -50,7 +50,7 @@ Du pflegst die Testimonial-Collection der Website. Eine Kundenbewertung gehört 
 
 ### Weitere Integrationspunkte
 
-- **Flächen-Seiten (Areas):** `src/content/areas/<area>.mdx` – Frontmatter-Array `testimonials: [<id>, …]` steuert die Featured-Bewertungen der Bereichsseite (Komponente `FeaturedTestimonials`).
+- **Flächen-Seiten (Areas):** privates Angebot `src/content/privateAreas/<area>.mdx` (akt, beauty, couples), Sport `src/content/sportAreas/sport/<area>.mdx` – Frontmatter-Array `testimonials: [<id>, …]` steuert die Featured-Bewertungen der Bereichsseite (Komponente `FeaturedTestimonials`). Die Ablage wurde am 2026-10-18 aus der früheren `areas`-Collection getrennt (siehe `rules/09-shooting-areas.md`); URLs und IDs sind unverändert.
 - **Übersichtsseite:** `src/content/simple/testimonials.mdx` rendert automatisch **alle** sichtbaren Testimonials – keine Anpassung nötig.
 - **Zähler:** `src/content/testimonialSummary.json` (`reviewCount` pro Kategorie + `general`). Bei neuen Testimonials die Zahl der passenden Kategorie (und `general`) erhöhen, wenn die Summen gepflegt werden.
 
@@ -66,7 +66,7 @@ Du pflegst die Testimonial-Collection der Website. Eine Kundenbewertung gehört 
    ```bash
    pnpm run prebuild
    ```
-8. **Optional in Area einbinden:** `<id>` zur `testimonials:`-Liste der passenden Area (`areas/*.mdx`) hinzufügen.
+8. **Optional in Area einbinden:** `<id>` zur `testimonials:`-Liste der passenden Area hinzufügen (`src/content/privateAreas/<area>.mdx` für akt/beauty/couples, `src/content/sportAreas/sport/<area>.mdx` für Sport).
 
 > **HITL (verbindlich):** Testimonial-Text und Bildvorschlag im Chat zur Freigabe vorlegen. Dateien erst nach expliziter Freigabe schreiben. Korrekturen des Users 1:1 übernehmen.
 

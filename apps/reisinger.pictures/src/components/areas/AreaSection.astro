@@ -1,0 +1,26 @@
+---
+interface Props {
+  id: string;
+  heading?: string;
+  eyebrow?: string;
+  class?: string;
+}
+
+const { id, heading, eyebrow, class: className } = Astro.props;
+
+const hasHeader = [eyebrow, heading].some((value) => value != null);
+---
+
+<section id={id} class:list={["not-prose", className]} aria-labelledby={heading ? `${id}-heading` : undefined}>
+  {hasHeader && (
+    <div class="mb-8">
+      {eyebrow && (
+        <p class="m-0 mb-2 text-xs font-medium uppercase tracking-[0.16em] text-base-content/75">{eyebrow}</p>
+      )}
+      {heading && (
+        <h2 id={`${id}-heading`} class="m-0 text-left! text-2xl font-semibold md:text-3xl">{heading}</h2>
+      )}
+    </div>
+  )}
+  <slot />
+</section>

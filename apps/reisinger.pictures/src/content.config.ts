@@ -50,16 +50,30 @@ const testimonials = defineCollection({
   })
 });
 
-const areas = defineCollection({
-  loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: "./src/content/areas" }),
-  schema: z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    priority: z.number().optional().default(9999),
-    testimonials: z.array(reference("testimonials")).optional(),
-    images: z.array(z.string()),
-    heroImage: z.string().optional()
-  })
+// Shooting area pages are split into two collections that share one schema:
+// the private offers (Akt, Beauty, Pärchen) and the sport areas. Splitting is a
+// content-structure decision only — both collections still render under
+// `/shootings/<id>/`, so no URL changes and no content rewrite is required.
+// See `rules/09-shooting-areas.md`.
+const shootingAreaSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  priority: z.number().optional().default(9999),
+  testimonials: z.array(reference("testimonials")).optional(),
+  images: z.array(z.string()),
+  heroImage: z.string().optional()
+});
+
+/** Private paid offers: ids `akt`, `beauty`, `couples`. */
+const privateAreas = defineCollection({
+  loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: "./src/content/privateAreas" }),
+  schema: shootingAreaSchema
+});
+
+/** Sport areas: id `sport` plus every `sport/<sub-area>` entry. */
+const sportAreas = defineCollection({
+  loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: "./src/content/sportAreas" }),
+  schema: shootingAreaSchema
 });
 
 const simple = defineCollection({
@@ -121,12 +135,13 @@ const tfp = defineCollection({
 
 export const collections = {
   agb,
-  areas,
   categories,
   dsb,
   portfolio,
   portfolioOverviews,
+  privateAreas,
   simple,
+  sportAreas,
   testimonialSummary,
   testimonials,
   tfp

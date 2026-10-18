@@ -1,113 +1,80 @@
 ---
 import { groupBy } from "@reisinger/shared/utils";
-import { type CollectionEntry, getCollection, render } from "astro:content";
+import { type CollectionEntry, getCollection } from "astro:content";
 
-import BaseHead from "../../../components/BaseHead.astro";
-import FeaturedTestimonials from "../../../components/FeaturedTestimonials.astro";
-import Gallery from "../../../components/Gallery.astro";
-import HeroBanner from "../../../components/HeroBanner.astro";
-import MinimalPage from "../../../components/pages/MinimalPage.astro";
-import PortfolioCard from "../../../components/PortfolioCard.astro";
-import type { SchemaCreationFunction } from "../../../components/SchemaOrg";
-import SchemaOrg from "../../../components/SchemaOrg.astro";
-import { createWebPageSchema } from "../../../components/SchemaOrg.factory";
-import SocialImage from "../../../components/SocialImage.astro";
-import { loadImage } from "../../../images/image-service";
+import PrivateAreaPage from "../../../components/areas/PrivateAreaPage.astro";
+import SportAreaPage from "../../../components/areas/SportAreaPage.astro";
+import { getPortfolioPrefix, selectRelatedPosts, sortAreasByPriority } from "../../../data/shooting-areas";
 
-interface Props {
-  entry: CollectionEntry<"areas">,
-  reviews: CollectionEntry<"testimonials">[],
-  relatedPosts: CollectionEntry<"portfolio">[],
-  portfolioPrefix: string | null
+// One route, two collections, unchanged URLs: private offers and sport areas
+// both render under `/shootings/<area-id>/`. The split (and the two distinct
+// compositions) is documented in `rules/09-shooting-areas.md`.
+
+interface AreaProps {
+  reviews: CollectionEntry<"testimonials">[];
+  relatedPosts: CollectionEntry<"portfolio">[];
+  portfolioPrefix: string | null;
 }
+
+type Props =
+  | ({ kind: "private"; entry: CollectionEntry<"privateAreas">; siblings: CollectionEntry<"privateAreas">[] } & AreaProps)
+  | ({ kind: "sport"; entry: CollectionEntry<"sportAreas"> } & AreaProps);
 
 export async function getStaticPaths() {
-  const getPortfolioPrefix = (areaId: string): string | null => {
-    const directMap: Record<string, string> = {
-      akt: "akt",
-      beauty: "beauty",
-      sport: "sport",
-      "sport/american-football": "sport",
-      "sport/basketball": "sport",
-      "sport/eishockey": "sport/eishockey/ice",
-      "sport/fussball": "sport/fussball",
-      "sport/volleyball": "sport",
-    };
-    if (areaId in directMap) return directMap[areaId];
+  const [privateAreas, sportAreas, testimonials, portfolioPosts] = await Promise.all([
+    getCollection("privateAreas"),
+    getCollection("sportAreas"),
+    getCollection("testimonials"),
+    getCollection("portfolio")
+  ]);
 
-    const sportTeamMap: Record<string, string> = {
-      "sport/bwl": "sport/eishockey/ice",
-      "sport/swl": "sport/eishockey/ice",
-      "sport/lask": "sport/fussball/bundesliga",
-      "sport/oefb": "sport/fussball",
-      "sport/skv": "sport/fussball",
-      "sport/dragons": "sport",
-      "sport/vikings": "sport",
-      "sport/acsl": "sport",
-      "sport/steelvolleys": "sport",
-    };
-    if (areaId in sportTeamMap) return sportTeamMap[areaId];
+  const reviewsByType = groupBy(testimonials, e => e.data.type);
+  const orderedPrivateAreas = sortAreasByPriority(privateAreas);
 
-    if (areaId.startsWith("sport/")) return "sport";
-
-    return areaId;
-  };
-  const areas = await getCollection("areas");
-  const testimonials = groupBy(await getCollection("testimonials"), e => e.data.type);
-  const portfolioPosts = await getCollection("portfolio");
-  return areas.map(entry => {
-    const prefix = getPortfolioPrefix(entry.id);
-    const relatedPosts = prefix ? portfolioPosts
-      .filter(p => p.id.startsWith(prefix + "/") || p.id.startsWith(prefix))
-      .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-      .slice(0, 3) : [];
-    return { params: { area: entry.id }, props: { entry, reviews: testimonials[entry.id] || [], relatedPosts, portfolioPrefix: prefix ?? null } };
-  });
+  return [
+    ...orderedPrivateAreas.map(entry => {
+      const prefix = getPortfolioPrefix(entry.id);
+      return {
+        params: { area: entry.id },
+        props: {
+          kind: "private" as const,
+          entry,
+          reviews: reviewsByType[entry.id] || [],
+          siblings: orderedPrivateAreas.filter(sibling => sibling.id !== entry.id),
+          relatedPosts: selectRelatedPosts(portfolioPosts, prefix),
+          portfolioPrefix: prefix
+        }
+      };
+    }),
+    ...sportAreas.map(entry => {
+      const prefix = getPortfolioPrefix(entry.id);
+      return {
+        params: { area: entry.id },
+        props: {
+          kind: "sport" as const,
+          entry,
+          reviews: reviewsByType[entry.id] || [],
+          relatedPosts: selectRelatedPosts(portfolioPosts, prefix),
+          portfolioPrefix: prefix
+        }
+      };
+    })
+  ];
 }
 
-const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix } = Astro.props;
-const { id: slug, data: { name, description, testimonials, images, heroImage } } = entry;
-const reviewSlugs: string[] | undefined = testimonials?.map(e => e.id);
-const { Content } = await render(entry);
-
-const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
-
-const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchema({
-  url,
-  name,
-  description,
-  image: imageInfo?.src,
-  author: me,
-  publisher: o
-});
+const props = Astro.props;
 ---
-<MinimalPage>
-  <BaseHead title={name} description={description} slot="head">
-    <SocialImage name={heroImage} />
-    <SchemaOrg createData={createData} />
-  </BaseHead>
-  {heroImage && <HeroBanner slot="hero" name={heroImage} alt={name} />}
-
-  <h1>{name}</h1>
-
-  <Content />
-
-  <FeaturedTestimonials slug={slug} categoryTestimonials={categoryReviews} featuredTestimonials={reviewSlugs} />
-  {images.length > 0 &&
-    <div class="mt-16"><Gallery sorted={images} /></div>}
-  {relatedPosts && relatedPosts.length > 0 && (
-    <div class="[&:not(:nth-child(3))]:mt-16 [&:not(:nth-child(3))]:pt-10 [&:not(:nth-child(3))]:border-t [&:not(:nth-child(3))]:border-base-200">
-      <div class="flex items-center justify-between mb-8">
-        <h2 class="text-3xl font-black m-0">Aktuelle Einblicke</h2>
-        {portfolioPrefix && (
-          <a href={`/portfolio/${portfolioPrefix}/`} class="btn btn-outline btn-sm">
-            Alle Beiträge <span class="icon-[mdi--arrow-right] ml-1"></span>
-          </a>
-        )}
-      </div>
-      <div class="grid gap-y-4 md:grid-cols-2 md:gap-x-4 xl:grid-cols-3">
-        {relatedPosts.map(post => <PortfolioCard post={post} />)}
-      </div>
-    </div>
-  )}
-</MinimalPage>
+{props.kind === "private"
+  ? <PrivateAreaPage
+      entry={props.entry}
+      reviews={props.reviews}
+      siblings={props.siblings}
+      relatedPosts={props.relatedPosts}
+      portfolioPrefix={props.portfolioPrefix}
+    />
+  : <SportAreaPage
+      entry={props.entry}
+      reviews={props.reviews}
+      relatedPosts={props.relatedPosts}
+      portfolioPrefix={props.portfolioPrefix}
+    />}
