@@ -23,7 +23,9 @@ const {
   imageSizeModifiers = GALLERY_BREAKPOINTS[GalleryLayout.Overview],
   class: className,
   aspectRatio = "3/2",
-  fit = "contain"
+  // `cover` keeps the uniform card grid: `contain` left grey bars on the sides of
+  // portrait photos inside the 3/2 frame (see rules/10-ui-review-findings.md §2).
+  fit = "cover"
 } = Astro.props;
 ---
 

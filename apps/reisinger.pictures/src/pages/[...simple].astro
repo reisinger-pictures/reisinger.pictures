@@ -48,11 +48,13 @@ const createData: SchemaCreationFunction = (o, p, df, url) => createWebPageSchem
     <SchemaOrg createData={createData} />
   </BaseHead>
   {heroImage && <HeroBanner slot="hero" name={heroImage} alt={title} />}
-  <h1>{title}</h1>
-  <Published {...dates} />
+  <div class="content-measure">
+    <h1>{title}</h1>
+    <Published {...dates} />
 
-  {showToc &&
-    <div data-toc />}
+    {showToc &&
+      <div data-toc />}
 
-  <Content />
+    <Content />
+  </div>
 </MinimalPage>

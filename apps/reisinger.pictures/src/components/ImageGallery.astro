@@ -1,6 +1,7 @@
 ---
 import type { ImageMetadata } from "astro";
 
+import { loadImage } from "../images/image-service";
 import { GALLERY_BREAKPOINTS, GalleryLayout } from "./GalleryLayout";
 import Photoswipe from "./Photoswipe.astro";
 import ResponsiveImage from "./ResponsiveImage.astro";
@@ -13,18 +14,33 @@ interface Props {
 }
 
 const { images, layout = GalleryLayout.Presentation } = Astro.props;
+
+// The last image of an odd-count presentation gallery is promoted to the full
+// content width to avoid an orphan half-tile. Resolve the native dimensions so
+// that promotion only happens for landscape photos: a portrait photo at full
+// content width keeps its native aspect ratio and grows to several viewport
+// heights (see rules/10-ui-review-findings.md §2).
+const dimensions = await Promise.all(images.map(async (entry) =>
+  typeof entry === "string"
+    ? await loadImage(entry)
+    : { width: entry.width, height: entry.height }
+));
 ---
 <section data-gallery={layout}>
   {images.map((entry, idx) => {
     const isString = typeof entry === "string";
     const isLast = idx === images.length - 1;
+    const isLandscape = dimensions[idx].width >= dimensions[idx].height;
+    const promoted = isLast && idx % 2 === 0 && layout === GalleryLayout.Presentation && isLandscape;
     return (
-      <ResponsiveImage
-        name={isString ? entry : undefined}
-        image={isString ? undefined : entry}
-        showInfo={isString}
-        sizeModifiers={GALLERY_BREAKPOINTS[isLast && idx % 2 === 0 && layout === GalleryLayout.Presentation ? GalleryLayout.Full : layout]}
-      />);
+      <div class:list={[promoted && "xl:col-span-2"]}>
+        <ResponsiveImage
+          name={isString ? entry : undefined}
+          image={isString ? undefined : entry}
+          showInfo={isString}
+          sizeModifiers={GALLERY_BREAKPOINTS[promoted ? GalleryLayout.Full : layout]}
+        />
+      </div>);
   })}
 </section>
 <Photoswipe />
