@@ -1,38 +1,71 @@
-import { flexImagesIncluded } from "@reisinger/shared/utils/pricing";
-import { createSignal, Show } from "solid-js";
+import { formatExactPrice } from "@reisinger/shared/utils";
+import { flexPrivacyBase } from "@reisinger/shared/utils/pricing";
+import { createSignal, createUniqueId, onCleanup, onMount, Show } from "solid-js";
 
+import { parsePricingUrl, type PricingTariff, type PricingUrlState, serializePricingUrl, switchPricingTariff } from "./pricing-url-state";
 import PricingCalculator from "./PricingCalculator";
 import PricingCalculatorProfi from "./PricingCalculatorProfi";
 
-type Tab = "standard" | "flex";
-
 export default function PricingTabs() {
-  const [activeTab, setActiveTab] = createSignal<Tab>("standard");
+  // SSG cannot know the query string. Do not render a wrong calculator/price
+  // before hydration; read the complete URL once, without serializing defaults.
+  const [configuration, setConfiguration] = createSignal(parsePricingUrl(new URLSearchParams()));
+  const [ready, setReady] = createSignal(false);
+  const activeTab = () => ready() ? configuration().tariff : undefined;
+  const id = createUniqueId();
 
-  const switchTab = (tab: Tab) => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (tab === "flex") {
-        const img = parseInt(params.get("img") ?? String(flexImagesIncluded), 10);
-        params.set("extra", String(Math.max(0, img - flexImagesIncluded)));
-      } else {
-        const extra = parseInt(params.get("extra") ?? "0", 10);
-        params.set("img", String(extra + flexImagesIncluded));
-      }
-      const query = params.toString();
-      window.history.replaceState({}, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
-    }
-    setActiveTab(tab);
+  onMount(() => {
+    const readUrl = () => setConfiguration(parsePricingUrl(new URLSearchParams(window.location.search)));
+    readUrl();
+    setReady(true);
+    window.addEventListener("popstate", readUrl);
+    onCleanup(() => window.removeEventListener("popstate", readUrl));
+  });
+
+  const update = (next: PricingUrlState, push = false) => {
+    const url = serializePricingUrl(new URL(window.location.href), next);
+    if (push) window.history.pushState(window.history.state, "", url);
+    else window.history.replaceState(window.history.state, "", url);
+    setConfiguration(next);
+  };
+
+  const switchTab = (tab: PricingTariff) => {
+    const current = configuration();
+    if (ready() && current.tariff !== tab) update(switchPricingTariff(current, tab), true);
+  };
+
+  const onTabKeyDown = (event: KeyboardEvent, tab: PricingTariff) => {
+    let next: PricingTariff;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") next = tab === "standard" ? "flex" : "standard";
+    else if (event.key === "Home") next = "standard";
+    else if (event.key === "End") next = "flex";
+    else return;
+    event.preventDefault();
+    switchTab(next);
+    document.getElementById(`${id}-${next}-tab`)?.focus();
+  };
+
+  const requestHref = (message: string, subject?: string) => {
+    const url = serializePricingUrl(new URL(window.location.href), configuration());
+    url.searchParams.set("message", message);
+    if (subject) url.searchParams.set("subject_prefix", subject);
+    else url.searchParams.delete("subject_prefix");
+    return url.pathname + url.search + "#kontakt";
   };
 
   return (
-    <div class="card bg-base-100 border-2 border-primary/30 shadow-xl rounded-2xl overflow-hidden">
+    <div data-pricing-ready={ready()} class="card bg-base-100 border-2 border-primary/30 shadow-xl rounded-2xl overflow-hidden">
       {/* Tab Bar */}
-      <div class="flex" role="tablist">
+      <div class="tabs grid grid-cols-2" role="tablist" aria-label="Shooting-Tarif">
         <button
+          type="button"
+          id={`${id}-standard-tab`}
           role="tab"
+          aria-controls={`${id}-standard-panel`}
           aria-selected={activeTab() === "standard"}
-          class={"flex-1 px-4 py-4 text-sm font-black uppercase tracking-wider transition-all duration-200 " +
+          tabIndex={activeTab() !== "flex" ? 0 : -1}
+          onKeyDown={(event) => onTabKeyDown(event, "standard")}
+          class={"tab h-auto px-4 py-4 text-sm font-black uppercase tracking-wider transition-all duration-200 " +
             (activeTab() === "standard"
               ? "bg-primary text-primary-content shadow-inner"
               : "bg-base-200 text-base-content/60 hover:text-base-content/90 hover:bg-base-300")}
@@ -41,9 +74,14 @@ export default function PricingTabs() {
           Standard
         </button>
         <button
+          type="button"
+          id={`${id}-flex-tab`}
           role="tab"
+          aria-controls={`${id}-flex-panel`}
           aria-selected={activeTab() === "flex"}
-          class={"flex-1 px-4 py-4 text-sm font-black uppercase tracking-wider transition-all duration-200 " +
+          tabIndex={activeTab() === "flex" ? 0 : -1}
+          onKeyDown={(event) => onTabKeyDown(event, "flex")}
+          class={"tab h-auto px-4 py-4 text-sm font-black uppercase tracking-wider transition-all duration-200 " +
             (activeTab() === "flex"
               ? "bg-primary text-primary-content shadow-inner"
               : "bg-base-200 text-base-content/60 hover:text-base-content/90 hover:bg-base-300")}
@@ -55,27 +93,55 @@ export default function PricingTabs() {
 
       {/* Tab Content */}
       <div class="p-4 md:p-6">
-        <Show when={activeTab() === "standard"}>
-          <div class="space-y-4">
+        <div id={`${id}-standard-panel`} role="tabpanel" aria-labelledby={`${id}-standard-tab`} tabIndex={0} hidden={activeTab() !== "standard"} class="space-y-4">
+          <Show when={activeTab() === "standard"}>
             <div class="text-sm text-base-content/70 leading-relaxed space-y-2">
               <p class="m-0">
-                <strong class="text-base-content">Transparent & fair</strong> – für Privat und Business gleichermaßen.
-                Keine versteckten Kosten, kein Kleingedrucktes.
+                <strong class="text-base-content">Transparent & fair</strong> – der Standard-Tarif gilt
+                für private und geschäftliche Shootings gleichermaßen. Keine versteckten Kosten.
               </p>
               <p class="m-0">
                 <strong class="text-base-content">Diskretion als Standard</strong> – deine Bilder unterliegen
-                selbstverständlich der Verschwiegenheit. Eine Veröffentlichung erfolgt nur nach deiner
-                ausdrücklichen Freigabe.
+                der Verschwiegenheit. Ohne Rabatt ist keine Veröffentlichung enthalten: Eine Nutzung
+                braucht deine gesonderte, ausdrückliche Freigabe.
+              </p>
+              <p class="m-0">
+                <strong class="text-base-content">Mit Rabatt</strong> (Studierenden- oder Freundes-Rabatt)
+                ist die Freigabe ausgewählter Bilder zur Veröffentlichung Bestandteil des Angebots. Ob und
+                welche Bilder gezeigt werden dürfen, stimmen wir gemeinsam ab, bevor die Buchung gilt –
+                ein Klick im Konfigurator allein ist dafür noch keine Zusage.
               </p>
             </div>
 
-            <PricingCalculatorProfi />
-          </div>
-        </Show>
+            <PricingCalculatorProfi
+              configuration={configuration().standard}
+              onChange={(standard) => update({ ...configuration(), standard })}
+              requestHref={requestHref}
+            />
+          </Show>
+        </div>
 
-        <Show when={activeTab() === "flex"}>
-          <div class="space-y-4">
-            <PricingCalculator />
+        <div id={`${id}-flex-panel`} role="tabpanel" aria-labelledby={`${id}-flex-tab`} tabIndex={0} hidden={activeTab() !== "flex"} class="space-y-4">
+          <Show when={activeTab() === "flex"}>
+            <div class="text-sm text-base-content/70 leading-relaxed space-y-2">
+              <p class="m-0">
+                <strong class="text-base-content">Flex – mein kreativer Einstieg</strong> für private
+                Sessions: dieselbe fotografische Qualität wie im Standard-Tarif, zu einem kleineren Preis,
+                dafür ohne kommerzielle Bildnutzung.
+              </p>
+              <p class="m-0">
+                Beim Flex-Tarif ist die <strong class="text-base-content">Freigabe ausgewählter Bilder zur
+                Veröffentlichung</strong> Bestandteil des Angebots; was gezeigt werden darf, stimmen wir vor
+                der Buchung ab – ein Klick im Konfigurator allein ist dafür noch keine Zusage. Einzige
+                Ausnahme ist das unten beschriebene Akt-&amp;-Boudoir-Modell ohne Online-Veröffentlichung.
+              </p>
+            </div>
+
+            <PricingCalculator
+              configuration={configuration().flex}
+              onChange={(flex) => update({ ...configuration(), flex })}
+              requestHref={requestHref}
+            />
 
             {/* Privacy & Setup Details */}
             <div class="space-y-3">
@@ -100,10 +166,11 @@ export default function PricingTabs() {
                     <p class="text-sm leading-relaxed opacity-90 m-0">
                       <strong>Die Freigabe fürs Web:</strong> Wir fokussieren uns gezielt auf kunstvolle
                       Fragmente, Silhouetten, Schattenspiele oder Posen von hinten, bei denen
-                      <strong> dein Gesicht niemals zu erkennen ist</strong>. Du bleibst im Netz vollkommen
-                      anonym. Das garantiert den perfekten Schutz für sensible Berufsgruppen (wie im Lehr-
-                      oder Staatsdienst) und ist gleichzeitig der kreative Treibstoff, der meine Arbeit
-                      sichtbar macht.
+                      <strong> dein Gesicht nicht zu erkennen ist</strong>. Das ist eine bewusste Entscheidung
+                      für das Motiv, keine Zusage: Eine Wiedererkennung oder Identifizierung lässt sich
+                      damit nicht ausschließen – etwa über Kontext, Tattoos oder Begleitumstände. Das
+                      schützt sensible Berufsgruppen (wie im Lehr- oder Staatsdienst) und ist gleichzeitig
+                      der kreative Treibstoff, der meine Arbeit sichtbar macht.
                       <span class="text-primary font-bold"> (Standard & im Basispreis inklusive)</span>
                     </p>
                   </div>
@@ -120,9 +187,9 @@ export default function PricingTabs() {
                     </p>
                   </div>
                   <p class="text-xs opacity-80 italic m-0">
-                    Hinweis: Da mir durch das absolute Online-Verbot jegliches visuelles Anschauungsmaterial
-                    für das Web verloren geht, fängt ein fairer Exklusiv-Aufpreis im Konfigurator diesen
-                    Verlust pro Bild linear auf.
+                    Hinweis: Weil diesem Modus bewusst kein Anschauungsmaterial fürs Web bleibt, gibt es
+                    dafür im Konfigurator einen festen Exklusiv-Aufpreis von {formatExactPrice(flexPrivacyBase)},
+                    unabhängig von der Anzahl der Bilder.
                   </p>
                 </div>
               </details>
@@ -161,8 +228,8 @@ export default function PricingTabs() {
                 </div>
               </details>
             </div>
-          </div>
-        </Show>
+          </Show>
+        </div>
       </div>
     </div>
   );

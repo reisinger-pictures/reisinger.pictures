@@ -11,7 +11,8 @@
     "test:ui": "pnpm exec playwright test -c playwright.screenshots.config.ts",
     "test:ui:unit": "node --test tests/screenshots/ui-review.helpers.test.ts",
     "review:validate": "node packages/tools/scripts/validate-review.mjs",
-    "review:apply": "node packages/tools/scripts/apply-review.mjs"
+    "review:apply": "node packages/tools/scripts/apply-review.mjs",
+    "import:portal-terms": "node packages/tools/scripts/import-portal-license-terms.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
