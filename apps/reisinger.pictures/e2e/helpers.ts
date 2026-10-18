@@ -3,7 +3,9 @@ import { test, type Page } from "@playwright/test";
 export { test };
 
 export async function openModal(page: Page): Promise<void> {
-  await page.locator('[data-contact-open="fab"]').click();
+  // The header trigger is available on every route and viewport; homepage page
+  // one deliberately omits the floating contact button.
+  await page.locator('[data-contact-open="header"]').click();
   await page.locator("#contact_modal").waitFor({ state: "visible" });
 }
 

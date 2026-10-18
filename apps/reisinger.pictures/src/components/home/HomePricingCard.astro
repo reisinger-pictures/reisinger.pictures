@@ -1,0 +1,44 @@
+---
+import { flexEntryHref, flexEntryPrice, flexIncludedImages, standardExample, standardExampleHref, standardExamplePrice } from "../../data/homepage";
+
+const standardPrice = standardExamplePrice();
+const flexPrice = flexEntryPrice();
+---
+
+<section class="not-prose border-t border-base-300 pt-7 text-left" aria-labelledby="home-pricing-heading">
+  <h2 id="home-pricing-heading" class="m-0 mb-6 text-left! text-2xl font-medium">Fotoshootings &amp; Preise</h2>
+  <div class="grid gap-7 lg:grid-cols-12 lg:gap-12">
+    <div class="lg:col-span-7">
+      <div class="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h3 class="m-0 text-left! text-lg font-semibold">Standard</h3>
+        <span class="text-3xl font-medium tracking-tight md:text-4xl">{standardPrice}</span>
+      </div>
+      <p class="m-0 mb-2 leading-relaxed">
+        {standardExample.hours} Stunde · {standardExample.images} bearbeitete Bilder · Outdoor
+      </p>
+      <p class="m-0 text-sm leading-relaxed text-base-content/85">
+        Beispielpreis, <strong class="font-semibold">kein Mindestpreis</strong>.
+        Deinen Preis stellst du individuell zusammen.
+      </p>
+      <p class="mb-0 mt-2 text-sm leading-relaxed text-base-content/85">
+        Für individuelle Shootings und professionelle Aufträge; Details nach Vereinbarung.
+      </p>
+      <a href={standardExampleHref} class="btn btn-primary mt-5 min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4">Standard berechnen <span class="icon-[mdi--arrow-right]" aria-hidden="true"></span></a>
+    </div>
+    <div class="border-t border-base-300 pt-5 lg:col-span-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+      <h3 class="m-0 mb-2 text-left! text-base font-medium">Flex · <span>Kreative Privat-Sessions ab</span> {flexPrice}</h3>
+      <ul class="m-0 list-none space-y-2 p-0 text-sm leading-relaxed text-base-content/85">
+        <li>{flexIncludedImages} bearbeitete Bilder inklusive</li>
+        <li>Für private kreative Sessions – keine kommerzielle Bildnutzung</li>
+        <li>Vergünstigter Tarif gegen vereinbarte Bildveröffentlichung</li>
+      </ul>
+      <p class="mb-0 mt-3 text-sm leading-relaxed text-base-content/85">
+        Online-Verzicht bei Akt &amp; Boudoir gegen Aufpreis – Details im Rechner.
+      </p>
+      <a href={flexEntryHref} class="btn btn-outline mt-4 min-h-11 focus-visible:outline-2 focus-visible:outline-offset-4">Flex berechnen <span class="icon-[mdi--arrow-right]" aria-hidden="true"></span></a>
+    </div>
+  </div>
+  <p class="mb-0 mt-5 text-sm leading-relaxed text-base-content/85">
+    Alle Preise sind Richtwerte und werden im Konfigurator transparent berechnet.
+  </p>
+</section>

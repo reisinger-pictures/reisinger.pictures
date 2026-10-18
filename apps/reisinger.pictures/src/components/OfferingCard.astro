@@ -1,0 +1,51 @@
+---
+import type { NumericBreakpoints } from "@reisinger/shared/utils/Breakpoints";
+
+import ResponsiveImage from "./ResponsiveImage.astro";
+import { ResponsiveImageLoading } from "./ResponsiveImageLoading";
+
+interface Props {
+  href: string;
+  imageName: string;
+  title: string;
+  cta?: string;
+  headingTag?: "h2" | "h3";
+  loading?: ResponsiveImageLoading;
+  sizes?: string;
+  class?: string;
+}
+
+const {
+  href,
+  imageName,
+  title,
+  cta = "Mehr erfahren",
+  headingTag: Heading = "h2",
+  loading = ResponsiveImageLoading.LAZY,
+  sizes,
+  class: className
+} = Astro.props;
+
+const cardImageSizes: Partial<NumericBreakpoints> = { sm: 2, md: 2, lg: 2, xl: 2, "2xl": 2 };
+---
+
+<figure
+  class:list={["m-0 flex h-full min-w-0 flex-col", className]}
+>
+  <ResponsiveImage
+    name={imageName}
+    loading={loading}
+    sizes={sizes}
+    sizeModifiers={cardImageSizes}
+    class="w-full"
+  />
+  <figcaption class="flex flex-1 flex-col items-start pt-3 text-left">
+    <Heading class="m-0 text-left! text-base font-medium md:text-xl">{title}</Heading>
+    <a href={href} aria-label={`${cta}: ${title}`} class="group mt-auto inline-flex min-h-11 items-center gap-1 text-sm text-base-content/80 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">
+      {cta}
+      <span
+        class="icon-[mdi--arrow-right] transition-transform duration-200 motion-reduce:transition-none group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
+        aria-hidden="true"></span>
+    </a>
+  </figcaption>
+</figure>

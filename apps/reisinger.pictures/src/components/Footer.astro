@@ -3,8 +3,9 @@ import ContactForm from "../solid/ContactForm";
 
 interface Props {
   showContact?: boolean;
+  showFloatingContact?: boolean;
 }
-const { showContact = true } = Astro.props;
+const { showContact = true, showFloatingContact = true } = Astro.props;
 const today = new Date();
 ---
 <footer>
@@ -27,14 +28,14 @@ const today = new Date();
 
 {showContact && (
 <>
-  <button
+  {showFloatingContact && <button
     data-contact-open="fab"
     onclick="document.getElementById('contact_modal').showModal();"
     class="tooltip tooltip-left tooltip-primary btn btn-primary btn-circle fixed bottom-6 right-6 z-[90] shadow-2xl h-16 w-16 hidden sm:flex hover:scale-110 transition-transform group border-none"
     aria-label="Kontaktformular öffnen" data-tip="Lass uns unverbindlich reden!"
   >
     <span class="icon-[mdi--message-text] text-3xl group-hover:animate-pulse"></span>
-  </button>
+  </button>}
 
   <dialog id="contact_modal" class="modal modal-bottom sm:modal-middle z-[9999]">
     <div class="modal-box bg-base-100">
@@ -59,6 +60,8 @@ const today = new Date();
 
     const nameInput = document.getElementById("form__name") as HTMLInputElement;
     const subjectInput = document.getElementById("form-subject") as HTMLInputElement;
+    const contactParams = new Set(["name", "email", "phone", "message", "subject_prefix", "subject"]);
+    let previousHash = window.location.hash === "#kontakt" ? "" : window.location.hash;
 
     const updateSubject = () => {
       if (!nameInput || !subjectInput) return;
@@ -69,6 +72,7 @@ const today = new Date();
 
     const fillForm = (params: URLSearchParams) => {
       for (const [key, value] of params.entries()) {
+        if (!contactParams.has(key)) continue;
         const element = form.elements.namedItem(key);
         if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
           element.value = value;
@@ -91,9 +95,12 @@ const today = new Date();
 
     if (modal) {
       modal.addEventListener("close", () => {
-        if (window.location.hash === "#kontakt" || window.location.search !== "") {
-          history.replaceState(null, "", window.location.pathname);
-        }
+        // Read the current URL, not an opening-time snapshot: calculator changes
+        // made while the dialog was open must survive closing it.
+        const url = new URL(window.location.href);
+        for (const key of contactParams) url.searchParams.delete(key);
+        if (url.hash === "#kontakt") url.hash = previousHash;
+        history.replaceState(history.state, "", url);
       });
     }
 
@@ -105,10 +112,16 @@ const today = new Date();
       const link = (e.target as HTMLElement)?.closest("a[href*='#kontakt']");
       if (!link) return;
       const targetUrl = new URL((link as HTMLAnchorElement).href);
-      if (targetUrl.pathname === window.location.pathname) {
+      if (targetUrl.origin === window.location.origin && targetUrl.pathname === window.location.pathname) {
         e.preventDefault();
         fillForm(targetUrl.searchParams);
-        history.pushState(null, "", targetUrl.href);
+        const url = new URL(window.location.href);
+        if (url.hash !== "#kontakt") previousHash = url.hash;
+        for (const [key, value] of targetUrl.searchParams) {
+          if (contactParams.has(key)) url.searchParams.set(key, value);
+        }
+        url.hash = "#kontakt";
+        history.pushState(history.state, "", url);
         if (modal && !modal.open) {
           modal.showModal();
         }

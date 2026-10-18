@@ -1,0 +1,92 @@
+---
+import { getEntry, render } from "astro:content";
+
+import { standardExampleHref } from "../../data/homepage";
+import OfferingCard from "../OfferingCard.astro";
+import { ResponsiveImageLoading } from "../ResponsiveImageLoading";
+import HomePricingCard from "./HomePricingCard.astro";
+
+// Existing approved images only. The owner explicitly selected fa-02 for both
+// this Boudoir entry and the Akt offer's hero; no new assets, crops or renames.
+const PORTRAIT_IMAGE = "beauty-sarah-home2025-portrait-rothaarig-intensiver-blick";
+const COUPLES_IMAGE = "couples-schule1";
+const BOUDOIR_IMAGE = "akt-boudoir-fine-art-fa-02";
+
+// Optional, small existing testimonial. The quote is rendered verbatim from the
+// collection; it is deliberately not labelled as a paid customer.
+const TESTIMONIAL_SLUG = "nicolepecnik1";
+const testimonialEntry = await getEntry("testimonials", TESTIMONIAL_SLUG);
+const TestimonialContent = testimonialEntry ? (await render(testimonialEntry)).Content : undefined;
+const testimonialName = testimonialEntry?.data.name;
+---
+
+<section class="not-prose mb-4 space-y-10 md:space-y-14" aria-labelledby="home-intro-heading">
+  <!-- Mobile reads heading → photograph → introduction; desktop shares one editorial grid. -->
+  <div class="grid gap-x-12 gap-y-5 text-left lg:grid-cols-12 lg:items-center lg:gap-y-0">
+    <div class="lg:col-span-5 lg:self-end lg:pb-5">
+      <p class="m-0 mb-3 text-xs font-medium uppercase tracking-[0.16em] text-base-content/75">
+        Fotograf in Linz &amp; Oberösterreich
+      </p>
+      <h1 id="home-intro-heading" class="m-0 text-left text-3xl font-semibold leading-tight tracking-tight md:text-4xl xl:text-5xl">
+        Fotografie, die sich nach dir anfühlt.
+      </h1>
+    </div>
+
+    <OfferingCard
+      href="/shootings/beauty/"
+      imageName={PORTRAIT_IMAGE}
+      title="Beauty & Portrait"
+      loading={ResponsiveImageLoading.EAGER}
+      sizes="(min-width: 1024px) 58vw, 100vw"
+      class="lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1"
+    />
+
+    <div class="space-y-4 lg:col-span-5 lg:row-start-2 lg:self-start">
+      <p class="m-0 max-w-prose text-base leading-relaxed text-base-content/85">
+        Ich bin Florian. Am liebsten fotografiere ich Menschen – bei Portrait-, Paar- und
+        Boudoir-Shootings mit genug Zeit und einer ruhigen Atmosphäre, in der du dich fallen lassen
+        kannst.
+      </p>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <a href={standardExampleHref} class="link inline-flex min-h-11 items-center font-medium underline-offset-4">Fotoshootings &amp; Preise <span class="ml-2" aria-hidden="true">→</span></a>
+      </div>
+      <a
+        href="#portfolio-blog"
+        class="inline-flex min-h-11 items-center gap-1 text-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+      >
+        Zum Portfolio-Blog
+        <span class="icon-[mdi--arrow-down]" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 md:gap-8">
+      <OfferingCard
+        href="/shootings/couples/"
+        imageName={COUPLES_IMAGE}
+        title="Paare"
+      />
+      <OfferingCard
+        href="/shootings/akt/"
+        imageName={BOUDOIR_IMAGE}
+        title="Boudoir & Fine Art"
+      />
+  </div>
+
+  {testimonialName && TestimonialContent && (
+    <figure class="mx-auto max-w-3xl py-2 text-center md:py-4">
+      <blockquote class="m-0 text-lg italic leading-relaxed text-base-content/90 md:text-xl [&>p]:m-0">
+        <TestimonialContent />
+      </blockquote>
+      <figcaption class="mt-4 text-sm text-base-content/75">{testimonialName}</figcaption>
+    </figure>
+  )}
+
+  <HomePricingCard />
+
+  <nav aria-label="Unternehmen" class="flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-base-300 pt-4 text-sm">
+    <span class="w-full text-base-content/75 md:w-auto">Auch für Unternehmen:</span>
+    <a href="/personal-branding/" class="link inline-flex min-h-11 items-center underline-offset-4">Personal Branding</a>
+    <a href="/eventfotografie/" class="link inline-flex min-h-11 items-center underline-offset-4">Eventfotografie</a>
+  </nav>
+</section>

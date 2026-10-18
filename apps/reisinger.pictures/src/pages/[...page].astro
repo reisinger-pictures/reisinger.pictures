@@ -1,10 +1,9 @@
 ---
-import type { NumericBreakpoints } from "@reisinger/shared/utils/Breakpoints";
 import type { Page, PaginateFunction } from "astro";
-import { type CollectionEntry, getCollection, getEntry, render } from "astro:content";
+import { type CollectionEntry, getCollection, getEntry } from "astro:content";
 
 import BaseHead from "../components/BaseHead.astro";
-import ContentCard from "../components/ContentCard.astro";
+import HomeIntro from "../components/home/HomeIntro.astro";
 import MinimalPage from "../components/pages/MinimalPage.astro";
 import PortfolioGrid from "../components/Portfolio.astro";
 import type { SchemaCreationFunction } from "../components/SchemaOrg";
@@ -24,19 +23,10 @@ export async function getStaticPaths({ paginate }: { paginate: PaginateFunction 
 
 const { page } = Astro.props;
 
-let ContentComponent = null;
 let indexTitle = "Florian Reisinger Fotografie";
 
 const pageDescription =
   "Fotograf Florian Reisinger aus Linz – authentische Portrait-, Beauty-, Akt-, Boudoir- und Pärchen-Shootings. Professionelle Sportfotografie aus der österreichischen Bundesliga.";
-
-const CATEGORY_CARD_SIZES: NumericBreakpoints = {
-  sm: 1,
-  md: 2,
-  lg: 2,
-  xl: 2,
-  "2xl": 2
-};
 
 const createData: SchemaCreationFunction = (o, p, _df, url) => createWebPageSchema({
   name: indexTitle,
@@ -50,8 +40,6 @@ if (page.currentPage === 1) {
   const indexEntry = await getEntry("portfolioOverviews", "index");
   if (indexEntry) {
     indexTitle = indexEntry.data.title || indexTitle;
-    const rendered = await render(indexEntry);
-    ContentComponent = rendered.Content;
   }
 }
 
@@ -67,7 +55,7 @@ const websiteSchema = page.currentPage === 1
     })
   : undefined;
 ---
-<MinimalPage>
+<MinimalPage showFloatingContact={page.currentPage !== 1}>
   <BaseHead
     title={page.currentPage === 1 ? indexTitle : `Portfolio & Fotografie Blog – Seite ${page.currentPage} | Florian Reisinger`}
     description={pageDescription}
@@ -78,50 +66,13 @@ const websiteSchema = page.currentPage === 1
     {websiteSchema && <script type="application/ld+json" is:inline set:html={websiteSchema} />}
   </BaseHead>
 
-  {page.currentPage === 1 && (
-    <>
-      <h1 class="text-4xl font-black mb-4 text-center">Florian Reisinger – Fotografie mit Leidenschaft</h1>
-      {ContentComponent && (
-        <div class="prose max-w-none mb-10 text-base md:text-lg leading-relaxed text-base-content/90">
-          <ContentComponent />
-        </div>
-      )}
+  {page.currentPage === 1 && <HomeIntro />}
 
-
-      <div class="grid grid-cols-1 md:grid-cols-2 my-12 not-prose">
-        <ContentCard
-          title="Beauty & Portrait"
-          imageName="beauty-sarah-home2025-portrait-rothaarig-intensiver-blick"
-          href="/shootings/beauty/"
-          overlay={true}
-          imageSizeModifiers={CATEGORY_CARD_SIZES}
-        />
-        <ContentCard
-          title="Akt & Boudoir"
-          imageName="akt-boudoir-fine-art-b-03"
-          href="/shootings/akt/"
-          overlay={true}
-          imageSizeModifiers={CATEGORY_CARD_SIZES}
-        />
-        <ContentCard
-          title="Pärchen & Liebe"
-          imageName="couples-schule1"
-          href="/shootings/couples/"
-          overlay={true}
-          imageSizeModifiers={CATEGORY_CARD_SIZES}
-        />
-        <ContentCard
-          title="Personal Branding"
-          imageName="beauty-anna-studio2025-gallery-anna-business-portrait"
-          href="/personal-branding/"
-          overlay={true}
-          imageSizeModifiers={CATEGORY_CARD_SIZES}
-        />
-      </div>
-    </>
-  )}
-
-  <div class="[&:not(:nth-child(3))]:mt-16 [&:not(:nth-child(3))]:pt-10 [&:not(:nth-child(3))]:border-t [&:not(:nth-child(3))]:border-base-200">
+  <div
+    id="portfolio-blog"
+    tabindex="-1"
+    class="scroll-mt-24 [&:not(:nth-child(3))]:mt-16 [&:not(:nth-child(3))]:pt-10 [&:not(:nth-child(3))]:border-t [&:not(:nth-child(3))]:border-base-200"
+  >
     <h2 class="text-3xl font-black mb-8 text-center">Neueste Einblicke aus dem Portfolio</h2>
     <PortfolioGrid page={page as Page<CollectionEntry<"portfolio">>} />
   </div>
