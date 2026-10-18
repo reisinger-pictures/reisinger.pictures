@@ -1,9 +1,10 @@
 # Sport area pages redesign — proposal
 
-**Status: PROPOSAL, NOT DECIDED.** Nothing in this document is commissioned, approved or
-implemented. No code, component, style, content, commit, push or publication was produced for it,
-and no build, test, server or cache was touched. It exists so the owner can decide; every section
-that needs a decision says so and carries an explicit recommendation.
+**Status: DECISIONS RECORDED, NOT IMPLEMENTED.** The owner answered every fork (D1–D10) on
+2026-10-18; §8 is the binding record of those answers. Nothing in this document is implemented: no
+code, component, style, content, commit, push or publication was produced for it, and no build,
+test, server or cache was touched. §9 lists the implementation steps, each of which still stops for
+an explicit owner release.
 
 - **Date:** 2026-10-18
 - **Author:** planning subagent (not the owner, not the implementer)
@@ -119,7 +120,7 @@ Legend: **[both]** = overview and sub-area pages · **[ov]** = `/shootings/sport
 [ov] 0  Breadcrumb (existing MinimalPage)                       → "Startseite" only today
 [ov] 1  Hero (4.1)                                            eyebrow SPORTFOTOGRAFIE
 [ov] 2  Sportarten — the 5 art hubs as photo tiles            ← 5 hub entries
-[ov] 3  Teams & Ligen — the 9 team pages, grouped by art      ← see open decision D1
+[ov] 3  Teams & Ligen — the 9 team pages, grouped by art      ← decided, see D1 in §8
 [ov] 4  Neu im Sport — 6 newest sport posts + dates           ← portfolio prefix "sport"
 [ov] 5  Press & Redaktionen — 3 factual lines + link          ← /portal/ + /eventfotografie/
 [ov] 6  Bildstrecke/Galerie — existing gallery                ← existing `images`
@@ -310,9 +311,12 @@ All of the following are checkable on the built output; none of them is a rankin
 
 ---
 
-## 8. Open decisions for the owner
+## 8. Owner decisions (recorded 2026-10-18)
 
-Each item lists options and a recommendation. **None of these is decided.**
+The owner answered every fork on 2026-10-18. Each item below keeps the question and the options that
+were on the table and adds the binding answer. The answers are transcribed, not reinterpreted: a
+recommendation that was not taken is marked as such, and none of these items is reopened by the
+implementer. Implementation itself is still gated on an explicit release per step (§9).
 
 **D1 — How are the 9 team/league pages grouped and reached from the overview?**
 - (a) A small, unit-tested `src/data/sport-areas.ts` map (art → child ids), reusing the existing
@@ -321,32 +325,46 @@ Each item lists options and a recommendation. **None of these is decided.**
 - (b) A new optional frontmatter field (e.g. `parent`) on the 14 sport entries — single source, but
   it edits 14 content files, which the commission says not to rewrite.
 - (c) Leave the overview as a 5-art router only; teams stay reachable through hub bodies.
-- **Recommendation:** (a) — it follows the existing `SPORT_TEAM_PORTFOLIO_PREFIX` pattern, needs no
-  content edit, and can be deleted again if it does not pay off.
+- **Decision (owner, 2026-10-18): (a).** A small, unit-tested `src/data/sport-areas.ts` map
+  (art → child ids) reuses the existing `priority` values for order. No content file is edited; the
+  9 team/league pages become reachable directly from the sport overview.
+- **Implementation fact (verified 2026-10-18, deliberately left as it is):** `acsl.md`,
+  `steelvolleys.md` and `swl.md` carry **no** `priority`. The map must therefore define a
+  deterministic order for those three entries. That order is the implementer's call and needs no
+  owner decision.
 
 **D2 — What should "newest posts" show for the 4 teams that map to the general `sport` prefix
 (Dragons, Vikings, ACSL, Steelvolleys)?**
-- (a) Accept the general sport mix.
+- (a) Accept the general sport mix. — superseded by (d).
 - (b) For those pages, drop the post block and lead with the gallery instead (the page's own
-  substance).
+  substance). — superseded by (d).
 - (c) Add explicit team prefixes — requires portfolio content under those prefixes, i.e. a content
-  decision, not a layout one.
-- **Recommendation:** (b) for the four teams, (a) for the other five; the gallery is stronger proof
-  than a generic sport feed.
+  decision, not a layout one. — **rejected.**
+- **(d) Explicit tags — the chosen variant, and not one of the three options printed above.** A
+  controlled `tags` frontmatter field plus a matching schema entry, a project rule and the
+  project-local `blog-beitrag` skill carry the assignment of a post to a team/league area. Only tags
+  that are evidenced in the content may be set; a post without evidence stays untagged.
+- **Decision (owner, 2026-10-18): (d).** The recorded recommendation ((b) for the four teams, (a)
+  for the other five) was not taken.
+- **Consequence, recorded honestly:** for Dragons, Vikings, ACSL and SteelVolleys the general `sport`
+  prefix no longer feeds the "newest posts" block, so a page whose posts stay untagged may show
+  fewer posts than today. That is accepted.
 
 **D3 — Is a "Presse & Redaktionen" block on the sport pages wanted?**
 - (a) Yes, as a two-or-three-line pointer to `/portal/` + `/eventfotografie/` (no new promises).
 - (b) No; keep sport purely as a portfolio and let `/eventfotografie/` own the press route.
 - (c) Only on the overview, not on the 14 sub-pages.
-- **Recommendation:** (a) on the overview and on the 5 art hubs; the editorial audience is one of
-  the four stated audiences and currently has no route at all. This is the item closest to a
-  business-positioning change, so it is worth an explicit yes.
+- **Decision (owner, 2026-10-18): (a).** A two-or-three-line "Presse & Redaktionen" pointer ships on
+  the overview **and** on the 5 art hubs — **not** on the 9 team pages — pointing at `/portal/` and
+  `/eventfotografie/`, with no new promises.
 
 **D4 — Gallery length on the overview.** The overview currently carries 15 hand-picked images on top
 of the post block and the art grid, which is a lot of scrolling before the contact step.
 - (a) Keep all 15. (b) Reduce to 6–8 and keep the full set on the art hubs. (c) Drop the gallery on
   the overview entirely (the art grid + posts already carry pictures).
-- **Recommendation:** (b) — the overview routes, the sub-pages prove.
+- **Decision (owner, 2026-10-18): (b).** The overview gallery shrinks to 6–8 hand-picked images; the
+  full sets stay on the art hubs. The concrete selection is an owner release that has not happened
+  yet — nothing may be trimmed before it does.
 
 **D5 — Does the CTA move out of the markdown bodies?** (the hub bodies end with a hand-written
 centred `ContactCTA`; the closing block would duplicate it.)
@@ -354,31 +372,38 @@ centred `ContactCTA`; the closing block would duplicate it.)
   otherwise; affects the 5 hub `.mdx` bodies + the overview).
 - (b) Leave the bodies exactly as they are and place no closing step.
 - (c) Leave them and add the closing block anyway (two CTAs per page).
-- **Recommendation:** (a). (c) is the one to avoid; it repeats the same button twice per page.
+- **Decision (owner, 2026-10-18): (a).** The hand-written in-body `ContactCTA`s leave the 5 hub
+  bodies and the overview; one closing block is rendered once in the layout. The remaining body
+  wording is unchanged.
 
 **D6 — Primary button label and the subject-prefix vocabulary.**
-- Labels: see §6 (A/B/C), recommendation B.
+- Labels: see §6 (A/B/C); the recorded recommendation was B.
 - Prefix: one value for the whole sport area. Options: keep `BUSINESS` (already in the typed union,
   but loses the sport context), use `SPORT` and add it to the `ContactFormPrefill` union, or keep
   per-sport values (`FUSSBALL`, `EISHOCKEY`, …) and widen the union accordingly.
-- **Recommendation:** one sport-wide prefix added to the shared union. None of the values currently
-  used on sport pages (`SPORT`, `FUSSBALL`, `BASKETBALL`, `VOLLEYBALL`, `FOOTBALL`) is a member of
-  that union today, so this needs a decision either way.
+- **Decision (owner, 2026-10-18) — label: variant A, "Fotoanfrage für Verein oder Redaktion".** The
+  owner deliberately did **not** take the recommended variant B.
+- **Decision (owner, 2026-10-18) — prefix: one sport-wide value `SPORT`,** newly added to the
+  `ContactFormPrefill` union. None of the values currently used on sport pages (`SPORT`, `FUSSBALL`,
+  `BASKETBALL`, `VOLLEYBALL`, `FOOTBALL`) is a member of that union today, so `SPORT` is a new
+  addition, not a rename.
 
 **D7 — Do the 15 sport pages get distinguishing `<title>`/meta?**
 - (a) Leave `<title>` exactly as recorded in `rules/09-shooting-areas.md` (name only) and only add
   the missing meta descriptions (measure 1).
 - (b) Add a consistent suffix (e.g. "… | Sportfotografie Linz") to all 15 titles.
 - (c) Hand-write all 15 descriptions.
-- **Recommendation:** (a) plus a hand-written description per page; the title change is the item with
-  the least clear benefit and the most history attached.
+- **Decision (owner, 2026-10-18): (a) plus one hand-written meta description per page.** For the 9
+  team pages the wording is released individually by the owner — no auto-generation.
+- **Verified 2026-10-18:** the 9 team pages have no `description` at all, while `index.mdx` and the
+  5 art hubs already carry one. Those existing descriptions stay untouched.
 
 **D8 — Does the overview keep "Sportfotografie" as its H1, or get a hub-style heading?**
 - (a) Keep the existing `name` "Sportfotografie" (zero content change).
 - (b) A new H1 such as "Sportfotografie in Linz & Österreich" (new copy, changes the frozen title).
 - (c) Two levels: keep "Sportfotografie" as H1 and add an H2 "Sportarten".
-- **Recommendation:** (c) today, with (b) only if the owner wants the location term in the H1; the
-  location already appears in the existing `description`.
+- **Decision (owner, 2026-10-18): (a).** The overview H1 stays "Sportfotografie": no new H1 and no
+  added heading copy. The recorded recommendation ((c)) was not taken.
 
 **D9 — Sponsors/references area?**
 - (a) No dedicated area; sponsors appear only through the existing photographs and the existing
@@ -386,14 +411,34 @@ centred `ContactCTA`; the closing block would duplicate it.)
 - (b) A text-only "Für Sponsoren" line in the closing block, no logos.
 - (c) A reference area with logos — **not proposed**: it requires assets and claims that do not
   exist in the repo today and would be an invented reference.
-- **Recommendation:** (a); (b) if the owner wants the audience named explicitly.
+- **Decision (owner, 2026-10-18): (a).** No sponsors area, no logo wall and no "Für Sponsoren" line
+  inside the closing block.
 
 **D10 — Duplicate hero on the 4 team pages that belong to a hub** (e.g. BWL hero vs Eishockey hero).
 No conflict today because the pages are only reachable via hub bodies.
 - (a) Accept overlap between hub and team galleries. (b) Trim the hub galleries to a
   cross-team selection once the team pages are directly reachable from the overview.
-- **Recommendation:** (a) for the first iteration; revisit only if a hub and its team pages look
-  interchangeable after the overview starts linking both.
+- **Decision (owner, 2026-10-18): (b).** The overlap between the hub galleries and their team pages
+  is reduced; the hub galleries become a cross-team selection once the team pages are directly
+  reachable from the overview.
+- **Consequence, recorded clearly:** this requires a concrete, owner-released image selection before
+  any gallery list changes. Nothing may be trimmed on a guess. The recorded recommendation ((a)) was
+  not taken.
+
+### Open content points (2026-10-18)
+
+These are content questions, not layout decisions, and they remain **open**. Nothing here is
+corrected or assumed, and no "correct" club or league name is named in this file.
+
+- **`swl.md` currently duplicates `bwl.md`'s name.** The observed frontmatter names are
+  `skv.md` → "FC Blau-Weiß Linz", `bwl.md` → "Steinbach Black Wings Linz",
+  `swl.md` → "Steinbach Black Wings Linz".
+- **`acsl.md`'s spelling was previously flagged as "Sport" vs "Sports".** The entry's own body writes
+  "Austrian College Sport League (ACSL)", while other pages spell it "Austrian College Sports
+  League" (e.g. the `basketball.mdx` child button). Both spellings exist in the repo; neither is
+  declared correct here.
+- The owner decides the correct names **before** the team pages get their meta descriptions (§9
+  step 11). Until then the team pages ship without a `description`, as today (D7).
 
 ---
 
@@ -403,8 +448,9 @@ Each step is small, individually checkable, and stops for review before the next
 started without a yes. Screenshot/contrast runs are dev-server based (`rules/08-local-ui-review.md`)
 and never touch the cache directories (`AGENTS.md` §5).
 
-1. **Owner decisions D1–D10 recorded** (in this file or a follow-up rule). Exit: every decision has
-   an answer or an explicit deferral; nothing else starts before that.
+1. **Owner decisions D1–D10 recorded** in §8 of this file, together with the open content points
+   dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. This step is
+   the present revision; the owner still releases every following step individually.
 2. **Extend the UI-review manifest** (`tests/screenshots/ui-review.config.ts`) with three routes:
    `/shootings/sport/`, one art hub (`/shootings/sport/eishockey/`) and one team page
    (`/shootings/sport/lask/`). Exit: `pnpm test:ui --grep 'sport'` captures all three in six
@@ -416,29 +462,50 @@ and never touch the cache directories (`AGENTS.md` §5).
    removed from the sport path, sections reordered. Exit: `pnpm test:ui --grep 'sport'` shows no
    band, no letterbox, exactly one H1, H1 attached to the photo; mobile 480 px first screen shows
    heading + photo.
-5. **Sections 2/3 (art grid, team grouping)** using the D1 data module, with label-on-photo tiles.
-   Exit: hub unit tests (`pnpm --filter reisinger.pictures test:unit`) cover the new map; all 14
-   children resolve; `pnpm test:ui` desktop grid shows no mixed label/photo rhythm.
-6. **Related-posts extension** (limit parameter, per-page heading, optional date on the card). Exit:
-   unit tests for `selectRelatedPosts` still pass; the card shows a locale-formatted date
-   (de-AT) in both themes; no other consumer of `ContentCard` regresses (portfolio overview pages in
-   the same `pnpm test:ui` run).
-7. **Gallery for sport** (layout decision; if a new `GalleryLayout` value is added, the matching
+5. **Sections 2/3 (art grid, team grouping)** using the D1 data module (`src/data/sport-areas.ts`),
+   with label-on-photo tiles. The map defines a deterministic order for `acsl`, `swl` and
+   `steelvolleys`, which carry no `priority` (§8 D1; implementer's call). Exit: hub unit tests
+   (`pnpm --filter reisinger.pictures test:unit`) cover the new map; all 14 children resolve;
+   `pnpm test:ui` desktop grid shows no mixed label/photo rhythm.
+6. **Tag work (D2)** — the controlled `tags` frontmatter field plus its schema entry, the project
+   rule for it, the update to the project-local `blog-beitrag` skill, and the evidenced per-post
+   assignments. Only tags that are evidenced in the content are set; a post without evidence stays
+   untagged. Exit: the schema accepts `tags`; the rule and the skill carry the assignment; every set
+   tag is traceable to the post's own content, none is guessed.
+7. **Related-posts extension** (limit parameter, per-page heading, optional date on the card), now
+   driven by the D2 tag mapping. Exit: unit tests for `selectRelatedPosts` still pass; the card shows
+   a locale-formatted date (de-AT) in both themes; no other consumer of `ContentCard` regresses
+   (portfolio overview pages in the same `pnpm test:ui` run); the four team pages without evidenced
+   tags show the accepted, possibly shorter post list (§8 D2).
+8. **Gallery for sport** (layout decision; if a new `GalleryLayout` value is added, the matching
    `data-gallery` rule in `global.css` ships in the same step). Exit: `pnpm test:ui` at 480 px shows
    the intended column count; the portrait-promotion guard from `rules/10-ui-review-findings.md` §2
    still holds.
-8. **Press/contact closing block** (D3/D5/D6) with the chosen label and prefix. Exit: modal opens
-   with the prefilled subject from every sport page; `/eventfotografie/` and `/portal/` reachable;
-   `check_links` clean.
-9. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). Exit:
-   all 15 built pages have a description; JSON-LD parses; `check_links` clean.
-10. **Verification pass.** `pnpm --filter reisinger.pictures test:unit`, `pnpm --filter
+9. **Overview-gallery reduction (D4)** — shrink the overview gallery to the 6–8 hand-picked images,
+   the full sets staying on the art hubs. This step depends on the owner-released image selection and
+   does not start before it exists; nothing is trimmed on a guess. Exit: the released selection is
+   in place on the overview, the full sets unchanged on the art hubs.
+10. **Press/contact closing block (D3/D5/D6)** with the chosen label and prefix: variant A
+    "Fotoanfrage für Verein oder Redaktion", the sport-wide prefix `SPORT` added to the
+    `ContactFormPrefill` union, and the hand-written in-body `ContactCTA`s removed from the overview
+    and the 5 hub bodies. Exit: modal opens with the prefilled subject from every sport page;
+    `/eventfotografie/` and `/portal/` reachable from the overview and the 5 art hubs (not from the 9
+    team pages); `check_links` clean.
+11. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). The
+    missing team-page descriptions are hand-written per page and wait on the owner-decided club and
+    league names (open content points, §8); nothing is auto-generated. Exit: a description on all 15
+    built pages once the owner releases the wording; JSON-LD parses; `check_links` clean.
+12. **Hub-gallery trim (D10)** — reduce the overlap between the hub galleries and their team pages,
+    the hub galleries becoming a cross-team selection. This step depends on the owner-released image
+    selection and does not start before it exists; nothing is trimmed on a guess. Exit: the released
+    selection is in place and no hub looks interchangeable with its team pages.
+13. **Verification pass.** `pnpm --filter reisinger.pictures test:unit`, `pnpm --filter
     reisinger.pictures lint`, `pnpm build` (runs `astro check`, `prebuild`, `postbuild`
     `check_links`), `pnpm test:contrast`, and a full `pnpm test:ui` pass over the three sport routes
     plus the private/business pages that share components. Exit: no `critical`/`high` finding open in
     `rules/10-ui-review-findings.md` for sport; the sport rows in that file are updated (old rows
     removed or downgraded, new captures appended), in both themes and at 480/1024/1920.
-11. **Owner review of real URLs** in dev before anything is committed or published. Publishing
+14. **Owner review of real URLs** in dev before anything is committed or published. Publishing
     (`pnpm publish` / `sync.sh`) remains a separate, explicitly requested step
     (`AGENTS.md` §6).
 
