@@ -10,7 +10,7 @@ export default defineConfig({
   image: {
     dangerouslyProcessSVG: true
   },
-  redirects: { "/live": "/portal", "/privat/preise": "/preise" },
+  redirects: { "/live": "/portal", "/privat/preise": "/preise", "/tfp/resident-model": "/tfp/" },
   site: "https://reisinger.pictures",
   cacheDir: "./.cache",
   devToolbar: {

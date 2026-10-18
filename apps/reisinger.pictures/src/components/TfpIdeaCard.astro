@@ -1,0 +1,27 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+export interface Props {
+  idea: CollectionEntry<"tfp">;
+}
+
+const { idea } = Astro.props;
+---
+
+<div class="card bg-base-100 shadow-xl border border-base-300 rounded-2xl hover:-translate-y-1 transition-transform flex flex-col h-full overflow-hidden">
+  <div class="card-body flex flex-col grow p-6 md:p-8">
+    <h3 class="card-title font-bold text-primary mb-4 leading-tight m-0 min-h-[4.5rem] lg:min-h-[5.5rem] items-start">
+      {idea.data.title}
+    </h3>
+
+    <div class="prose prose-sm opacity-70 line-clamp-6 mb-4 grow">
+      <p>{idea.data.description}</p>
+    </div>
+
+    <div class="card-actions mt-auto pt-4 border-t border-base-300/50">
+      <a href={`/tfp/${idea.id}`} class="btn btn-outline border-base-300 w-full hover:bg-primary hover:border-primary hover:text-primary-content">
+        Mehr erfahren
+      </a>
+    </div>
+  </div>
+</div>

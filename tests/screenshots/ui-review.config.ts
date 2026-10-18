@@ -74,6 +74,13 @@ export const uiReviewConfig: UiReviewConfig = {
       expectedTitle: "TFP Shootings in Linz: Ideen & Projekte",
     },
     {
+      name: "tfp-idea",
+      path: "/tfp/in-home-lifestyle",
+      states: ["filled"],
+      note: "Repräsentative TFP-Ideen-Detailseite (höchste Priorität der Collection) — steht für alle Ideen-Detailseiten: generische CTA- und Fallback-Texte, kein eigener Seiteninhalt.",
+      expectedTitle: "In-Home Lifestyle (Couples) | TFP Shooting Linz",
+    },
+    {
       name: "content-example",
       path: "/portfolio/sport/fussball/bundesliga/2026-27/grunddurchgang-02-fak-ask/",
       states: ["filled"],

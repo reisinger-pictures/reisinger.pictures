@@ -22,7 +22,7 @@ const { Content } = await render(entry);
 const {
   title,
   heroImage,
-  description: frontmatterDesc = `Kostenloses TFP Fotoshooting in Linz: Bewirb dich jetzt für das kreative Fotoprojekt "${title}" und erweitere dein Model-Portfolio.`,
+  description: frontmatterDesc = `TFP-Idee in Linz: "${title}" ist eines meiner kreativen Fotokonzepte. Schreib mir, wenn dich die Idee anspricht – wir besprechen in Ruhe, ob und wie wir sie gemeinsam umsetzen.`,
   keywords
 } = entry.data;
 
@@ -31,7 +31,7 @@ const description = frontmatterDesc;
 
 const contactUrl = generateContactLink({
   subject_prefix: "TFP",
-  message: `Hallo Florian,\n\nich möchte mich sehr gerne für dein TFP-Projekt "${title}" bewerben.\n\nLiebe Grüße,\n`
+  message: `Hallo Florian,\n\nich habe Interesse an deiner TFP-Idee "${title}". Lass uns gerne die Details besprechen.\n\nLiebe Grüße\n`
 });
 ---
 
@@ -58,7 +58,7 @@ const contactUrl = generateContactLink({
         <h2 class="card-title text-2xl mb-2">Interesse geweckt?</h2>
         <p class="opacity-80 mb-8 max-w-md">Schreib mir einfach eine kurze Nachricht und wir besprechen die Details für unsere gemeinsame kreative Arbeit in Linz und Umgebung.</p>
         <a href={contactUrl} data-contact-open="tfp" class="btn btn-primary btn-lg w-full sm:w-auto shadow-lg hover:-translate-y-0.5 transition-transform">
-          Jetzt als Model bewerben
+          Über diese Idee sprechen
         </a>
       </div>
     </div>

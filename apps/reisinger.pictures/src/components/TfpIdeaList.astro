@@ -1,0 +1,33 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+import { INITIAL_TFP_IDEA_COUNT, splitTfpIdeas } from "../data/tfp-ideas";
+import TfpIdeaCard from "./TfpIdeaCard.astro";
+
+export interface Props {
+  ideas: CollectionEntry<"tfp">[];
+  initialCount?: number;
+}
+
+const { ideas, initialCount = INITIAL_TFP_IDEA_COUNT } = Astro.props;
+const { initial, remaining } = splitTfpIdeas(ideas, initialCount);
+---
+
+<div class="not-prose">
+  <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {initial.map((idea) => <TfpIdeaCard {idea} />)}
+  </div>
+
+  {remaining.length > 0 && (
+    <details class="collapse collapse-arrow bg-base-200 border border-base-300 rounded-2xl mt-8">
+      <summary class="collapse-title text-lg font-bold">
+        Weitere Ideen anzeigen ({remaining.length})
+      </summary>
+      <div class="collapse-content">
+        <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pt-2">
+          {remaining.map((idea) => <TfpIdeaCard {idea} />)}
+        </div>
+      </div>
+    </details>
+  )}
+</div>
