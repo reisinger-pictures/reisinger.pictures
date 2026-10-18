@@ -117,36 +117,52 @@ Severity follows `ui-review/references/findings-report.md`:
 
 ---
 
-## Top-Verbesserungen (ranked by impact)
+## 10. Inhaltsverzeichnis (Portfolio-Beiträge und `simple`-Seiten)
+
+Not a component: `src/middleware/toc.ts` post-processes every page's HTML, finds `<div data-toc></div>` and injects `<h2 class="text-left">Inhaltsverzeichnis</h2><ul>…</ul>` built from all `h2`–`h6` elements that carry an `id` (headings inside `<footer>` are excluded). It appears in `BlogPost.astro:60` (every portfolio post) and in `[...simple].astro:55` (guarded by `showToc`, default true).
+
+Measured on 2026-10-18 against the running dev server, in a real browser, on `/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/`:
+
+| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+|---|---|---|---|---|
+| high | `src/middleware/toc.ts:42` (anchor href) + no `scroll-margin-top` anywhere (the only offset in the project is `scroll-mt-24` on `[...page].astro:74`) | `toc-desktop-jump.png`, `toc-mobile-jump.png` (temp evidence) | Clicking a table-of-contents entry scrolls the target heading to `top: 0`, i.e. **directly under the sticky header** (`sticky top-0 z-50`, 69 px at 1440, 73 px at 390). Measured result: `headingTop 0`, `headerBottom 69/73`, so the heading is fully covered — the reader arrives without seeing the heading they clicked. Applies to every ToC entry on all 65 posts and the `simple` pages that show a ToC. | Give the generated headings `scroll-margin-top` (e.g. `scroll-mt-24` matching the header, or `html { scroll-padding-top: 5rem }`). One CSS rule fixes all entries and also benefits any future anchor link. |
+| medium | `src/middleware/toc.ts:115-118` | — (65 of 136 posts carry a ToC; 7 have exactly one entry, 12 have two) | The ToC is rendered whenever at least one heading exists. A "Inhaltsverzeichnis" heading above a **single** entry is pure noise; 19 of 65 posts are in that range. | Suppress the ToC below a threshold (e.g. fewer than three entries) or require two levels of nesting. |
+| low | `src/middleware/toc.ts:118` | `toc-desktop.png`, `toc-mobile.png` (temp evidence) | The injected markup is a bare `<h2>` plus `<ul>`: no `<nav>`, no `aria-label`, so assistive technology does not announce it as a navigation region and the heading is not programmatically tied to the list. Visually it is fine (bullet list, `text-left` wins over the global centring rule — measured `text-align: left` on both viewports). | Wrap it in `<nav aria-labelledby="…">` with an id on the heading. |
+| low | `src/middleware/toc.ts:32,89` | — | Two robustness smells: the heading selector parses the **whole page** and excludes only `footer *`, so any later `h2[id]` outside the article body would silently join the ToC (harmless today, the related-posts heading has no id); and `node.children?.length ?? 0 > 0` relies on `??` binding looser than `>`, so the guard only works by accident. | Restrict the parse to the article container and write the guard explicitly. |
+| — | n/a | — | Anchor targets with umlauts work: the href is percent-encoded (`#…f%C3%BCr…`) while the `id` keeps the raw character, and the browser resolves it (measured: the click landed on the element). | none |
+| — | n/a | — | **Coverage gap, now closed for review only:** the manifest's `content-example` route renders a post **without** headings, so no capture has ever shown the ToC — which is why the earlier visual pass did not report it. A ToC-bearing post (e.g. `s1-bwl-pvb`) should be added to the manifest. | Add one ToC post to `tests/screenshots/ui-review.config.ts`. |
+
+
 
 **Status 2026-10-18:** points 1, 2, 4, 5 and 7 fixed, point 3 resolved by owner decision
 (signed PDF kept, presentation improved), point 6 deliberately out of this scope (homepage hero).
 
-1. **Preis-Konfigurator — H1/H2 hierarchy inversion.** The H2 "Faire Preise – für alle" is bigger than
-   the page's own H1 on the commercially most important page; a one-line type-scale fix.
-   (§4, `high`)
-2. **Simple pages — unbounded prose measure + mixed alignment.** ~1310 px lines (~100 chars) and
-   centred headings over left-aligned body text affect ueber-mich, impressum, eventfotografie,
-   personal-branding, share and portal, while TFP already shows the correct treatment.
-   (§5, `medium` ×2)
-3. **AGB/DSB legal text exists only as a PDF in an iframe.** Not reviewable from screenshots and
-   effectively unreadable on mobile / iOS; render the text as HTML and keep the PDF as a download.
-   (§5, `high`)
-4. **DSB page labels its version list "AGB gültig ab …".** Wrong document name in legal content,
-   one-string fix (`dsb.mdx:23`). (§5, `high`)
-5. **`/testimonials/` — image-less review cards are stretched to the row height** of a tall image
-   neighbour, leaving a ~1210 px empty card body with the footer detached from the text. See the
-   correction in §7: an earlier revision wrongly reported this card as completely empty.
-   (§7, `medium`)
-6. **Homepage hero primary action lacks weight.** The primary hero action is an underlined text link
-   next to a nearly identical secondary link, while the header owns the only button. (§1, `medium`)
-7. **`/shootings/couples/` ends with a single gallery image ~3 viewports tall** (full content width,
-   native portrait aspect), plus the duplicated "Eine Idee oder Lust auf ein Shooting?" line on the
-   portfolio overview — the two content/scale defects that are most obviously visible in a walk-through.
-   (§2, §6)
+## Top-Verbesserungen (ranked by impact)
 
-Immediately after those: the `ContentCard` 3:2 `contain` letterbox in "Aktuelle Einblicke" (§2), the
-two-layout review grid on `/testimonials/` (§7) and the `share` page's faint orientation text (§5).
+**Status 2026-10-18:** the earlier ranking (pricing H1/H2, simple-page measure, AGB/DSB PDF, DSB label,
+stretched review card, gallery image, portfolio duplicate) is **done** — see the per-row status in the
+sections above and the fix round commit. What remains, ranked:
+
+1. **Table of contents hides its own target.** Clicking a ToC entry scrolls the heading under the
+   sticky header on every post and on the `simple` pages that show a ToC (§10, `high`) — a one-rule
+   CSS fix with a large effect across 65 posts.
+2. **Homepage hero primary action lacks weight.** The primary hero action is an underlined text link
+   next to a nearly identical secondary link, while the header owns the only real button.
+   (§1, `medium`)
+3. **The review grid mixes two card layouts and very different row heights.** One layout centres the
+   avatar/logo in a third-width column, the other puts it on top; rows therefore look uneven.
+   (§7, `medium`)
+4. **`/testimonials/<name>/` wraps a small portrait in a wide band**, leaving ~400 px of empty panel
+   on each side (§7, `medium`).
+5. **`/impressum/` has an uneven vertical rhythm and interleaved contact lines on mobile**
+   (§5, `medium`).
+6. **Sport pages** — hero band wider than the photo, art grid mixing label bars and photos, CTA
+   wording. All three are handled by the separately commissioned sport redesign
+   (`rules/11-sport-area-redesign-proposal.md`), not here.
+
+Immediately after those: the paginated portfolio URLs sharing one title and H1 (§6), the TFP idea H1
+in brand green while every other H1 uses the base colour (§8), the EXIF badge detaching from
+`object-contain` images and the floating chat bubble overlapping the last card (§9).
 
 ## Bewusst nicht geändert / keine Beanstandung
 
