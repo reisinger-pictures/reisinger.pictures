@@ -5,12 +5,12 @@ import { loadImage } from "../../images/image-service";
 import BaseHead from "../BaseHead.astro";
 import FeaturedTestimonials from "../FeaturedTestimonials.astro";
 import Gallery from "../Gallery.astro";
-import HeroBanner from "../HeroBanner.astro";
 import MinimalPage from "../pages/MinimalPage.astro";
 import { type SchemaCreationFunction } from "../SchemaOrg";
 import SchemaOrg from "../SchemaOrg.astro";
 import { createWebPageSchema } from "../SchemaOrg.factory";
 import SocialImage from "../SocialImage.astro";
+import AreaHero from "./AreaHero.astro";
 import AreaRelatedPosts from "./AreaRelatedPosts.astro";
 
 interface Props {
@@ -20,9 +20,10 @@ interface Props {
   portfolioPrefix: string | null;
 }
 
-// Sport composition, kept as-is: the sport pages are redesigned in a later,
-// separately commissioned step (see rules/09-shooting-areas.md). Only the data
-// source moved from `areas` to `sportAreas`; the markup is unchanged.
+// Sport composition. The hero is the photo-dominant `AreaHero` variant
+// (rules/11-sport-area-redesign-proposal.md §4.1), which also owns the single
+// H1 of the page; the section order below is unchanged until the later,
+// separately commissioned steps.
 
 const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix } = Astro.props;
 const { id: slug, data: { name, description, testimonials, images, heroImage } } = entry;
@@ -45,9 +46,8 @@ const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchem
     <SocialImage name={heroImage} />
     <SchemaOrg createData={createData} />
   </BaseHead>
-  {heroImage && <HeroBanner slot="hero" name={heroImage} alt={name} />}
 
-  <h1>{name}</h1>
+  <AreaHero title={name} imageName={heroImage} description={description} variant="sport" />
 
   <Content />
 
