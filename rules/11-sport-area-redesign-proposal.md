@@ -1,10 +1,11 @@
 # Sport area pages redesign — proposal
 
-**Status: DECISIONS RECORDED, NOT IMPLEMENTED.** The owner answered every fork (D1–D10) on
-2026-10-18; §8 is the binding record of those answers. Nothing in this document is implemented: no
-code, component, style, content, commit, push or publication was produced for it, and no build,
-test, server or cache was touched. §9 lists the implementation steps, each of which still stops for
-an explicit owner release.
+**Status: STEPS 1, 3 AND 4 DONE, THE REST NOT IMPLEMENTED.** The owner answered every fork (D1–D10)
+on 2026-10-18; §8 is the binding record of those answers. §9 steps 1, 3 and 4 are implemented and
+committed (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was written (the three
+sport routes have been in the manifest since `f88e5d4`). No content file, no publication and no
+build, server or cache was touched, and everything from step 5 on is unimplemented. §9 lists the
+steps; each one still stops for an explicit owner release.
 
 - **Date:** 2026-10-18
 - **Author:** planning subagent (not the owner, not the implementer)
@@ -106,12 +107,25 @@ Legend: **[both]** = overview and sub-area pages · **[ov]** = `/shootings/sport
   `description` exists on the overview and on the 5 art hubs; the 9 team/league pages have **no**
   `description`, so their lead slot stays empty (correct: no invention) unless the owner supplies
   text.
+- **Eyebrow:** the wireframe above shows an eyebrow, but it is deliberately **not** rendered yet.
+  **Owner decision (2026-10-18): the eyebrow arrives with the parent-art map (D1).** The 14 sub-pages
+  then get their art as context (e.g. "Eishockey" on team pages) and the overview gets none, because
+  there it would only repeat its own H1.
 - **Photo size/orientation:** landscape preferred (the existing hero images are editorial sports
   frames). Full content width, `object-cover`, height capped so that heading + photo + lead + CTA
   fit roughly into the first screen on a phone and one to one-and-a-bit screens on desktop.
   No `object-contain` letterboxing (that is what produced the 390 px empty band per side).
+- **Known limitation — two portrait heroes (2026-10-18).** Two of the 15 sport heroes are portrait:
+  `fussball` (`…mannschaft-jubelt-buehne`, 4000×6000) and `dragons` (`…action-touchdown`,
+  3972×5958). In the `aspect-[3/2]` + `object-cover` box that discards about 62 % of the image height
+  at desktop width, and on `dragons` the players' heads are cut at the top edge (measured and
+  screenshotted by an independent verifier, both themes and all three viewports). **Owner decision
+  (2026-10-18): the owner supplies a landscape hero for those two entries.** Until then the crop
+  stands as this documented, known limitation — recorded as a sport row in
+  `rules/10-ui-review-findings.md` §3 and **not** fixed.
 - **Mobile behaviour:** order eyebrow → H1 → photograph → lead → CTA; the photo appears before the
-  lead text, as on the private pages (`AreaHero.astro:17-21` documents this as deliberate).
+  lead text, as on the private pages (`AreaHero.astro:70-74` in the default branch and `:30-34` in
+  the sport branch document this as deliberate).
 - **Both page types.**
 
 ### 4.2 `/shootings/sport/` (overview) — full section order
@@ -449,19 +463,40 @@ started without a yes. Screenshot/contrast runs are dev-server based (`rules/08-
 and never touch the cache directories (`AGENTS.md` §5).
 
 1. **Owner decisions D1–D10 recorded** in §8 of this file, together with the open content points
-   dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. This step is
-   the present revision; the owner still releases every following step individually.
+   dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. **Done
+   2026-10-18 — commit `a0f04ea` (`docs(sport): record the owner's decisions for the sport-area
+   redesign`).** The owner still releases every following step individually.
 2. **Extend the UI-review manifest** (`tests/screenshots/ui-review.config.ts`) with three routes:
    `/shootings/sport/`, one art hub (`/shootings/sport/eishockey/`) and one team page
    (`/shootings/sport/lask/`). Exit: `pnpm test:ui --grep 'sport'` captures all three in six
-   projects; baseline captures exist for comparison.
+   projects; baseline captures exist for comparison. **Already satisfied before step 1 was written:
+   the three routes are in the manifest since `f88e5d4`** — `shootings-sport`, `shootings-sport-hub`
+   and `shootings-sport-team` (`tests/screenshots/ui-review.config.ts:142-161`), so no manifest change
+   was needed. The before-captures for the redesign exist: an `18`-test run passed (3 routes × 6
+   projects, 110 PNGs plus the 18 per-route JSONs). A safety copy lives outside the repo under
+   `/private/var/folders/vq/db6hdqsx32b1xg4z2mnzt8nm0000gn/T/opencode/ui-review-baseline-sport-2026-10-18/`,
+   because the harness clears its own `test-results/` output on every run — that is why the copy
+   exists.
 3. **`AreaHero` sport variant** (photo-dominant hero) — component only, no route change. Exit:
    `pnpm --filter reisinger.pictures lint` clean, private pages visually unchanged in a
-   `pnpm test:ui --grep 'shootings-akt|shootings-beauty|shootings-couples'` re-run.
+   `pnpm test:ui --grep 'screenshot shootings(-beauty|-couples)? \(filled\)'` re-run. **Done together
+   with step 4 on 2026-10-18 — commit `1129a37` (`feat(sport): give the sport pages a photo-led
+   hero`).** **Command corrected 2026-10-18:** the literal
+   `'shootings-akt|shootings-beauty|shootings-couples'` cannot match `/shootings/akt/`, because that
+   route's manifest name is `shootings` (`tests/screenshots/ui-review.config.ts:93`) — `shootings-akt`
+   exists only inside `shootings-akt-testimonials`. The working regex is
+   `'screenshot shootings(-beauty|-couples)? \(filled\)'`. The manifest route name is therefore always
+   named next to the path (route name `shootings` = `/shootings/akt/`), so this cannot recur.
 4. **Sport hero + sub-area composition** in `SportAreaPage.astro`: hero variant, `HeroBanner`
    removed from the sport path, sections reordered. Exit: `pnpm test:ui --grep 'sport'` shows no
    band, no letterbox, exactly one H1, H1 attached to the photo; mobile 480 px first screen shows
-   heading + photo.
+   heading + photo. **Done 2026-10-18 in the same round as step 3 — commit `1129a37`.** Steps 3 and 4
+   were merged into one round deliberately: a variant that is not wired in cannot be visually checked,
+   and the step-2 baselines exist for exactly that comparison. Outcomes: the `bg-base-200` band and
+   the letterbox bars are gone, the photograph sits at content-grid width with `object-cover`, exactly
+   one H1 is attached to the photo, and the mobile order is eyebrow → H1 → photograph → lead. The
+   private pages render byte-identically (108 PNG hashes, verified twice), and the default branch of
+   `AreaHero` is the previous markup verbatim.
 5. **Sections 2/3 (art grid, team grouping)** using the D1 data module (`src/data/sport-areas.ts`),
    with label-on-photo tiles. The map defines a deterministic order for `acsl`, `swl` and
    `steelvolleys`, which carry no `priority` (§8 D1; implementer's call). Exit: hub unit tests
@@ -508,6 +543,19 @@ and never touch the cache directories (`AGENTS.md` §5).
 14. **Owner review of real URLs** in dev before anything is committed or published. Publishing
     (`pnpm publish` / `sync.sh`) remains a separate, explicitly requested step
     (`AGENTS.md` §6).
+
+### Carried into the next component step (recorded 2026-10-18, deliberately not fixed here)
+
+Both items live in `AreaHero.astro` and do not block steps 1–4; they move with the next component step.
+
+- **`sportHeroSizes` duplicates the `.container` caps as a CSS string.** `AreaHero.astro:24-25`
+  hard-codes `1320/1140/960/720/540 px` in the eager hero's `sizes`, mirroring the `.container` caps
+  in `global.css:130-132`. Correct today, but it silently drifts if those caps change; a shared
+  constant would remove the duplication.
+- **One redundant nested `<div>` in the sport hero markup.** The sport branch opens a classless outer
+  `<div>` wrapping a single inner `<div>` (`AreaHero.astro:35-36`), left over from a replaced flex
+  container. "No dead code" (`AGENTS.md` §2) would collapse it into one element; the rendering is
+  unchanged.
 
 ---
 
@@ -573,8 +621,10 @@ and all 15 entries under `src/content/sportAreas/sport/`.
 8. **SEO.** `BaseHead` sets `<title>` to the raw `name`; `buildSeoMetaTags` omits
    `meta description`/`og:description` when `description` is undefined → missing on all 9 team pages.
    Every sport page emits `WebPage` + `BreadcrumbList`; no `CollectionPage`/`ItemList`.
-9. **Hero alt text** is `alt={name}` (`SportAreaPage.astro:48`), i.e. "LASK" / "Eishockey", while
-   sidebar descriptions exist for the underlying portfolio images.
+9. **Hero alt text** is `alt={name}` (`SportAreaPage.astro:50` passes `title={name}` to
+   `<AreaHero … variant="sport" />`; the alt itself is set inside `AreaHero.astro:56`, sport branch,
+   and `:89`, default branch), i.e. "LASK" / "Eishockey", while sidebar descriptions exist for the
+   underlying portfolio images.
 10. **CTA prefixes on sport pages** (`SPORT`, `BUSINESS`, `FUSSBALL`, `BASKETBALL`, `VOLLEYBALL`,
     `FOOTBALL`) include values outside the `ContactFormPrefill["subject_prefix"]` union; the form
     field is a hidden free-text input, so they pass through unvalidated.
@@ -589,6 +639,10 @@ and all 15 entries under `src/content/sportAreas/sport/`.
   sport findings above are quoted from `rules/10-ui-review-findings.md`, not re-observed. The
   current captures cover `/shootings/sport/` only — no art hub and no team page is in the manifest,
   and `shootings-sport` `sec3–sec10` were never looked at.
+  **Correction 2026-10-18:** the limit described the state when this proposal was written
+  (2026-10-18 14:44); `f88e5d4` (2026-10-18 17:34) then added the hub and team routes
+  (`shootings-sport-hub`, `shootings-sport-team`, `tests/screenshots/ui-review.config.ts:142-161`)
+  **afterwards**, which is why the limit no longer holds.
 - **No assessment of search performance.** No ranking, impression, click or traffic data is
   available here, and no external SEO tool was consulted.
 - **No new imagery.** Whether enough *landscape, action-dense* hero-candidate images exist per
