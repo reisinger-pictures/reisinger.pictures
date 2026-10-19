@@ -113,14 +113,16 @@ a later legal alignment is pending.
 - **The struck-through base price stays** as the price affordance above the final
   price; only the *rate as text* is removed. If the base price should disappear
   as well, that is a separate owner decision.
-- **Deep link `/preise/friends`:** the route did not exist (404). It now
-  redirects to `/preise/?tarif=flex&code=friend&friend=true` — the Flex tab
-  opens, the friend code is unlocked and the friend discount is pre-armed in the
-  Standard tab. The friend option itself lives **only in the Standard tariff**
-  (the Flex configuration has no discount); the redirect therefore does not add
-  a friend discount to Flex. Implemented via the `redirects` map in
-  `apps/reisinger.pictures/astro.config.mjs` (pattern of `/live`,
-  `/privat/preise`, `/tfp/resident-model`).
+- **Deep link `/preise/friends`:** the route did not exist (404). It now redirects to
+  `/preise/?tarif=flex&code=friend&friend=true` — the Flex tab opens, the friend code is
+  unlocked and the friend discount is pre-armed in the Standard tab. The friend option itself
+  lives **only in the Standard tariff** (the Flex configuration has no discount); the redirect
+  therefore does not add a friend discount to Flex. **The redirect is a server-side rule in
+  Caddy** (`Caddyfile`, repo `caddyfile`, block `reisinger.pictures`: 302 on `/preise/friends`
+  and `/preise/friends/`), *not* an Astro redirect. Reason: the Astro variant is a generated
+  meta-refresh page — a white interstitial ("flicker") plus a second page load. The Astro entry
+  was removed on 2026-10-19; the site has **no page** for `/preise/friends`, so it is not in the
+  sitemap and the app route does not exist (the E2E suite asserts both).
 
 ## Where the rule is visible
 - `src/content/simple/preise.mdx` (local, git-ignored): page-level summary of the

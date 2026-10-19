@@ -283,18 +283,28 @@ test("student and friend conditions still prefill the request without any POST",
   expect(posts).toBe(0);
 });
 
-test("the friend deep link redirects to the Flex tariff with the friend discount pre-armed", async ({ page }) => {
-  await page.goto("/preise/friends");
-
-  await expect(page.locator('[data-pricing-ready="true"]')).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe("/preise/");
-  expect(new URL(page.url()).search).toBe("?tarif=flex&code=friend&friend=true");
+test("the friend deep link target opens the Flex tariff with the friend discount pre-armed", async ({ page }) => {
+  // `/preise/friends` is a server-side redirect (Caddyfile, caddyfile repo) and
+  // therefore not part of the app: the Astro preview has no such route. What
+  // the app owns is the target of that redirect.
+  await openPricing(page, "?tarif=flex&code=friend&friend=true");
   await assertConfiguration(page, "Flex", 149);
 
-  // The friend option lives in the Standard tariff only — the redirect pre-arms it there.
+  // The friend option lives in the Standard tariff only — the deep link pre-arms it there.
   await page.getByRole("tab", { name: "Standard", exact: true }).click();
   await expect(page.getByRole("checkbox", { name: /Freunde-Rabatt/ })).toBeChecked();
   await expect(page.getByTestId("pricing-total")).toHaveText("125 €");
+});
+
+test("the friend deep link is not a page of the site and not in the sitemap", async ({ page }) => {
+  // The deep link is a redirect at the server, so the site has no page for it:
+  // it must not appear in the sitemap, and no route may answer it.
+  const sitemap = await page.request.get("/sitemap-0.xml");
+  expect(sitemap.ok()).toBe(true);
+  expect(await sitemap.text()).not.toContain("/preise/friends");
+
+  const response = await page.request.get("/preise/friends");
+  expect(response.status()).toBe(404);
 });
 
 test("Standard example inquiry preserves its 249 € configuration on close/reload", async ({ page }) => {

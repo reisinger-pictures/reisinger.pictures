@@ -10,16 +10,15 @@ export default defineConfig({
   image: {
     dangerouslyProcessSVG: true
   },
-  // `/preise/friends` is the friend deep link: it opens the Flex tab and
-  // pre-arms the friend discount in the Standard tab (`code=friend` unlocks the
-  // option, `friend=true` selects it). The friend option exists only in the
-  // Standard tariff — the redirect does not add a discount to Flex.
-  // Owner decision 2026-10-19, rules/06-pricing-publication.md.
+  // The friend deep link `/preise/friends` is NOT handled here: it is a
+  // server-side redirect in the Caddyfile (caddyfile repo, `reisinger.pictures`
+  // block) that answers with 302 directly — the Astro meta-refresh created a
+  // white interstitial ("flicker") and loaded two pages.
+  // Owner decision 2026-10-19, rules/06-pricing-publication.md, rules/07-pricing-url-state.md.
   redirects: {
     "/live": "/portal",
     "/privat/preise": "/preise",
-    "/tfp/resident-model": "/tfp/",
-    "/preise/friends": "/preise/?tarif=flex&code=friend&friend=true"
+    "/tfp/resident-model": "/tfp/"
   },
   site: "https://reisinger.pictures",
   cacheDir: "./.cache",

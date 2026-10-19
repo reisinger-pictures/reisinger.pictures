@@ -47,15 +47,24 @@ Pure parsing/serialization lives in `src/solid/pricing-url-state.ts`.
   `/preise/?tarif=flex&code=friend&friend=true`: the Flex tab opens, the friend
   code is unlocked (`code=friend` reveals the option) and the friend discount is
   pre-armed in the Standard tab (`friend=true`). The friend option exists **only
-  in the Standard tariff** — the redirect adds no discount to Flex. It is
-  declared in the `redirects` map of `apps/reisinger.pictures/astro.config.mjs`,
-  like `/live`, `/privat/preise` and `/tfp/resident-model`.
+  in the Standard tariff** — the redirect adds no discount to Flex. It is a
+  **server-side rule in Caddy** (`Caddyfile`, repo `caddyfile`, block
+  `reisinger.pictures`, 302 on `/preise/friends` and `/preise/friends/`), not an
+  Astro redirect: the Astro variant is a generated meta-refresh page and
+  therefore a white interstitial plus a second page load. The site has **no page**
+  for that URL — it is not in the sitemap and no app route answers it.
+- `/live`, `/privat/preise` and `/tfp/resident-model` remain **Astro** redirects
+  in the `redirects` map of `apps/reisinger.pictures/astro.config.mjs`: they are
+  legacy aliases without a query target, their meta-refresh has no visible
+  content, and the E2E suite covers them in the production preview (a Caddy rule
+  would not exist in the preview, so that coverage would be lost).
 - A redirect target may carry calculator parameters; the query string of the
   target must survive the redirect unchanged.
-- A **static** redirect cannot merge an inbound query: `/preise/friends?utm_source=x`
-  keeps the fixed target query (`?tarif=flex&code=friend&friend=true`) and drops
-  `utm_source`. The redirect is a generated meta-refresh page, not a server-side
-  rewrite — the same limitation applies to `/live` and `/tfp/resident-model`.
+- A **static** redirect cannot merge an inbound query: `/privat/preise?utm_source=x`
+  keeps the fixed target query and drops `utm_source`. The redirect is a
+  generated meta-refresh page, not a server-side rewrite — the same limitation
+  applies to `/live` and `/tfp/resident-model`. The Caddy rule for
+  `/preise/friends` has the same property: its target query is fixed.
 
 ## Price examples and inquiry boundary
 - `/preise/?tarif=standard&h=1&img=15&location=outdoor`: **249 €**.
