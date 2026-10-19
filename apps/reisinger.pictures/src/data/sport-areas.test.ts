@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { groupSportAreas, orderSportAreas, SPORT_ART_HUBS, SPORT_CHILDREN, sportChildIds, UNSET_PRIORITY } from "./sport-areas";
+import { groupSportAreas, orderSportAreas, SPORT_ART_HUBS, SPORT_CHILDREN, sportChildIds, sportCollectionIds, UNSET_PRIORITY } from "./sport-areas";
 
 const entry = (id: string, priority: number) => ({ id, data: { name: id, priority } });
 
@@ -112,5 +112,23 @@ describe("groupSportAreas", () => {
     const before = [...input];
     groupSportAreas(input);
     expect(input).toEqual(before);
+  });
+});
+
+describe("sportCollectionIds", () => {
+  it("matches the overview's grouped priority order and each hub's mapped children", () => {
+    expect(sportCollectionIds(SPORT_SUB_AREAS, "sport")).toEqual([
+      "sport/american-football", "sport/dragons", "sport/vikings",
+      "sport/fussball", "sport/lask", "sport/skv", "sport/oefb",
+      "sport/eishockey", "sport/bwl", "sport/swl",
+      "sport/basketball", "sport/acsl",
+      "sport/volleyball", "sport/steelvolleys"
+    ]);
+    for (const hub of SPORT_ART_HUBS) {
+      const mappedChildren = orderSportAreas(
+        SPORT_CHILDREN[hub].flatMap((id) => SPORT_SUB_AREAS.filter((area) => area.id === id))
+      ).map(({ id }) => id);
+      expect(sportCollectionIds(SPORT_SUB_AREAS, hub)).toEqual(mappedChildren);
+    }
   });
 });

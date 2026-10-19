@@ -1,7 +1,8 @@
 ---
 import ContactCTA from "@reisinger/shared/components/ContactCTA.astro";
-import { type CollectionEntry, render } from "astro:content";
+import { type CollectionEntry, getCollection, render } from "astro:content";
 
+import { SPORT_ART_HUBS, sportCollectionIds } from "../../data/sport-areas";
 import { loadImage } from "../../images/image-service";
 import BaseHead from "../BaseHead.astro";
 import FeaturedTestimonials from "../FeaturedTestimonials.astro";
@@ -10,7 +11,7 @@ import { GalleryLayout } from "../GalleryLayout";
 import MinimalPage from "../pages/MinimalPage.astro";
 import { type SchemaCreationFunction } from "../SchemaOrg";
 import SchemaOrg from "../SchemaOrg.astro";
-import { createWebPageSchema } from "../SchemaOrg.factory";
+import { createCollectionPageSchema, createWebPageSchema } from "../SchemaOrg.factory";
 import SocialImage from "../SocialImage.astro";
 import AreaHero from "./AreaHero.astro";
 import AreaRelatedPosts from "./AreaRelatedPosts.astro";
@@ -43,19 +44,38 @@ const showPressLinks = slug === "sport" || [
 
 const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
 
-const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchema({
-  url,
-  name,
-  description,
-  image: imageInfo?.src,
-  author: me,
-  publisher: o
-});
+const sportEntries = slug === "sport" || SPORT_ART_HUBS.includes(slug as (typeof SPORT_ART_HUBS)[number])
+  ? await getCollection("sportAreas")
+  : [];
+const entriesById = new Map(sportEntries.map((area) => [area.id, area]));
+const collectionIds = sportCollectionIds(sportEntries, slug);
+
+const collectionPageSchema = collectionIds.length > 0
+  ? createCollectionPageSchema({
+    name,
+    description,
+    items: collectionIds.flatMap((id) => {
+      const area = entriesById.get(id);
+      if (!area) return [];
+      return [{
+        url: new URL(`/shootings/${id}/`, Astro.url).toString(),
+        name: area.data.name,
+        type: SPORT_ART_HUBS.includes(id as (typeof SPORT_ART_HUBS)[number]) ? "CollectionPage" as const : "WebPage" as const
+      }];
+    })
+  })
+  : undefined;
+
+const collectionPageJson = collectionPageSchema ? JSON.stringify(collectionPageSchema) : undefined;
+const createData: SchemaCreationFunction = (o, me, _, url) => {
+  return createWebPageSchema({ url, name, description, image: imageInfo?.src, author: me, publisher: o });
+};
 ---
 <MinimalPage>
   <BaseHead title={name} description={description} slot="head">
     <SocialImage name={heroImage} />
     <SchemaOrg createData={createData} />
+    {collectionPageJson && <script type="application/ld+json" is:inline set:html={collectionPageJson} />}
   </BaseHead>
 
   <AreaHero title={name} imageName={heroImage} description={description} variant="sport" />

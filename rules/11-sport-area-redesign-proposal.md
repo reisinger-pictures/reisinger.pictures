@@ -1,13 +1,15 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–8 and 10 DONE; STEP 11 PARTIALLY IMPLEMENTED; STEPS 9, 12–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
-clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
+**Status: STEPS 1–13 IMPLEMENTED/VERIFIED; STEP 14 OWNER REVIEW OPEN.** The owner answered D1–D10 on 2026-10-18 and
+clarified steps 5, 9, 11 and 12 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
 (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
 tree and is backed up. Step 6's D2 schema, rule, skill and evidence-backed assignments were
 independently approved on 2026-10-19. No publication or deployment has occurred. The content backup
 remains until publication and final owner approval. The owner authorized continuing the released
-implementation steps through a local preview, except for the explicit image and text/name gates below.
+implementation steps through a local test preview, including provisional current gallery selections and
+officially evidenced team names/descriptions. Manual review/correction of selections and text remains a
+release TODO; the preview is not acceptance or publication.
 
 - **Date:** 2026-10-18
 - **Author:** planning subagent (not the owner, not the implementer)
@@ -389,9 +391,11 @@ gates and the final real-URL review.
 of the post block and the art grid, which is a lot of scrolling before the contact step.
 - (a) Keep all 15. (b) Reduce to 6–8 and keep the full set on the art hubs. (c) Drop the gallery on
   the overview entirely (the art grid + posts already carry pictures).
-- **Decision (owner, 2026-10-18): (b).** The overview gallery shrinks to 6–8 hand-picked images; the
-  full sets stay on the art hubs. The concrete selection is an owner release that has not happened
-  yet — nothing may be trimmed before it does.
+- **Decision (owner, 2026-10-18): (b).** The overview gallery is intended to shrink to 6–8 hand-picked
+  images; full sets stay on the art hubs.
+- **Clarification (owner, 2026-10-19):** use the current overview selection unchanged for the local test
+  preview (currently 15 images). No trimming or filename/list changes are authorized as part of this
+  preview. Owner manual review/correction of that selection is an open release TODO.
 
 **D5 — Does the CTA move out of the markdown bodies?** (the hub bodies end with a hand-written
 centred `ContactCTA`; the closing block would duplicate it.)
@@ -445,41 +449,46 @@ centred `ContactCTA`; the closing block would duplicate it.)
 No conflict today because the pages are only reachable via hub bodies.
 - (a) Accept overlap between hub and team galleries. (b) Trim the hub galleries to a
   cross-team selection once the team pages are directly reachable from the overview.
-- **Decision (owner, 2026-10-18): (b).** The overlap between the hub galleries and their team pages
-  is reduced; the hub galleries become a cross-team selection once the team pages are directly
-  reachable from the overview.
-- **Consequence, recorded clearly:** this requires a concrete, owner-released image selection before
-  any gallery list changes. Nothing may be trimmed on a guess. The recorded recommendation ((a)) was
-  not taken.
+- **Decision (owner, 2026-10-18): (b).** The overlap between hub and team galleries is intended to be
+  reduced once team pages are directly reachable from the overview.
+- **Clarification (owner, 2026-10-19):** keep current art-hub gallery selections unchanged for the
+  local test preview. Do not trim or change image lists/filenames. Owner manual review/correction of
+  the selections remains an open release TODO. The recorded recommendation ((a)) was not taken.
 
-### Open content points (2026-10-18)
+### Official name evidence and draft descriptions (2026-10-19)
 
-These are content questions, not layout decisions, and they remain **open**. Nothing here is
-corrected or assumed, and no "correct" club or league name is named in this file.
+The owner authorized proactive resolution from official evidence, with manual review/correction at
+release. The nine draft descriptions are individual and based on each page's existing body and these
+verified names; they are not final owner acceptance.
 
-- **`swl.md` currently duplicates `bwl.md`'s name.** The observed frontmatter names are
-  `skv.md` → "FC Blau-Weiß Linz", `bwl.md` → "Steinbach Black Wings Linz",
-  `swl.md` → "Steinbach Black Wings Linz".
-- **`acsl.md`'s spelling was previously flagged as "Sport" vs "Sports".** The entry's own body writes
-  "Austrian College Sport League (ACSL)", while other pages spell it "Austrian College Sports
-  League" (e.g. the `basketball.mdx` child button). Both spellings exist in the repo; neither is
-  declared correct here.
-- The owner decides the correct names **before** the team pages get their meta descriptions (§9
-  step 11). Until then the team pages ship without a `description`, as today (D7).
+- `acsl.md`: `https://acsl.at/` names the organization “Austrian College Sports League”; retain short
+  page name `ACSL` and use the official plural in prose.
+- `swl.md`: the official Black Wings notice
+  `https://www.blackwings.at/news/steel-wings-ziehen-sich-zurueck` calls the former second team “Steel
+  Wings Linz” and says it withdrew before 2024/25. Describe its AHL period historically, not as current
+  participation.
+- `steelvolleys.md`: current official `https://steelvolleys.at/news` uses “LINZ AG Steelvolleys”.
+- Confirmed and retained: “Steinbach Black Wings Linz” (`https://www.blackwings.at/`), “FC Blau-Weiß
+  Linz” (`https://blauweiss-linz.at/`), “LASK” (`https://www.lask.at/`), “ÖFB” (`https://www.oefb.at/`),
+  “Danube Dragons” (`https://www.danube-dragons.com/`) and “Vienna Vikings”
+  (`https://viennavikings.football/`).
+- The names and nine individual descriptions are drafts for preview; owner manual review/correction is
+  required before release.
 
 ---
 
 ## 9. Implementation steps (only after explicit owner release)
 
 Each step is small and individually checkable. The owner continuation authorization below releases
-implementation through the final local preview; steps requiring owner-selected images or
-text/name inputs remain gated. Screenshot/contrast runs are dev-server based
+implementation through a local test preview; manual image/text/name review for release remains open.
+Screenshot/contrast runs are dev-server based
 (`rules/08-local-ui-review.md`) and never touch the cache directories (`AGENTS.md` §5).
 
-**Owner continuation authorization (2026-10-19):** proceed autonomously through the released
-implementation steps until a final local preview of the redesign is ready. This does not authorize
-publication/deployment and does not waive the explicit owner-released image selections or text/name
-inputs below. Do not invent those inputs; surface the remaining gates with the local preview.
+**Owner continuation authorization and clarification (2026-10-19):** proceed through implementation
+and prepare a local test preview using current gallery selections unchanged. The owner also authorized
+resolving names from official evidence and drafting individual descriptions from existing page content.
+This does not authorize publication/deployment or final acceptance; manual review and correction of
+selections, names and descriptions, plus the real-URL review in step 14, remain open.
 
 1. **Owner decisions D1–D10 recorded** in §8 of this file, together with the open content points
     dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. **Done
@@ -578,10 +587,9 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
       package lint and `astro check` passed, and all 18 `shootings-sport` screenshots passed across
       six projects. Reviewed the 480px light/dark gallery captures and desktop light/dark captures;
       the gallery shows two columns without horizontal overflow. No content or image inputs changed.
- 9. **Overview-gallery reduction (D4)** — shrink the overview gallery to the 6–8 hand-picked images,
-   the full sets staying on the art hubs. This step depends on the owner-released image selection and
-   does not start before it exists; nothing is trimmed on a guess. Exit: the released selection is
-   in place on the overview, the full sets unchanged on the art hubs.
+ 9. **Overview-gallery selection (D4)** — the overview retains its current 15-image list for the local
+    test preview; no image list or filename was changed. **Implemented for preview, not release-complete.**
+    Owner manual review/correction of the selection remains an open release TODO.
 10. **Press/contact closing block (D3/D5/D6)** with the chosen label and prefix: variant A
     "Fotoanfrage für Verein oder Redaktion", the sport-wide prefix `SPORT` added to the
     `ContactFormPrefill` union, and the hand-written in-body `ContactCTA`s removed from the overview
@@ -600,31 +608,60 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
       modal with `SPORT` on all 15 routes and press links occur only on the overview and five hubs.
       `check_links` has no safe pre-build mode; the hrefs were checked against the existing
       `/portal/` and `/eventfotografie/` routes instead. No build, commit, push, publication or
-      deployment was run. Steps 9/D4 and 12/D10 remain gated on owner image selections.
-11. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). The
-     missing team-page descriptions are hand-written per page and wait on the owner-decided club and
-     league names (open content points, §8); nothing is auto-generated. Exit: a description on all 15
-     built pages once the owner releases the wording; JSON-LD parses; `check_links` clean.
-      **Partial implementation (2026-10-19; owner-gated work remains).** The sport hero `sizes` now
+       deployment was run. The owner clarified on 2026-10-19 that the existing selections are used
+       unchanged for the local test preview; manual owner review/correction remains a release TODO.
+ 11. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). Team
+      descriptions are individual German drafts grounded in page bodies and verified names; no template
+      is used. **Implemented for preview; owner manual review/correction remains a release TODO.**
+      Exit: descriptions on all 15 built pages, CollectionPage/ItemList JSON-LD parses, and `check_links` clean.
+       **Implementation note (2026-10-19; preview-ready).** The sport hero `sizes` now
       derives its desktop container widths from shared `computeSizes`/`CONTAINER_SIZES`, retaining the
       existing 2rem mobile gutter. Sport hero images and sport hub directory cards now omit title-as-alt
        and use `ResponsiveImage`'s sidecar-description fallback. A repeat audit of all 15 hero entries
        found a nonempty description in every matching sidecar, including ACSL, Basketball, LASK, ÖFB,
        and SWL; the earlier list of missing descriptions was incorrect. No sidecars were edited.
-       Team-page meta descriptions remain
-      blocked on owner-approved names and individual wording. Do not add `CollectionPage`/`ItemList`
-      until the duplicate `swl`/`bwl`, `skv`, and ACSL spelling decisions are resolved. Step 11 is not
-      complete; these remaining owner gates and the step-11 exit checks still apply.
-12. **Hub-gallery trim (D10)** — reduce the overlap between the hub galleries and their team pages,
-    the hub galleries becoming a cross-team selection. This step depends on the owner-released image
-    selection and does not start before it exists; nothing is trimmed on a guess. Exit: the released
-    selection is in place and no hub looks interchangeable with its team pages.
+        The nine team descriptions and corrected names are now present in the local ignored content
+        tree; official evidence mappings are in §8. The overview and five hubs emit `CollectionPage` /
+        `ItemList`: the overview lists five hubs and nine team pages; each hub lists only its mapped
+        children. Team pages remain `WebPage`. The existing `SPORT_ART_HUBS` / `SPORT_CHILDREN` map
+        supplies membership; `acsl` is listed only under Basketball. No invented review/rating data is
+        added. Owner manual review/correction of all names and descriptions remains open at release.
+ 12. **Hub-gallery selection (D10)** — current art-hub galleries remain unchanged for the local test
+     preview; no image list or filename was changed. **Implemented for preview, not release-complete.**
+     Owner manual review/correction of the selections remains an open release TODO.
 13. **Verification pass.** `pnpm --filter reisinger.pictures test:unit`, `pnpm --filter
     reisinger.pictures lint`, `pnpm build` (runs `astro check`, `prebuild`, `postbuild`
     `check_links`), `pnpm test:contrast`, and a full `pnpm test:ui` pass over the three sport routes
     plus the private/business pages that share components. Exit: no `critical`/`high` finding open in
-    `rules/10-ui-review-findings.md` for sport; the sport rows in that file are updated (old rows
-    removed or downgraded, new captures appended), in both themes and at 480/1024/1920.
+     `rules/10-ui-review-findings.md` for sport; the sport rows in that file are updated (old rows
+     removed or downgraded, new captures appended), in both themes and at 480/1024/1920.
+       **Local verification (2026-10-19):** unit tests 11 files / 107 tests passed; lint passed;
+       `astro check` passed with 0 errors/warnings/hints; `pnpm build` completed including `check_links`
+       (“No missing links found”); contrast passed 10/10. The targeted UI run passed 36/36 across six
+       projects: overview, hub and team plus the shared private-area routes (akt, beauty, couples),
+       covering desktop/intermediate/mobile and light/dark. Mobile overview and desktop hub captures
+       were visually reviewed in both themes. Built output verified parsed JSON-LD and descriptions on
+       all 15 sport pages, including the expected 14 overview items and each hub's mapped children.
+        This is local testing, not step 14 owner acceptance.
+        **JSON-LD fix-round verification (2026-10-19):** unit tests 11 files / 107 tests passed;
+        package lint passed; `astro check` passed with 0 errors/warnings/hints; `pnpm build` completed
+        with `check_links` reporting “No missing links found”; `git diff --check` passed. Built JSON-LD
+        parses with both `WebPage` and `CollectionPage` on `/shootings/sport/` (14 items) and all five
+        art hubs (mapped item counts: American Football 2, Basketball 1, Eishockey 2, Fußball 3,
+        Volleyball 1). Team route `/shootings/sport/dragons/` emits only `WebPage`; each checked page
+        contains exactly one `ProfessionalService` node. No UI/contrast rerun: this round changes only
+        head JSON-LD. This is local testing, not step 14 owner acceptance.
+        **Collection ordering fix-round verification (2026-10-19):** CodeGraph CLI inspection confirmed
+        `SportAreaPage`, `groupSportAreas`, the hub/child map and their tests (CodeGraph MCP was unavailable).
+        Overview item IDs now derive from the same grouped priority order as `SportAreaDirectory`; each
+        hub list derives only its mapped children in that group's child priority order. Unit tests passed
+        (11 files / 108 tests), package lint passed, `astro check` passed with 0 errors/warnings/hints,
+        `pnpm build` completed and `check_links` reported “No missing links found”, and
+        `git diff --check` passed. Parsed built output confirmed 14 overview IDs in visible group order,
+        all five hub lists in mapped order, team pages `WebPage`-only, and one `ProfessionalService`
+        per route. No UI/contrast rerun: this round changes only JSON-LD ordering. This is local testing,
+        not step 14 owner acceptance; all manual name, description and gallery-selection review TODOs
+        remain open.
 14. **Owner review of real URLs** in dev before anything is committed or published. Publishing
     (`pnpm publish` / `sync.sh`) remains a separate, explicitly requested step
     (`AGENTS.md` §6).

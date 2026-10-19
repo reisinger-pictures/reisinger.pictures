@@ -103,3 +103,12 @@ export function groupSportAreas<T extends SportAreaLike>(areas: readonly T[]): S
     )
   }));
 }
+
+/** Collection item ids for the overview or one art hub, following directory order. */
+export function sportCollectionIds<T extends SportAreaLike>(areas: readonly T[], pageId: string): string[] {
+  const groups = groupSportAreas(areas);
+  if (pageId === "sport") {
+    return groups.flatMap(({ hub, children }) => [hub.id, ...children.map((child) => child.id)]);
+  }
+  return groups.find(({ hub }) => hub.id === pageId)?.children.map((child) => child.id) ?? [];
+}
