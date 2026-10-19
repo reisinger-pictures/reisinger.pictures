@@ -112,9 +112,13 @@ disabled during screenshots. Broken visible images fail readiness rather than
 silently producing a successful incomplete capture.
 Native lazy images are made eager before section traversal because the whole
 page is in scope: their final dimensions must not expand an already-captured
-section later. Long real pages (notably all testimonials) may need more than
-100 sections; traversal follows the actual scroll extent, not an arbitrary
-section-count cutoff. The per-test timeout still bounds a broken/infinite page.
+section later. The init script does this on `DOMContentLoaded` for each document,
+not only after `page.goto()` returns: Astro's `ClientRouter` can trigger a second
+same-URL document load during initial navigation, which otherwise resets
+below-fold images to native lazy loading and can stall the all-images readiness
+check. Long real pages (notably all testimonials) may need more than 100 sections;
+traversal follows the actual scroll extent, not an arbitrary section-count cutoff.
+The per-test timeout still bounds a broken/infinite page.
 
 ```text
 test-results/ui-screenshots/<state>/<theme>/<viewport>/<name>.png

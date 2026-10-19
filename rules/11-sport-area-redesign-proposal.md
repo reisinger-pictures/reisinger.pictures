@@ -1,6 +1,6 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–6 DONE; STEPS 7–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
+**Status: STEPS 1–7 DONE; STEPS 8–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
 clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
 (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
@@ -553,12 +553,21 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
      on 2026-10-19 APPROVED the change; `astro check` reported 0 errors/warnings/hints, lint was
      clean, and unit tests passed (10 files, 93 tests). The review's low-severity wording advisory
      about distinguishing an event post from a post that merely mentions a team is non-blocking.
-7. **Related-posts extension** (limit parameter, per-page heading, optional date on the card), now
-   driven by the D2 tag mapping. Exit: unit tests for `selectRelatedPosts` still pass; the card shows
-   a locale-formatted date (de-AT) in both themes; no other consumer of `ContentCard` regresses
-   (portfolio overview pages in the same `pnpm test:ui` run); the four team pages without evidenced
-   tags show the accepted, possibly shorter post list (§8 D2).
-8. **Gallery for sport** (layout decision; if a new `GalleryLayout` value is added, the matching
+ 7. **Related-posts extension** (limit parameter, per-page heading, optional date on the card), now
+    driven by the D2 tag mapping. Exit: unit tests for `selectRelatedPosts` still pass; the card shows
+    a locale-formatted date (de-AT) in both themes; no other consumer of `ContentCard` regresses
+    (portfolio overview pages in the same `pnpm test:ui` run); the four team pages without evidenced
+    tags show the accepted, possibly shorter post list (§8 D2).
+      **Implementation note (2026-10-19, independently approved — DONE).** Sport related-posts use
+      per-area limits/headings/date settings; Dragons, Vikings, ACSL and SteelVolleys select only
+      explicitly tagged posts. Dates use the existing `FormattedDate`; other `ContentCard` consumers
+      remain unchanged by default, and private pages retain their previous selection and presentation.
+      Verification: 10 unit-test files / 103 tests passed, lint clean, `astro check` reported 0
+      errors/warnings/hints, `pnpm test:contrast` passed all 10 tests, and the affected screenshot
+      batch passed 66/66 after the screenshot harness was fixed to force images eager on each
+      `DOMContentLoaded` (Astro `ClientRouter` can reload the same URL during initial navigation).
+      Independent review APPROVED. No production build, publication or deployment was run.
+ 8. **Gallery for sport** (layout decision; if a new `GalleryLayout` value is added, the matching
    `data-gallery` rule in `global.css` ships in the same step). Exit: `pnpm test:ui` at 480 px shows
    the intended column count; the portrait-promotion guard from `rules/10-ui-review-findings.md` §2
    still holds.

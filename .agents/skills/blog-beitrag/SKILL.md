@@ -556,7 +556,7 @@ and `tags` are optional according to the schema. Use image slugs in `heroImage`
 and gallery arrays, import the existing Gallery component, and keep each
 article's gallery list free of duplicates.
 
-### 9.1 Portfolio tags (controlled, evidence-backed)
+#### 9.1 Portfolio tags (controlled, evidence-backed)
 
 The `portfolio` frontmatter supports an optional `tags` field. It is a
 controlled vocabulary for attaching a post to a sport team/league area and
@@ -571,6 +571,12 @@ exists so the four team pages that fall back to the broad `sport` prefix
   team or league. Never infer one from the sport, the opponent, an image slug, a
   filename, or an unrelated page. A post that does not name a team gets **no**
   `tags` field at all — do not guess.
+- Naming the team is necessary but not sufficient: the post's **main subject**
+  must be that team/league, its event, or its coverage. A post that only mentions
+  a team in passing (for example the Canon EOS R1 gear review, which names ACSL
+  among many other sports while reviewing a camera) gets **no** tag. When in
+  doubt, leave the post untagged — a wrong tag puts an unrelated post on a team
+  page.
 - One post may carry several tags (a game naming two teams sets both), listed in
   `PORTFOLIO_TAGS` order. Tags change no URL, slug, image, or other frontmatter.
 - Do not add tags for the five other team pages, which keep their existing

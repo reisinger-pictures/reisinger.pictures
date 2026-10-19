@@ -8,9 +8,11 @@ interface Props {
   post: CollectionEntry<"portfolio">;
   imageSizeModifiers?: Partial<NumericBreakpoints>;
   class?: string;
+  /** Show the post's publication date on the card (off by default). */
+  showDate?: boolean;
 }
 
-const { post, imageSizeModifiers, class: clazz } = Astro.props;
+const { post, imageSizeModifiers, class: clazz, showDate = false } = Astro.props;
 ---
 <ContentCard
   href={`/portfolio/${post.id}/`}
@@ -19,4 +21,6 @@ const { post, imageSizeModifiers, class: clazz } = Astro.props;
   overlay={false}
   imageSizeModifiers={imageSizeModifiers}
   class={clazz}
+  date={post.data.date}
+  showDate={showDate}
 />

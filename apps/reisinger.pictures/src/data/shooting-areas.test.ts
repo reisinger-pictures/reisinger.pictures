@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getPortfolioPrefix, selectRelatedPosts, sortAreasByPriority } from "./shooting-areas";
+import { getPortfolioPrefix, getRelatedPostsConfig, selectRelatedPosts, sortAreasByPriority } from "./shooting-areas";
 
 describe("getPortfolioPrefix", () => {
   it("maps the private offers to their own portfolio prefix", () => {
@@ -100,6 +100,140 @@ describe("selectRelatedPosts", () => {
     const before = [...input];
     selectRelatedPosts(input, "akt");
     expect(input).toEqual(before);
+  });
+
+  const tagged = (id: string, day: number, tags: string[]) => ({
+    id,
+    data: { date: new Date(2026, 0, day), tags }
+  });
+
+  it("selects only posts carrying the explicit team tag (no prefix leakage)", () => {
+    const mixed = [
+      tagged("sport/football/afl/week-1-dragons-vikings", 1, ["dragons", "vikings"]),
+      tagged("sport/football/afl/week-3-dragons-panthers", 5, ["dragons"]),
+      tagged("sport/football/afle/week-4-vikings-rams", 3, ["vikings"]),
+      post("sport/eishockey/ice/b", 9),
+      post("sport/acsl/bees-astros", 8)
+    ];
+    expect(selectRelatedPosts(mixed, "sport", 3, "dragons").map((p) => p.id)).toEqual([
+      "sport/football/afl/week-3-dragons-panthers",
+      "sport/football/afl/week-1-dragons-vikings"
+    ]);
+  });
+
+  it("returns a shared post for each of its tags", () => {
+    const shared = [tagged("sport/football/afl/week-1-dragons-vikings", 1, ["dragons", "vikings"])];
+    expect(selectRelatedPosts(shared, "sport", 3, "dragons")).toHaveLength(1);
+    expect(selectRelatedPosts(shared, "sport", 3, "vikings")).toHaveLength(1);
+  });
+
+  it("never falls back to the prefix and skips untagged or missing tags", () => {
+    const untagged = [post("sport/eishockey/ice/b", 9), post("sport/z", 8)];
+    expect(selectRelatedPosts(untagged, "sport", 3, "dragons")).toEqual([]);
+    // A tag that has no tagged post yet (SteelVolleys) yields an empty block.
+    expect(selectRelatedPosts(untagged, "sport", 3, "steelvolleys")).toEqual([]);
+  });
+
+  it("sorts tag matches newest-first and honours the limit", () => {
+    const many = [
+      tagged("sport/football/afl/a", 1, ["dragons"]),
+      tagged("sport/football/afl/b", 5, ["dragons"]),
+      tagged("sport/football/afl/c", 3, ["dragons"]),
+      tagged("sport/football/afl/d", 4, ["dragons"])
+    ];
+    expect(selectRelatedPosts(many, "sport", 2, "dragons").map((p) => p.id)).toEqual([
+      "sport/football/afl/b",
+      "sport/football/afl/d"
+    ]);
+  });
+
+  it("does not mutate the input list when selecting by tag", () => {
+    const input = [
+      tagged("sport/football/afl/a", 1, ["dragons"]),
+      tagged("sport/football/afl/b", 9, ["dragons"])
+    ];
+    const before = [...input];
+    selectRelatedPosts(input, "sport", 3, "dragons");
+    expect(input).toEqual(before);
+  });
+});
+
+describe("getRelatedPostsConfig", () => {
+  it("gives the sport overview six dated posts and the exact heading", () => {
+    expect(getRelatedPostsConfig("sport", "Sportfotografie")).toEqual({
+      prefix: "sport",
+      limit: 6,
+      heading: "Neu im Sport",
+      showDate: true
+    });
+  });
+
+  it("gives the five art hubs three dated posts and a 'Neu in <Sportart>' heading", () => {
+    const hubs: [string, string, string][] = [
+      ["sport/american-football", "American Football & Cheerleading", "sport"],
+      ["sport/basketball", "Basketball", "sport"],
+      ["sport/eishockey", "Eishockey", "sport/eishockey/ice"],
+      ["sport/fussball", "Fußball", "sport/fussball"],
+      ["sport/volleyball", "Volleyball", "sport"]
+    ];
+    for (const [id, name, prefix] of hubs) {
+      expect(getRelatedPostsConfig(id, name)).toEqual({
+        prefix,
+        limit: 3,
+        heading: `Neu in ${name}`,
+        showDate: true
+      });
+    }
+  });
+
+  it("gives the five prefix-mapped team pages three dated posts and a 'Neu bei <Team>' heading", () => {
+    const teams: [string, string, string][] = [
+      ["sport/bwl", "BWL", "sport/eishockey/ice"],
+      ["sport/swl", "SWL", "sport/eishockey/ice"],
+      ["sport/lask", "LASK", "sport/fussball/bundesliga"],
+      ["sport/oefb", "ÖFB", "sport/fussball"],
+      ["sport/skv", "SKV", "sport/fussball"]
+    ];
+    for (const [id, name, prefix] of teams) {
+      expect(getRelatedPostsConfig(id, name)).toEqual({
+        prefix,
+        limit: 3,
+        heading: `Neu bei ${name}`,
+        showDate: true
+      });
+    }
+  });
+
+  it("selects the four broad-prefix teams by their explicit tag only", () => {
+    const teams: [string, string, string][] = [
+      ["sport/dragons", "Dragons", "dragons"],
+      ["sport/vikings", "Vikings", "vikings"],
+      ["sport/acsl", "ACSL", "acsl"],
+      ["sport/steelvolleys", "SteelVolleys", "steelvolleys"]
+    ];
+    for (const [id, name, tag] of teams) {
+      expect(getRelatedPostsConfig(id, name)).toEqual({
+        prefix: "sport",
+        tag,
+        limit: 3,
+        heading: `Neu bei ${name}`,
+        showDate: true
+      });
+    }
+    // The other five team pages keep their narrower prefix and get no tag.
+    expect(getRelatedPostsConfig("sport/bwl", "BWL").tag).toBeUndefined();
+    expect(getRelatedPostsConfig("sport/lask", "LASK").tag).toBeUndefined();
+  });
+
+  it("keeps the private offers on the original block", () => {
+    expect(getRelatedPostsConfig("akt", "Akt")).toEqual({
+      prefix: "akt",
+      limit: 3,
+      heading: "Aktuelle Einblicke",
+      showDate: false
+    });
+    expect(getRelatedPostsConfig("beauty", "Beauty").showDate).toBe(false);
+    expect(getRelatedPostsConfig("couples", "Pärchen").heading).toBe("Aktuelle Einblicke");
   });
 });
 

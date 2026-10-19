@@ -4,7 +4,7 @@ import { type CollectionEntry, getCollection } from "astro:content";
 
 import PrivateAreaPage from "../../../components/areas/PrivateAreaPage.astro";
 import SportAreaPage from "../../../components/areas/SportAreaPage.astro";
-import { getPortfolioPrefix, selectRelatedPosts, sortAreasByPriority } from "../../../data/shooting-areas";
+import { getPortfolioPrefix, getRelatedPostsConfig, selectRelatedPosts, sortAreasByPriority } from "../../../data/shooting-areas";
 
 // One route, two collections, unchanged URLs: private offers and sport areas
 // both render under `/shootings/<area-id>/`. The split (and the two distinct
@@ -16,9 +16,15 @@ interface AreaProps {
   portfolioPrefix: string | null;
 }
 
+/** Only the sport composition passes a custom related-posts heading/date. */
+interface SportAreaProps {
+  relatedPostsHeading: string;
+  relatedPostsShowDate: boolean;
+}
+
 type Props =
   | ({ kind: "private"; entry: CollectionEntry<"privateAreas">; siblings: CollectionEntry<"privateAreas">[] } & AreaProps)
-  | ({ kind: "sport"; entry: CollectionEntry<"sportAreas"> } & AreaProps);
+  | ({ kind: "sport"; entry: CollectionEntry<"sportAreas"> } & AreaProps & SportAreaProps);
 
 export async function getStaticPaths() {
   const [privateAreas, sportAreas, testimonials, portfolioPosts] = await Promise.all([
@@ -47,15 +53,17 @@ export async function getStaticPaths() {
       };
     }),
     ...sportAreas.map(entry => {
-      const prefix = getPortfolioPrefix(entry.id);
+      const config = getRelatedPostsConfig(entry.id, entry.data.name);
       return {
         params: { area: entry.id },
         props: {
           kind: "sport" as const,
           entry,
           reviews: reviewsByType[entry.id] || [],
-          relatedPosts: selectRelatedPosts(portfolioPosts, prefix),
-          portfolioPrefix: prefix
+          relatedPosts: selectRelatedPosts(portfolioPosts, config.prefix, config.limit, config.tag),
+          portfolioPrefix: config.prefix,
+          relatedPostsHeading: config.heading,
+          relatedPostsShowDate: config.showDate
         }
       };
     })
@@ -77,4 +85,6 @@ const props = Astro.props;
       reviews={props.reviews}
       relatedPosts={props.relatedPosts}
       portfolioPrefix={props.portfolioPrefix}
+      heading={props.relatedPostsHeading}
+      showDate={props.relatedPostsShowDate}
     />}

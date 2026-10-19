@@ -7,7 +7,7 @@ import { routes } from "./ui-review.config";
 import type { UiReviewTheme } from "./ui-review.config";
 import { FULL_PAGE_MAX_SECTIONS, HEIGHT_GROWTH_TOLERANCE, nextSectionPosition, reviewTarget, sampledSectionIndexes, screenshotPath, sectionPositions } from "./ui-review.helpers";
 
-async function setThemeBeforeNavigation(page: Page, theme: UiReviewTheme): Promise<void> {
+async function preparePageBeforeNavigation(page: Page, theme: UiReviewTheme): Promise<void> {
   // These are the app's actual daisyUI theme names. The app has no JS theme
   // controller/storage key; matching colorScheme alone would not prove capture.
   await page.addInitScript((name) => {
@@ -19,6 +19,15 @@ async function setThemeBeforeNavigation(page: Page, theme: UiReviewTheme): Promi
     if (!apply()) {
       const observer = new MutationObserver(() => { if (apply()) observer.disconnect(); });
       observer.observe(document, { childList: true, subtree: true });
+    }
+
+    const eagerlyLoadImages = () => {
+      for (const image of document.images) image.loading = "eager";
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", eagerlyLoadImages, { once: true });
+    } else {
+      eagerlyLoadImages();
     }
   }, `reisinger-${theme}`);
 }
@@ -82,7 +91,7 @@ for (const route of routes) {
       const target = reviewTarget(testInfo.project.metadata);
       test.skip(route.viewports !== undefined && !route.viewports.includes(target.viewport), "viewport excluded by manifest");
       const out = (file: string) => screenshotPath(testInfo.project.outputDir, state, target, file);
-      await setThemeBeforeNavigation(page, target.theme);
+      await preparePageBeforeNavigation(page, target.theme);
       await page.goto(route.path, { waitUntil: "load" });
       await expect(page.getByRole("main")).toBeVisible();
       await expect(page).toHaveTitle(route.expectedTitle);
@@ -91,9 +100,10 @@ for (const route of routes) {
         await expect(page.getByRole("tab", { name: route.calculatorTab, exact: true })).toHaveAttribute("aria-selected", "true");
         await expect(page.getByRole("tabpanel")).toBeVisible();
       }
-      // The full page is in scope. Resolve native lazy images up front so their
-      // final dimensions cannot expand earlier sections after we passed them.
-      await page.evaluate(() => { for (const image of document.images) image.loading = "eager"; });
+      // The init script marks every document's images eager at DOMContentLoaded.
+      // Astro's ClientRouter can perform a second same-URL document load after
+      // goto() returns; doing this only here would leave that document lazy.
+      // The full page is in scope, so wait for all dimensions before traversal.
       await page.waitForFunction(() => [...document.images].every((image) => image.complete && image.naturalWidth > 0));
       await waitForVisibleContent(page);
       const surface = await renderedTheme(page, target.theme);

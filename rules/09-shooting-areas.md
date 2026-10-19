@@ -52,15 +52,38 @@ One shared schema, two collections (`apps/reisinger.pictures/src/content.config.
 - `/shootings/*area/testimonials` is a separate template driven by the
   `testimonials` collection; it is out of scope and untouched.
 
-## Related posts: `getPortfolioPrefix`
+## Related posts: `getPortfolioPrefix`, `selectRelatedPosts`, `getRelatedPostsConfig`
 
 The area → portfolio-prefix mapping moved unchanged from the route into
-`src/data/shooting-areas.ts` (`getPortfolioPrefix`, `selectRelatedPosts`), with
-unit tests in `src/data/shooting-areas.test.ts`. The mapping (direct map, sport
-team map, `sport/` fallback to the general sport hub, otherwise the area id) and
-the related-post filter/sort/limit behaviour are identical to before, so the
-"Aktuelle Einblicke" block (shared `AreaRelatedPosts.astro`) keeps working for
-every area.
+`src/data/shooting-areas.ts` (`getPortfolioPrefix`), with unit tests in
+`src/data/shooting-areas.test.ts`. The mapping (direct map, sport team map,
+`sport/` fallback to the general sport hub, otherwise the area id) is identical
+to before.
+
+`selectRelatedPosts(posts, prefix, limit = 3, tag?)` is newest-first, does not
+mutate its input, and keeps the original prefix filter (`prefix + "/"` or bare
+`prefix`) and the 3-post default for every existing caller. The optional fourth
+argument is a D2 `PortfolioTag`: when it is set it **replaces** the prefix, so
+only posts whose `data.tags` contains that tag are eligible and the general
+`sport` mix never leaks in. A post without tags is never selected for a tag.
+
+`getRelatedPostsConfig(areaId, name)` is the single source of the block's
+selection and presentation (`rules/11-sport-area-redesign-proposal.md` §9 step 7):
+
+| Area | Selection | Limit | Heading | Date |
+| --- | --- | --- | --- | --- |
+| `sport` (overview) | prefix `sport` | 6 | `Neu im Sport` | yes |
+| 5 art hubs | prefix per mapping | 3 | `Neu in <name>` | yes |
+| 5 prefix-mapped teams | prefix per mapping | 3 | `Neu bei <name>` | yes |
+| 4 tag teams (Dragons, Vikings, ACSL, SteelVolleys) | explicit tag only | 3 | `Neu bei <name>` | yes |
+| private offers (akt, beauty, couples) | prefix per mapping | 3 | `Aktuelle Einblicke` | no |
+
+The heading reuses the entry's existing `name`; no wording is invented. The
+shared `AreaRelatedPosts.astro` block renders the heading and forwards
+`showDate` to `PortfolioCard`/`ContentCard`, whose optional date defaults **off**,
+so archive, carousel and every other `ContentCard` consumer stay unchanged. The
+date itself comes from the existing `FormattedDate.astro`. SteelVolleys has no
+tagged post, so its block renders no heading — as today when a list is empty.
 
 ## Portfolio post tags (`tags`, D2)
 
@@ -83,6 +106,13 @@ evidenced assignments, and leaves the prefix mapping and the filtering unchanged
   sport, the opponent, an image slug, a filename or an unrelated page. A post
   that does not name a team stays **untagged**; it is not attached to a team area
   by guesswork.
+- **Main subject, not a mere mention.** Naming the team is necessary but not
+  sufficient: the post's **main subject** must be that team/league, its event or
+  its coverage. A post that only mentions a team in passing (for example the
+  Canon EOS R1 gear review `reviews/r1`, which names ACSL among many other
+  sports while reviewing a camera) does **not** qualify and stays untagged. When
+  in doubt, leave the post untagged — a wrong tag puts an unrelated post on a
+  team page.
 - **Single and multiple tags.** A post may carry one or several tags: a game that
   names two teams (e.g. the shared Dragons-vs-Vikings AFL entries) carries both
   `dragons` and `vikings`. Set every evidenced tag, in `PORTFOLIO_TAGS` order.
@@ -109,8 +139,8 @@ evidenced assignments, and leaves the prefix mapping and the filtering unchanged
     **existing** pages (`/preise/` and `/shootings/<area>/testimonials`) and to
     the sibling private offers; the sibling labels are reused from
     `src/data/Menue.ts`, never re-invented from the long marketing `name`s.
-  - `AreaRelatedPosts.astro` — the "Aktuelle Einblicke" block, shared by both
-    compositions (markup unchanged).
+  - `AreaRelatedPosts.astro` — the related-posts block, shared by both
+    compositions; its heading and optional date are configurable per page.
 - Design rules for the private pages: photography-led and quiet, semantic
   headings, readable sections instead of a grey card stack, left-aligned body
   headings inside the article (the global base layer centers `h1..h4`), no

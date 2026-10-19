@@ -18,6 +18,8 @@ interface Props {
   reviews: CollectionEntry<"testimonials">[];
   relatedPosts: CollectionEntry<"portfolio">[];
   portfolioPrefix: string | null;
+  heading: string;
+  showDate: boolean;
 }
 
 // Sport composition. The hero is the photo-dominant `AreaHero` variant
@@ -25,7 +27,7 @@ interface Props {
 // H1 of the page; the section order below is unchanged until the later,
 // separately commissioned steps.
 
-const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix } = Astro.props;
+const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix, heading, showDate } = Astro.props;
 const { id: slug, data: { name, description, testimonials, images, heroImage } } = entry;
 const reviewSlugs: string[] | undefined = testimonials?.map(e => e.id);
 const { Content } = await render(entry);
@@ -55,5 +57,5 @@ const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchem
   {images.length > 0 &&
     <div class="mt-16"><Gallery sorted={images} /></div>}
 
-  <AreaRelatedPosts posts={relatedPosts} portfolioPrefix={portfolioPrefix} />
+  <AreaRelatedPosts posts={relatedPosts} portfolioPrefix={portfolioPrefix} heading={heading} showDate={showDate} />
 </MinimalPage>

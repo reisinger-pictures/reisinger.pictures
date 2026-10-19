@@ -6,16 +6,20 @@ import PortfolioCard from "../PortfolioCard.astro";
 interface Props {
   posts: CollectionEntry<"portfolio">[];
   portfolioPrefix: string | null;
+  /** Section heading; the private offers keep the original wording. */
+  heading?: string;
+  /** Sport pages show the publication date; every other page keeps it hidden. */
+  showDate?: boolean;
 }
 
-const { posts, portfolioPrefix } = Astro.props;
+const { posts, portfolioPrefix, heading = "Aktuelle Einblicke", showDate = false } = Astro.props;
 ---
 
 {/* Markup moved verbatim from the former area template, shared by both compositions. */}
 {posts.length > 0 && (
   <div class="[&:not(:nth-child(3))]:mt-16 [&:not(:nth-child(3))]:pt-10 [&:not(:nth-child(3))]:border-t [&:not(:nth-child(3))]:border-base-200">
     <div class="flex items-center justify-between mb-8">
-      <h2 class="text-3xl font-black m-0">Aktuelle Einblicke</h2>
+      <h2 class="text-3xl font-black m-0">{heading}</h2>
       {portfolioPrefix && (
         <a href={`/portfolio/${portfolioPrefix}/`} class="btn btn-outline btn-sm">
           Alle Beiträge <span class="icon-[mdi--arrow-right] ml-1"></span>
@@ -23,7 +27,7 @@ const { posts, portfolioPrefix } = Astro.props;
       )}
     </div>
     <div class="grid gap-y-4 md:grid-cols-2 md:gap-x-4 xl:grid-cols-3">
-      {posts.map(post => <PortfolioCard post={post} />)}
+      {posts.map(post => <PortfolioCard post={post} showDate={showDate} />)}
     </div>
   </div>
 )}
