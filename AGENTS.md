@@ -1,19 +1,12 @@
-# Architectural Guidelines, AI Rules & Best Practices
+# Project Rules
 
-This document summarizes key architectural decisions, toolchains, and workflow rules for the `reisinger.pictures` website project. All contributions and AI-generated code must strictly adhere to these standards.
+This file contains only durable, reusable rules for the `reisinger.pictures` project. All contributions and AI-generated code must follow them.
 
-## 1. AI Agent Roles & Strict Definition of Done (DoD)
-We enforce a strict separation of concerns via `AGENTS.todo.md`. An agent must fulfill its specific DoD before completing a turn.
-* **Role 1: Planner Agent ("Architect")**
-    * **Goal:** Define target state and estimate effort. Update/create Markdown docs in `/features/` (if applicable) or plan the architecture.
-    * **DoD:** Concept documented. Actionable tasks appended to `AGENTS.todo.md`.
-* **Role 2: Implementation Agent ("Maker")**
-    * **Goal:** Execute the top unassigned `[ ] TODO` from `AGENTS.todo.md`.
-    * **DoD:** Code is written. Task status changed to `(Ready for Review)`.
-* **Role 3: Review Agent ("Checker")**
-    * **Goal:** Quality assurance.
-    * **DoD:** Code validated. Zero tolerance for workarounds. Task checked off `[x]` in `AGENTS.todo.md`. If failed, change to `(Needs Fix)`.
-* **Silent TODO Rule:** Do not log or display TODOs in the chat that you create and immediately complete.
+## 1. Scope and Maintenance
+* Keep this file limited to durable, reusable project rules. Do not put active task status, plans, decision history, review findings, or completion logs here.
+* Keep `AGENTS.todo.md` limited to open work. Put architectural decisions, factual mappings, and lasting edge cases in `rules/`; put repeatable procedures in the relevant skill. Link to those sources instead of duplicating their contents here.
+* User-commissioned changes in this Git repository follow the global `build-verify` skill. Do not maintain a competing agent-role or completion-status workflow in this file.
+* Remove or update obsolete rules when the project structure or toolchain changes.
 
 ## 2. Language Policy & Code Quality
 * **Language:** Technical Content (Code, Docs, Variables, Comments) = **English**. User Interface (Strings, Menus, Content) = **German**.
