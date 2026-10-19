@@ -1,6 +1,6 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–8 and 10 DONE; STEPS 9, 11–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
+**Status: STEPS 1–8 and 10 DONE; STEP 11 PARTIALLY IMPLEMENTED; STEPS 9, 12–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
 clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
 (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
@@ -602,9 +602,19 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
       `/portal/` and `/eventfotografie/` routes instead. No build, commit, push, publication or
       deployment was run. Steps 9/D4 and 12/D10 remain gated on owner image selections.
 11. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). The
-    missing team-page descriptions are hand-written per page and wait on the owner-decided club and
-    league names (open content points, §8); nothing is auto-generated. Exit: a description on all 15
-    built pages once the owner releases the wording; JSON-LD parses; `check_links` clean.
+     missing team-page descriptions are hand-written per page and wait on the owner-decided club and
+     league names (open content points, §8); nothing is auto-generated. Exit: a description on all 15
+     built pages once the owner releases the wording; JSON-LD parses; `check_links` clean.
+      **Partial implementation (2026-10-19; owner-gated work remains).** The sport hero `sizes` now
+      derives its desktop container widths from shared `computeSizes`/`CONTAINER_SIZES`, retaining the
+      existing 2rem mobile gutter. Sport hero images and sport hub directory cards now omit title-as-alt
+       and use `ResponsiveImage`'s sidecar-description fallback. A repeat audit of all 15 hero entries
+       found a nonempty description in every matching sidecar, including ACSL, Basketball, LASK, ÖFB,
+       and SWL; the earlier list of missing descriptions was incorrect. No sidecars were edited.
+       Team-page meta descriptions remain
+      blocked on owner-approved names and individual wording. Do not add `CollectionPage`/`ItemList`
+      until the duplicate `swl`/`bwl`, `skv`, and ACSL spelling decisions are resolved. Step 11 is not
+      complete; these remaining owner gates and the step-11 exit checks still apply.
 12. **Hub-gallery trim (D10)** — reduce the overlap between the hub galleries and their team pages,
     the hub galleries becoming a cross-team selection. This step depends on the owner-released image
     selection and does not start before it exists; nothing is trimmed on a guess. Exit: the released

@@ -9,6 +9,8 @@ export interface Props {
   href: string;
   imageName: string;
   title: string;
+  /** Use the image sidecar description instead of the card title as alt text. */
+  imageDescriptionAlt?: boolean;
   overlay: boolean;
   imageSizeModifiers?: Partial<NumericBreakpoints>;
   class?: string;
@@ -25,6 +27,7 @@ const {
   href,
   imageName,
   title,
+  imageDescriptionAlt = false,
   overlay,
   imageSizeModifiers = GALLERY_BREAKPOINTS[GalleryLayout.Overview],
   class: className,
@@ -53,7 +56,7 @@ const {
       <ResponsiveImage
         class="w-full h-full transition-transform duration-300 group-hover:scale-105"
         sizeModifiers={imageSizeModifiers}
-        alt={title}
+        alt={imageDescriptionAlt ? undefined : title}
         name={imageName}
         showInfo={true}
         fit={fit}

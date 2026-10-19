@@ -26,6 +26,7 @@ const groups = groupSportAreas(await getCollection("sportAreas"));
           href={`/shootings/${hub.id}/`}
           imageName={hub.data.heroImage}
           title={hub.data.name}
+          imageDescriptionAlt
           titleClass="text-base sm:text-sm xl:text-lg"
           overlay
         />

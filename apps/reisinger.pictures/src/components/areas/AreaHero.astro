@@ -1,4 +1,6 @@
 ---
+import { computeSizes } from "@reisinger/shared/utils/Breakpoints";
+
 import ResponsiveImage from "../ResponsiveImage.astro";
 import { ResponsiveImageLoading } from "../ResponsiveImageLoading";
 
@@ -19,10 +21,11 @@ interface Props {
 
 const { title, imageName, description, eyebrow, variant = "default", class: className } = Astro.props;
 
-// Full content width mirrors the `.container` caps in global.css
-// (540/720/960/1140/1320 px) so the eager hero fetches the width it renders.
-const sportHeroSizes =
-  "(min-width: 1536px) 1320px, (min-width: 1280px) 1140px, (min-width: 1024px) 960px, (min-width: 768px) 720px, (min-width: 640px) 540px, calc(100vw - 2rem)";
+// Full content width mirrors the shared `.container` caps. Keep the actual
+// mobile gutter (rather than computeSizes' full-viewport default) for widths
+// below the container's first breakpoint.
+const sportHeroSizes = computeSizes({ sm: 1, md: 1, lg: 1, xl: 1, "2xl": 1 })
+  .replace("100vw", "calc(100vw - 2rem)");
 ---
 
 <header class:list={["not-prose", className]}>
@@ -53,7 +56,6 @@ const sportHeroSizes =
           */}
           <ResponsiveImage
             name={imageName}
-            alt={title}
             loading={ResponsiveImageLoading.EAGER}
             sizes={sportHeroSizes}
             fit="cover"
