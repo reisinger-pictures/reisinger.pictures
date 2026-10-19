@@ -150,3 +150,7 @@ playwright/.cache
 
 # Lokales Review-Artefakt (Bild-Metadaten-Review) – wird NICHT committet; review.html lädt es per fetch
 /review*.json
+
+# UI-Review-Captures (Screenshot-Sammlungen) – lokal, werden NICHT committet
+ui-review-*/
+ui-review.*/
