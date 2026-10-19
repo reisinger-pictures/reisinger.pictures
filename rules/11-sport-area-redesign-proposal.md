@@ -1,11 +1,14 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1, 3 AND 4 DONE, THE REST NOT IMPLEMENTED.** The owner answered every fork (D1–D10)
-on 2026-10-18; §8 is the binding record of those answers. §9 steps 1, 3 and 4 are implemented and
-committed (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was written (the three
-sport routes have been in the manifest since `f88e5d4`). No content file, no publication and no
-build, server or cache was touched, and everything from step 5 on is unimplemented. §9 lists the
-steps; each one still stops for an explicit owner release.
+**Status: STEPS 1–5 DONE; STEPS 6–14 NOT STARTED.** The owner answered
+D1–D10 on 2026-10-18 and clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4
+are implemented and committed (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was
+done. Step 5's map, directory component and overview presentation change are local and uncommitted;
+the first independent review returned CHANGES REQUIRED, and the independent redo review APPROVED the
+addressed changes on 2026-10-19. One overview MDX was changed and backed up; no publication or
+deployment has occurred. The backup remains until publication and final owner approval. The owner
+authorized continuing the released implementation steps through a local preview, except for the
+explicit image and text/name gates below.
 
 - **Date:** 2026-10-18
 - **Author:** planning subagent (not the owner, not the implementer)
@@ -325,23 +328,34 @@ All of the following are checkable on the built output; none of them is a rankin
 
 ---
 
-## 8. Owner decisions (recorded 2026-10-18)
+## 8. Owner decisions (recorded 2026-10-18; step 5 clarified 2026-10-19)
 
-The owner answered every fork on 2026-10-18. Each item below keeps the question and the options that
-were on the table and adds the binding answer. The answers are transcribed, not reinterpreted: a
-recommendation that was not taken is marked as such, and none of these items is reopened by the
-implementer. Implementation itself is still gated on an explicit release per step (§9).
+The owner answered D1–D10 on 2026-10-18 and clarified the step-5 order and content-file scope on
+2026-10-19. Each item below keeps the question and the options that were on the table and adds the
+binding answer. The answers are transcribed, not reinterpreted: a recommendation that was not taken
+is marked as such, and none of these items is reopened by the implementer. The owner's continuation
+authorization in §9 releases the remaining implementation sequence, subject to the listed content
+gates and the final real-URL review.
 
 **D1 — How are the 9 team/league pages grouped and reached from the overview?**
 - (a) A small, unit-tested `src/data/sport-areas.ts` map (art → child ids), reusing the existing
-  `priority` values for order. No content file is edited; one source of truth; but the map duplicates
-  the hub bodies' hand-written button lists.
+  `priority` values for order. No sport-entry metadata is edited; one source of truth; but the map
+  duplicates the hub bodies' hand-written button lists.
 - (b) A new optional frontmatter field (e.g. `parent`) on the 14 sport entries — single source, but
-  it edits 14 content files, which the commission says not to rewrite.
+  it adds parent metadata to 14 content entries, which is unnecessary for this presentation change.
 - (c) Leave the overview as a 5-art router only; teams stay reachable through hub bodies.
 - **Decision (owner, 2026-10-18): (a).** A small, unit-tested `src/data/sport-areas.ts` map
-  (art → child ids) reuses the existing `priority` values for order. No content file is edited; the
-  9 team/league pages become reachable directly from the sport overview.
+  (art → child ids) reuses the existing `priority` values for order, without adding a `parent` field
+  to any sport entry. The 9 team/league pages become reachable directly from the sport overview.
+- **Owner clarification (2026-10-19):** necessary presentation edits to content files are permitted;
+  D1 rules out parent metadata, not the overview's component markup. Step 5 changes only the import
+  and card-grid markup in `sport/index.mdx`; its frontmatter, prose, heading and CTA remain unchanged.
+  The 130-file Markdown backup at
+  `/private/var/folders/vq/db6hdqsx32b1xg4z2mnzt8nm0000gn/T/opencode/sport-content-backup-2026-10-19`
+  must be retained until publication and the owner's final approval.
+- **Order direction (owner, 2026-10-19):** ascending `priority`, preserving the existing visible
+  overview and hub-body link order. Entries without a priority sort after ranked entries; map order
+  is the deterministic fallback among them.
 - **Implementation fact (verified 2026-10-18, deliberately left as it is):** `acsl.md`,
   `steelvolleys.md` and `swl.md` carry **no** `priority`. The map must therefore define a
   deterministic order for those three entries. That order is the implementer's call and needs no
@@ -458,14 +472,21 @@ corrected or assumed, and no "correct" club or league name is named in this file
 
 ## 9. Implementation steps (only after explicit owner release)
 
-Each step is small, individually checkable, and stops for review before the next. No step is
-started without a yes. Screenshot/contrast runs are dev-server based (`rules/08-local-ui-review.md`)
-and never touch the cache directories (`AGENTS.md` §5).
+Each step is small and individually checkable. The owner continuation authorization below releases
+implementation through the final local preview; steps requiring owner-selected images or
+text/name inputs remain gated. Screenshot/contrast runs are dev-server based
+(`rules/08-local-ui-review.md`) and never touch the cache directories (`AGENTS.md` §5).
+
+**Owner continuation authorization (2026-10-19):** proceed autonomously through the released
+implementation steps until a final local preview of the redesign is ready. This does not authorize
+publication/deployment and does not waive the explicit owner-released image selections or text/name
+inputs below. Do not invent those inputs; surface the remaining gates with the local preview.
 
 1. **Owner decisions D1–D10 recorded** in §8 of this file, together with the open content points
-   dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. **Done
-   2026-10-18 — commit `a0f04ea` (`docs(sport): record the owner's decisions for the sport-area
-   redesign`).** The owner still releases every following step individually.
+    dated 2026-10-18. Exit: every decision has a binding answer and no item is left open. **Done
+    2026-10-18 — commit `a0f04ea` (`docs(sport): record the owner's decisions for the sport-area
+    redesign`).** The owner released the remaining implementation sequence on 2026-10-19, subject to
+    the explicit content gates below and the final real-URL review in step 14.
 2. **Extend the UI-review manifest** (`tests/screenshots/ui-review.config.ts`) with three routes:
    `/shootings/sport/`, one art hub (`/shootings/sport/eishockey/`) and one team page
    (`/shootings/sport/lask/`). Exit: `pnpm test:ui --grep 'sport'` captures all three in six
@@ -502,6 +523,23 @@ and never touch the cache directories (`AGENTS.md` §5).
    `steelvolleys`, which carry no `priority` (§8 D1; implementer's call). Exit: hub unit tests
    (`pnpm --filter reisinger.pictures test:unit`) cover the new map; all 14 children resolve;
    `pnpm test:ui` desktop grid shows no mixed label/photo rhythm.
+     **Implementation note (2026-10-19, independently approved — DONE).**
+    `src/data/sport-areas.ts` holds the map (`SPORT_ART_HUBS`, `SPORT_CHILDREN`, `sportChildIds`,
+    `orderSportAreas`, `groupSportAreas`), unit-tested in `src/data/sport-areas.test.ts`.
+    `src/components/areas/SportAreaDirectory.astro` renders the art grid and the grouped team
+     links where the hand-written 5-card grid sat in `index.mdx`; the frontmatter, the prose, the
+     H2 and the `ContactCTA` are byte-identical. Link markup now emits trailing slashes, but all
+     existing route targets remain unchanged.
+    - **Order (owner, 2026-10-19):** ascending `priority`, preserving the existing visible order:
+      American Football, Fußball, Eishockey, Basketball, Volleyball. Children likewise retain the
+      old hub-body order (e.g. Dragons before Vikings and LASK before SKV before ÖFB).
+    - **Fallback for the three without `priority`:** `shootingAreaSchema` fills an absent
+      `priority` with the `9999` sentinel; the module treats `9999` as "unranked" and places
+      those entries after the ranked ones of their group, with the map's declaration order as the
+      stable tiebreak (Eishockey: BWL, then SWL).
+    - **Responsive title sizing:** the sport tile title scales down at intermediate widths so
+      "American Football & Cheerleading" remains on one line in the three-column grid; other
+      `ContentCard` consumers retain the existing `text-lg` default.
 6. **Tag work (D2)** — the controlled `tags` frontmatter field plus its schema entry, the project
    rule for it, the update to the project-local `blog-beitrag` skill, and the evidenced per-post
    assignments. Only tags that are evidenced in the content are set; a post without evidence stays

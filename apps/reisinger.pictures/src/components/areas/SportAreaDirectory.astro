@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+
+import { groupSportAreas } from "../../data/sport-areas";
+import ContentCard from "../ContentCard.astro";
+
+// The sport overview's data-driven router, rendered where the hand-written
+// 5-card grid used to sit: the 5 art hubs as label-on-photo tiles (section 2)
+// and the 9 team/league pages grouped by their art hub (section 3).
+//
+// Everything shown is read from the existing entries — names, hero images and
+// priorities — through the D1 map in `src/data/sport-areas.ts`. No copy, image
+// or URL is invented here; every href is the entry's existing
+// `/shootings/<id>/` route. See `rules/11-sport-area-redesign-proposal.md`
+// §9 step 5.
+
+const groups = groupSportAreas(await getCollection("sportAreas"));
+---
+
+<div class="not-prose my-10">
+  {/* Section 2 — Sportarten: the 5 art hubs as label-on-photo tiles. */}
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {groups.map(({ hub }) =>
+      hub.data.heroImage && (
+        <ContentCard
+          href={`/shootings/${hub.id}/`}
+          imageName={hub.data.heroImage}
+          title={hub.data.name}
+          titleClass="text-base sm:text-sm xl:text-lg"
+          overlay
+        />
+      ))}
+  </div>
+
+  {/* Section 3 — Teams & Ligen: the 9 child pages grouped by art hub. */}
+  <div class="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+    {groups.map(({ hub, children }) => (
+      <div>
+        <h3 class="m-0 text-left! text-base font-semibold">{hub.data.name}</h3>
+        <ul class="m-0 mt-3 flex list-none flex-col p-0">
+          {children.map((child) => (
+            <li class="m-0">
+              <a
+                href={`/shootings/${child.id}/`}
+                class="inline-flex min-h-11 items-center underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                {child.data.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</div>

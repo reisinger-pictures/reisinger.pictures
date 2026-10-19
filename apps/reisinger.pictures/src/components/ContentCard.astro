@@ -11,6 +11,7 @@ export interface Props {
   overlay: boolean;
   imageSizeModifiers?: Partial<NumericBreakpoints>;
   class?: string;
+  titleClass?: string;
   aspectRatio?: string;
   fit?: "contain" | "cover";
 }
@@ -22,6 +23,7 @@ const {
   overlay,
   imageSizeModifiers = GALLERY_BREAKPOINTS[GalleryLayout.Overview],
   class: className,
+  titleClass = "text-lg",
   aspectRatio = "3/2",
   // `cover` keeps the uniform card grid: `contain` left grey bars on the sides of
   // portrait photos inside the 3/2 frame (see rules/10-ui-review-findings.md §2).
@@ -51,7 +53,7 @@ const {
       />
 
       <div class="absolute bottom-0 inset-x-0 z-10 bg-base-100/90 backdrop-blur-sm px-4 py-3">
-        <h3 class="card-title text-base-content text-lg !m-0 group-hover:text-primary transition-colors">{title}</h3>
+        <h3 class:list={["card-title text-base-content !m-0 group-hover:text-primary transition-colors", titleClass]}>{title}</h3>
       </div>
     </figure>
   </a>
