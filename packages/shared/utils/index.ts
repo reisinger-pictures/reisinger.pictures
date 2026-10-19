@@ -83,7 +83,7 @@ export function psychologicalPriceAsNumber(value: number) {
 }
 
 export type ContactFormPrefill = {
-  subject_prefix?: "BUSINESS" | "BEAUTY" | "AKT" | "COUPLES" | "TANZ" | "TFP" | "REVIEW" | "HOCHZEIT" | "REPORTAGE";
+  subject_prefix?: "BUSINESS" | "BEAUTY" | "AKT" | "COUPLES" | "TANZ" | "TFP" | "REVIEW" | "HOCHZEIT" | "REPORTAGE" | "SPORT";
   name?: string;
   email?: string;
   phone?: string;

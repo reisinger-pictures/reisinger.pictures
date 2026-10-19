@@ -1,4 +1,5 @@
 ---
+import ContactCTA from "@reisinger/shared/components/ContactCTA.astro";
 import { type CollectionEntry, render } from "astro:content";
 
 import { loadImage } from "../../images/image-service";
@@ -13,6 +14,7 @@ import { createWebPageSchema } from "../SchemaOrg.factory";
 import SocialImage from "../SocialImage.astro";
 import AreaHero from "./AreaHero.astro";
 import AreaRelatedPosts from "./AreaRelatedPosts.astro";
+import AreaSection from "./AreaSection.astro";
 
 interface Props {
   entry: CollectionEntry<"sportAreas">;
@@ -25,13 +27,19 @@ interface Props {
 
 // Sport composition. The hero is the photo-dominant `AreaHero` variant
 // (rules/11-sport-area-redesign-proposal.md §4.1), which also owns the single
-// H1 of the page; the section order below is unchanged until the later,
-// separately commissioned steps.
+// H1 of the page; closing sections follow the released sport-area proposal.
 
 const { entry, reviews: categoryReviews, relatedPosts, portfolioPrefix, heading, showDate } = Astro.props;
 const { id: slug, data: { name, description, testimonials, images, heroImage } } = entry;
 const reviewSlugs: string[] | undefined = testimonials?.map(e => e.id);
 const { Content } = await render(entry);
+const showPressLinks = slug === "sport" || [
+  "sport/american-football",
+  "sport/basketball",
+  "sport/eishockey",
+  "sport/fussball",
+  "sport/volleyball"
+].includes(slug);
 
 const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
 
@@ -54,9 +62,38 @@ const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchem
 
   <Content />
 
-  <FeaturedTestimonials slug={slug} categoryTestimonials={categoryReviews} featuredTestimonials={reviewSlugs} />
-  {images.length > 0 &&
-    <div class="mt-16"><Gallery sorted={images} layout={GalleryLayout.Sport} /></div>}
-
   <AreaRelatedPosts posts={relatedPosts} portfolioPrefix={portfolioPrefix} heading={heading} showDate={showDate} />
+
+  {showPressLinks && (
+    <AreaSection id="sport-presse" eyebrow="Für Redaktionen" heading="Presse & Redaktionen" class="mt-16">
+      <div class="grid gap-6 md:grid-cols-2">
+        <div>
+          <p class="m-0">Während des Events stehen Bilder im Presse-Portal bereit. Die Dateien enthalten IPTC-Metadaten und können gesammelt als Batch heruntergeladen werden.</p>
+        </div>
+        <nav aria-label="Informationen für Presse und Redaktionen" class="flex flex-col items-start gap-3">
+          <a class="link link-primary inline-flex min-h-11 items-center focus-visible:outline-2 focus-visible:outline-offset-4" href="/portal/">Foto-Portal</a>
+          <a class="link link-primary inline-flex min-h-11 items-center focus-visible:outline-2 focus-visible:outline-offset-4" href="/eventfotografie/">Eventfotografie</a>
+        </nav>
+      </div>
+    </AreaSection>
+  )}
+
+  {images.length > 0 && (
+    <AreaSection id="galerie" eyebrow="Bilder" heading="Galerie" class="mt-16">
+      <Gallery sorted={images} layout={GalleryLayout.Sport} />
+    </AreaSection>
+  )}
+
+  {slug === "sport" && (
+    <AreaSection id="kundenstimmen" eyebrow="Erfahrungen" heading="Kundenstimmen" class="mt-16">
+      <FeaturedTestimonials slug={slug} categoryTestimonials={categoryReviews} featuredTestimonials={reviewSlugs} />
+    </AreaSection>
+  )}
+
+  <AreaSection id="sport-kontakt" eyebrow="Sportfotografie" heading="Kontakt" class="mt-16">
+    <div class="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <p class="m-0">Vereine, Ligen, Veranstalter und Redaktionen können eine Fotoanfrage stellen.</p>
+      <ContactCTA text="Fotoanfrage für Verein oder Redaktion" subjectPrefix="SPORT" class="btn-block h-auto min-h-12 whitespace-normal py-3 leading-tight md:btn-wide" />
+    </div>
+  </AreaSection>
 </MinimalPage>

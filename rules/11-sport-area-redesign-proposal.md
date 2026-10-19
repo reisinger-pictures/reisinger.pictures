@@ -1,6 +1,6 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–8 DONE; STEPS 9–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
+**Status: STEPS 1–8 and 10 DONE; STEPS 9, 11–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
 clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
 (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
@@ -588,6 +588,19 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
     and the 5 hub bodies. Exit: modal opens with the prefilled subject from every sport page;
     `/eventfotografie/` and `/portal/` reachable from the overview and the 5 art hubs (not from the 9
     team pages); `check_links` clean.
+      **Implementation note (2026-10-19, independently approved — DONE).**
+      `SportAreaPage.astro` now places the press pointer on the overview and five art hubs, then the
+      existing sport gallery/testimonial in the released order, and a shared `ContactCTA` closing
+      section on all 15 sport routes. The CTA uses the exact owner-selected label and `SPORT` prefix;
+      the prefix is now part of `ContactFormPrefill`. The in-body CTA import/wrapper was removed from
+      the overview and five hub MDX files only; those ignored local content files remain uncommitted.
+      Unit tests (11 files / 107 tests), package lint, `astro check` (0 errors/warnings/hints), and
+      all 18 `shootings-sport` screenshot captures passed. Screenshots were visually reviewed in
+      light/dark desktop and mobile. A dev Playwright check confirmed the CTA opens the existing
+      modal with `SPORT` on all 15 routes and press links occur only on the overview and five hubs.
+      `check_links` has no safe pre-build mode; the hrefs were checked against the existing
+      `/portal/` and `/eventfotografie/` routes instead. No build, commit, push, publication or
+      deployment was run. Steps 9/D4 and 12/D10 remain gated on owner image selections.
 11. **SEO block** (meta descriptions, CollectionPage/ItemList, alt-text audit, hero `sizes`). The
     missing team-page descriptions are hand-written per page and wait on the owner-decided club and
     league names (open content points, §8); nothing is auto-generated. Exit: a description on all 15
