@@ -2,6 +2,18 @@ packages:
   - apps/*
   - packages/*
 
+# Security overrides (2026-10-19, Dependabot): both parents pin the vulnerable
+# version exactly, so a lockfile refresh alone cannot fix the advisories.
+#   - @parcel/watcher 2.5.1 pulls micromatch > braces 3.0.3 (GHSA-vfj7-8cjw-p6xm,
+#     no patched braces release). 2.6.0 replaces micromatch with picomatch.
+#   - @tailwindcss/typography pins postcss-selector-parser 6.0.10
+#     (GHSA-rj75-hqrm-r3gf, quadratic parsing). The plugin only calls
+#     `astSync` (read-only); the v7 breaking change concerns insertions during
+#     iteration. The built CSS is compared before/after to prove it.
+overrides:
+  '@parcel/watcher': 2.6.0
+  postcss-selector-parser: 7.1.6
+
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
@@ -13,3 +25,7 @@ onlyBuiltDependencies:
   - esbuild
   - exifreader
   - sharp
+
+minimumReleaseAgeExclude:
+  - '@astrojs/check@0.9.11'
+  - astro@7.4.1

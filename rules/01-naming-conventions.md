@@ -28,6 +28,11 @@
 - Unresolved comment conflicts (a local comment edited while the remote file changed, or an entry removed remotely) block the export until the reviewer decides which version wins.
 - `pnpm run review:unit` runs the viewer helper tests (`node --test tests/review-viewer.test.mjs`).
 
+## Frontmatter must be valid YAML
+- The frontmatter of every `index.mdx`/`.md` must be **valid YAML**: a continuation line inside a quoted scalar (e.g. a `description` spanning two lines) must be **indented**. Astro's frontmatter parser changed with **Astro 7.3.6** (`@astrojs/internal-helpers` 0.12.0): js-yaml was replaced by the `yaml` package, which rejects a non-indented continuation with "Missing closing quote" and aborts the build.
+- Real case 2026-10-19: `portfolio/sport/fussball/bundesliga/2025-26/grunddurchgang-06-bwl-gak/index.mdx` (description, lines 4/5). Fix: indent the second line by two spaces — the value stays identical, because the parser folds the line break into a space.
+- The content store is **outside Git tracking** (git-ignored via `apps/reisinger.pictures/src/.gitignore`), but it lives inside the repository directory. The fix therefore has to be applied in the owner's copy as well, otherwise the next build breaks there.
+
 ## Gleicher Dateiname in mehreren Event-Ordnern (Slug-Kollision)
 - Derselbe Basisname kann in unterschiedlichen Galerien ein **verschiedenes Bild** bezeichnen. Realfälle aus dem Audit 08/2026: `portrait-sean-collins.jpg` in `s8-bwl-rbs/gallery/` UND `s13-bwl-g99/gallery/` (zwei verschiedene Spieler-Fotos); `logan-roe-am-puck.jpg` in `s8-bwl-rbs/gallery/` UND `s16-bwl-vic/`.
 - **Konsequenz 1 – Umbenennen:** Nur die Datei umbenennen, deren voller Pfad in der Review-Datenquelle (`review.json` → `bild`) steht. Vorher prüfen, dass `finalerDateiname` im Zielordner nicht bereits existiert (sonst Überschreiben-Gefahr) → bei Kollision kollisionsfreien Namen wählen.
