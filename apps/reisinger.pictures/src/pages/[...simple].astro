@@ -4,6 +4,7 @@ import { type CollectionEntry, getCollection, render } from "astro:content";
 
 import BaseHead from "../components/BaseHead.astro";
 import HeroBanner from "../components/HeroBanner.astro";
+import EditorialHero from "../components/pages/EditorialHero.astro";
 import MinimalPage from "../components/pages/MinimalPage.astro";
 import Published from "../components/Published.astro";
 import type { SchemaCreationFunction } from "../components/SchemaOrg";
@@ -31,6 +32,14 @@ const imageInfo = heroImage ? await loadImage(heroImage) : undefined;
 
 const src = imageInfo?.src;
 
+// Route-specific editorial hero instead of the shared band. Only
+// `/personal-branding/` opts in; `HeroBanner` and every other caller of it are
+// unchanged (rules/10-ui-review-findings.md, 2026-10-19 round).
+const editorialImage = post.id === "personal-branding" ? heroImage : undefined;
+
+// A single long German compound must not split mid-word on narrow screens.
+const isDsb = post.id === "dsb";
+
 const createData: SchemaCreationFunction = (o, p, df, url) => createWebPageSchema({
   name: title,
   description,
@@ -48,11 +57,18 @@ const createData: SchemaCreationFunction = (o, p, df, url) => createWebPageSchem
     <SocialImage name={heroImage} />
     <SchemaOrg createData={createData} />
   </BaseHead>
-  {heroImage && <HeroBanner slot="hero" name={heroImage} alt={title} />}
-  <div class="content-measure">
-    <h1>{title}</h1>
-    <Published {...dates} />
+  {heroImage && !editorialImage && <HeroBanner slot="hero" name={heroImage} alt={title} />}
+  {editorialImage ? (
+    <EditorialHero title={title} description={description} imageName={editorialImage} alt={title}>
+      <Published {...dates} />
+      <Content components={{ TableOfContents }} />
+    </EditorialHero>
+  ) : (
+    <div class="content-measure">
+      <h1 class:list={[isDsb && "max-sm:text-[clamp(1.25rem,6.4vw,2.25rem)]"]}>{title}</h1>
+      <Published {...dates} />
 
-    <Content components={{ TableOfContents }} />
-  </div>
+      <Content components={{ TableOfContents }} />
+    </div>
+  )}
 </MinimalPage>

@@ -1,0 +1,68 @@
+---
+import ResponsiveImage from "../ResponsiveImage.astro";
+import { ResponsiveImageLoading } from "../ResponsiveImageLoading";
+
+interface Props {
+  title: string;
+  description?: string;
+  imageName: string;
+  alt?: string;
+}
+
+const { title, description, imageName, alt } = Astro.props;
+---
+
+{/*
+  Route-specific editorial hero for `/personal-branding/`.
+
+  The portrait floats right from `lg` on (Tailwind `float-right`), so headline,
+  lead and article text flow around it and fill the space next to it instead
+  of leaving an empty block below the lead. The picture is the first element in
+  the source order, because a float only shapes the content that follows it;
+  below `lg` the wrapper is a flex column and the picture is moved behind the
+  headline with `order`, so the mobile reading order stays headline → lead →
+  photograph → article. `clear-both` closes the float after the article.
+
+  The portrait keeps its native 2:3 ratio, so `fit="cover"` does not crop it,
+  and `showInfo` anchors the EXIF control to the rendered image
+  (rules/10-ui-review-findings.md).
+*/}
+<div class="flex flex-col lg:block">
+  <figure class="order-2 lg:order-none not-prose m-0 mt-6 mx-auto mb-8 w-full max-w-lg lg:mb-6 lg:mx-0 lg:ml-10 lg:mt-0 lg:float-right lg:w-[420px] lg:max-w-none xl:w-[480px] 2xl:w-[512px]">
+    <div class="aspect-[2/3] w-full overflow-hidden rounded-2xl">
+      <ResponsiveImage
+        name={imageName}
+        alt={alt}
+        loading={ResponsiveImageLoading.EAGER}
+        sizes="(min-width: 1536px) 32rem, (min-width: 1280px) 30rem, (min-width: 1024px) 26.25rem, min(32rem, calc(100vw - 2rem))"
+        fit="cover"
+        showInfo={true}
+        class="h-full w-full"
+      />
+    </div>
+  </figure>
+
+  <div class="order-1 lg:order-none not-prose">
+    <h1 class="m-0 text-left! text-3xl font-semibold leading-tight tracking-tight md:text-4xl xl:text-5xl">
+      {title}
+    </h1>
+
+    {description && (
+      <p class="m-0 mt-6 max-w-prose text-base leading-relaxed text-base-content/85">
+        {description}
+      </p>
+    )}
+  </div>
+
+  {/*
+    The article keeps the measure of the other simple pages (max-w-3xl = 768 px)
+    and its headings are left-aligned like the text (the global rule centres
+    h1–h4). The CTA wrapper (a `div`) stays uncapped, so its button remains
+    centred in the content column like on every other page.
+  */}
+  <div class="order-3 lg:order-none [&>:not(div)]:max-w-3xl [&>h2]:text-left! [&>h3]:text-left! [&>h4]:text-left!">
+    <slot />
+  </div>
+
+  <div class="clear-both" aria-hidden="true"></div>
+</div>

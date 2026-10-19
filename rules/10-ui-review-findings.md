@@ -78,11 +78,11 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/content/simple/dsb.mdx:23` | `light/desktop/dsb-sec3.png` | On the DSB page the version list says "**AGB** gültig ab 1. Jänner 2026" — the label is copy-pasted from `agb.mdx` and names the wrong document. | Change the label to "DSB gültig ab …" (the loop variable is already called `agb`, rename it too). **Fixed 2026-10-18:** label and loop variable renamed to `DSB`/`dsb`. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/pages/MinimalPage.astro:37` (`<main class="container prose max-w-none …">` — `max-w-none` cancels Tailwind Typography's `65ch` measure) | `light/desktop/ueber-mich-sec0.png`, `light/desktop/impressum-sec2.png`, `light/desktop/eventfotografie-sec0.png`, `-sec1.png` vs `light/desktop/tfp-sec0.png` | Prose measure is unbounded on most simple pages (and on every page using `MinimalPage`): paragraphs run to ~1310 px and ~95–110 characters per line at 1920, while TFP/TFP-Idee constrain their own paragraphs to ~766 px. Same content type, two very different reading widths. | Drop `max-w-none` or add a measure to the prose wrapper (`max-w-prose`/`max-w-3xl`), as the TFP page and `HomeIntro.astro:45` already do. **Fixed 2026-10-18** for the `simple` pages: `pages/[...simple].astro` wraps its text in `.content-measure`, whose direct `p/ul/ol/blockquote/heading` children are capped at `max-w-3xl mx-auto` (global.css). Measured on `/ueber-mich/` and `/impressum/`: widest paragraph 768 px (was ~1310 px). Other `MinimalPage` consumers (blog, area, portfolio, testimonials) are deliberately untouched. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/styles/global.css:30-32` (`h1,h2,h3,h4 { @apply text-center }`), opted out per component with `text-left` (`AreaHero.astro:40,80`, `PrivateAreaPage.astro:69`, `HomeIntro.astro:30`) | `light/desktop/impressum-sec2.png`, `light/desktop/ueber-mich-sec0.png`, `light/desktop/eventfotografie-sec1.png` | Mixed alignment within one page: all headings are centred by the global rule while body text stays left-aligned, so on the legal/content pages a centred heading sits above a left-aligned paragraph that starts at the far left of a 1310 px column. | Scope the centring rule (e.g. only for hero/section headings) or opt the simple-page prose out with `text-left!`. **Fixed 2026-10-18:** scoped opt-out via `.content-measure` (see the row above) instead of touching the global rule; the `simple` page headings are left-aligned like the body text. |
-| medium | n/a | `light/desktop/impressum-sec2.png` | Inconsistent vertical rhythm: the gap between the end of a paragraph and the next H2 varies between roughly 60 px and 200 px on the same page. | Normalise the heading margins (`prose` heading spacing) on the legal pages. |
+| **widerbestehend 2026-10-19** | n/a | `light/desktop/impressum-sec0..sec2.png` (neu: `ui-review-simple-2026-10-19`) | Inconsistent vertical rhythm: the gap between the end of a paragraph and the next H2 varies between roughly 60 px and 200 px on the same page. | Normalise the heading margins (`prose` heading spacing) on the legal pages. **Re-evaluated 2026-10-19, not reproducible:** the computed values of the current render are uniform — every `h2` has `margin-top: 48px` / `margin-bottom: 24px`, every `p` has `margin-top/bottom: 20px` (the first paragraph after a heading has `margin-top: 0px`) (measured in the browser at 1920 px on `/impressum/`). The visible distance between a paragraph and the next H2 is therefore always 48 px (measured: 48 px in all six cases); the earlier impression came from long paragraphs pushing the heading down, not from differing margins. **No change made** — the legal text and the page layout stay as they are. |
 | medium | `apps/reisinger.pictures/src/content/simple/share.mdx:2` | `light/desktop/share-sec0.png`, `light/mobile/share-sec0.png` | The share page's H1 is English ("Love it? Share it.") while everything below it is German; the campaign names ("Friends of Friends", "Extra Creative") are brand art, but the page title is UI copy. | Confirm as a deliberate slogan, or use a German H1 and keep the English line as a tag line. |
 | behoben 2026-10-18 | n/a | `light/desktop/share-sec0.png`, `light/mobile/share-sec0.png` | The orientation text is very faint: "DU FEIERST DEINE BILDER? ERZÄHL ES WEITER." and the three "SCHRITT 01/02/03" labels are light grey on white and are the page's main structure. (Deliberately *not* covered by the automated badge finding — this is a different element.) | Raise the muted colour one step (e.g. `text-base-content/70`) for the hint line and the step labels. **Fixed 2026-10-18** in `share.mdx`: hint `text-base-content/60` → `/70`, step labels `opacity-50` → `opacity-70`. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/content/simple/impressum.md` (gitignored content) | `impressum-mobile` | The contact block was written as inline runs, so on 480 px labels and values interleaved: "Web: https://reisinger.pictures WhatsApp:" followed by the wa.me URL on its own line. Hard to scan. | Put each entry on its own line (`<dl>`/block list) instead of relying on wrapping. **Fixed 2026-10-18:** each contact entry is now terminated with an explicit `<br>` (the "Web:" line was the only one missing a hard break); wording unchanged. The file is gitignored, so the fix is local-only and will not be part of a commit. |
-| low | `apps/reisinger.pictures/src/components/HeroBanner.astro:28-35` | `light/desktop/personal-branding-sec0.png`, `-sec1.png` | The HeroBanner band puts a ~500 px-wide photo inside a full-bleed 1920 px band above the H1, and the EXIF info badge floats at the band's top-right, i.e. outside the photo. | See the badge finding in §9; the band itself is the same issue as the sport hero. |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/components/pages/EditorialHero.astro` (route-specific; `HeroBanner.astro` itself unchanged) | `light/desktop/personal-branding-sec0.png`, `-sec1.png`, `dark/desktop/personal-branding-sec0.png`, `light/mobile/personal-branding-sec0.png` (neu nach dem Owner-Wechsel: `ui-review-pb2-2026-10-19/filled/{light,dark}/{desktop,intermediate,mobile}/personal-branding*.png`) | The HeroBanner band puts a ~500 px-wide photo inside a full-bleed 1920 px band above the H1, and the EXIF info badge floats at the band's top-right, i.e. outside the photo. | See the badge finding in §9; the band itself is the same issue as the sport hero. **Fixed 2026-10-19 for `/personal-branding/` only:** the route now renders a route-specific editorial hero (`EditorialHero.astro`) — the portrait **floats right** from `lg` on (Tailwind `float-right`), so headline, lead and article text flow around it; the shared `HeroBanner` (blog, TFP idea detail, `/akt/ablauf/`) is untouched. The portrait keeps its native 2:3 ratio (no crop), the EXIF control is anchored to the rendered image (`showInfo`). The picture is the first element in the source order (a float only shapes the content that follows it); below `lg` the wrapper is a flex column and the picture is moved behind the headline with `order`, so the mobile reading order stays headline → lead → photograph → article. `clear-both` closes the float after the article. Measured at 1920: image 512×768 at x=1108 (768 px text + 40 px margin + 512 px picture = the 1320 px container), the first article H2 at x=300 with the 768 px measure of the other simple pages; at 1024: image 420×630 at x=572, the text beside it ~500 px; at 480: image 448×672 with a 24 px gap below the lead (stacked, no float). No horizontal overflow at any of the three widths. The article keeps the **same measure as the other simple pages** (`max-w-3xl` = 768 px; the CTA wrapper stays uncapped so its button remains centred in the content column), so this route does not return to the long-line band flagged in the row above. The portrait's `alt` is the page title — the same pattern as `HeroBanner` and `AreaHero` use for their hero image; the duplication with the H1 is therefore project-wide, not introduced here. The headline/lead classes duplicate `AreaHero`'s default variant **on purpose**: `AreaHero` is shared with the private area pages and the sport pages (both out of scope for this commission), wraps its whole markup in `not-prose` and has no slot for the article. The frontmatter `description` is rendered as the visible lead — the same pre-existing words that were in the meta description before (as `AreaHero` does it); the owner saw this lead in the preview on 2026-10-19. |
 | low | n/a | `dark/desktop/impressum-sec0.png` | The WKO logo keeps its white logo background, which shows as a bright box on the dark surface. | Accept (official asset) or place the logo on a neutral `bg-base-100` chip in dark theme. |
 | low | n/a | `light/desktop/akt-ablauf-sec19.png` | `/akt/ablauf/` ends with a single half-width image and an empty right half of the row before the footer. | Accept as a grid orphan, or balance the last row. |
 | — | n/a | `light/desktop/portal-sec0.png` | No defect found on `portal` in the captured section. | none |
@@ -111,7 +111,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-19 | `apps/reisinger.pictures/src/pages/tfp/[slug].astro:49` | `light/desktop/tfp-idea-sec0.png` vs `light/desktop/tfp-sec0.png` | The idea detail page renders its H1 in the green brand colour while every other page (including the TFP overview) uses the dark base colour. | Use the standard H1 colour; if the green is wanted as a brand accent, use it consistently. **Fixed 2026-10-19:** the H1 colour is now `text-base-content`, matching the TFP overview and every other page H1; the title text is unchanged. |
-| low | n/a | `light/desktop/tfp-sec0.png`, `light/mobile/tfp-sec0.png` | In the idea cards there is a large empty gap between the centred card title and the left-aligned body text; title centred, body left — two alignments inside one small card. | Tighten the gap and pick one alignment for the card. |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/components/TfpIdeaCard.astro:13` | `light/desktop/tfp-sec0.png`, `-sec1.png`, `dark/desktop/tfp-sec0.png`, `light/mobile/tfp-sec0.png` | In the idea cards there is a large empty gap between the centred card title and the left-aligned body text; title centred, body left — two alignments inside one small card. | Tighten the gap and pick one alignment for the card. **Fixed 2026-10-19:** the card title is left-aligned like the body (`items-start justify-start text-left!`), the fixed minimum height (`min-h-[4.5rem] lg:min-h-[5.5rem]`) is gone and the spacing to the description is `mb-3`. Titles, descriptions, order, the disclosure ("Weitere Ideen anzeigen") and the "Mehr erfahren" links are unchanged; the action stays at the bottom of every card (the description keeps `grow`). |
 | — | n/a | `light/desktop/tfp-sec0.png` | The TFP content is written as "Vorschläge, keine Zusage", unpaid and mutually creative — wording and framing match the intended positioning (TFP only in the footer, no stronger promotion). No change suggested. | none |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/pages/404.astro:38` | `not-found-sec0.png` | The 404 page linked "TFP Shootings" in its closing link row, i.e. TFP appeared outside the footer, and that row used `text-base-content/60` (faint grey). | Move the TFP link out of the 404 row (keep footer only) and raise the row's contrast. **Fixed 2026-10-18:** the TFP link is removed from the row (the footer still links `/tfp/` as "TFP"); the remaining four links moved from `text-base-content/60` to `/70` in line with the share-page fix. |
 | — | n/a | `light/desktop/not-found-sec0.png` | Otherwise the 404 page is solid: one H1, readable copy, primary + outline button pair, secondary link row, footer present. | none |
@@ -180,7 +180,10 @@ sections above and the fix round commit. What remains, ranked:
 4. **`/testimonials/<name>/` wraps a small portrait in a wide band**, leaving ~400 px of empty panel
    on each side (§7, `medium`).
 5. **`/impressum/` has an uneven vertical rhythm and interleaved contact lines on mobile**
-   (§5, `medium`).
+   (§5, `medium`). The interleaved contact lines were fixed 2026-10-18 (local
+   content change only); the **vertical rhythm was re-evaluated 2026-10-19 and is
+   not reproducible** — the computed heading/paragraph margins are uniform, so
+   the page stays unchanged.
 6. **Sport pages** — hero band wider than the photo, art grid mixing label bars and photos, CTA
    wording. All three are handled by the separately commissioned sport redesign
    (`rules/11-sport-area-redesign-proposal.md`), not here.
@@ -349,9 +352,10 @@ layouts were left alone.
   and share, were pixel-identical to the audited baseline. Blog posts outside the manifest that embed
   `TestimonialBlock` also inherit the shared `ReviewCard` change; they were not part of this pixel
   comparison.
-- Still-open, out-of-scope rows remain: homepage hero action weight (§1), `/impressum/` vertical
-  rhythm (§5), the English share H1 (§5, owner decision), the floating chat bubble (§9), the TFP
-  card title/body alignment (§8), the KI-summary measure (§7).
+- Still-open, out-of-scope rows remain: homepage hero action weight (§1), the English share H1 (§5,
+  owner decision), the floating chat bubble (§9), the KI-summary measure (§7). The `/impressum/`
+  vertical rhythm (§5) and the TFP card title/body alignment (§8) were closed in the
+  simple-page round of 2026-10-19 (see below).
 
 ### Coverage — what was actually looked at
 
@@ -364,3 +368,101 @@ difference in 2 px on `home-sec1` / `portfolio-page-last-sec2|3` is render non-d
 content). Changed routes were reviewed at **desktop, intermediate and mobile** in **light and dark**;
 sampled sections only (the harness captures the page top + footer, so long-page interiors were not
 re-inspected). Other families were spot-checked rather than exhaustively re-opened.
+
+---
+
+## Simple-page round — 2026-10-19 (owner-commissioned, one page at a time)
+
+Owner commission: all **12 routable entries** of the `simple` collection (`index.mdx` is not routed)
+were looked at individually and rebuilt **only where a concrete layout defect was visible**. Copy,
+legal wording, prices, testimonials, links/URLs, image selections and functionality are unchanged;
+the homepage and `/shootings/sport/**` are out of scope and were not touched.
+
+Routes in scope: `/agb/`, `/dsb/`, `/eventfotografie/`, `/impressum/`, `/personal-branding/`,
+`/portal/`, `/preise/`, `/share/`, `/testimonials/`, `/tfp/`, `/ueber-mich/`, `/akt/ablauf/`.
+
+### Changed (3 routes)
+
+| Route | File | Change |
+|---|---|---|
+| `/dsb/` | `apps/reisinger.pictures/src/pages/[...simple].astro` (H1 class, route-specific) | The H1 "Datenschutzbestimmungen (DSB)" broke mid-word on narrow screens ("Datenschutzbestimmung" + "en (DSB)"). The compound is 477 px wide at the standard 36 px H1 size, so it cannot fit into the 448 px mobile measure. The H1 now scales fluidly below the `sm` breakpoint (`max-sm:text-[clamp(1.25rem,6.4vw,2.25rem)]`), so the word stays whole and the title wraps at the space instead ("Datenschutzbestimmungen" / "(DSB)"). Measured font size 30.7 px at 480, 25.0 px at 390, 20.5 px at 320; the word never breaks and no horizontal overflow occurs (checked at 320/360/390/480/540/640/768/1024/1920). The title text, the page title, the schema and the PDF block are unchanged. |
+| `/tfp/` | `apps/reisinger.pictures/src/components/TfpIdeaCard.astro` | The idea cards mixed two alignments (centred title, left body) and a fixed `min-h` on the title produced a conspicuous empty band above the description. The title is now left-aligned like the body, the minimum height is removed and the gap to the description is `mb-3`. Titles, descriptions, order, the "Weitere Ideen anzeigen" disclosure and the "Mehr erfahren" links are unchanged, and the action still sits at the bottom of every card. |
+| `/personal-branding/` | `apps/reisinger.pictures/src/components/pages/EditorialHero.astro` (new), `apps/reisinger.pictures/src/pages/[...simple].astro` | The portrait (2:3, 4000×6000) sat in the full-bleed `HeroBanner` band — at 1920 a ~507 px photo inside a 1920 px grey band, with the H1 below the band. The route now renders a **route-specific editorial hero**: the portrait **floats right** from `lg` on (Tailwind `float-right`, no band, no letterbox, no crop, EXIF control anchored to the picture via `showInfo`), so headline, lead and article text flow around it. The shared `HeroBanner` (blog, TFP idea detail, `/akt/ablauf/`) is **not** changed. The article keeps the **same measure as the other simple pages** (`max-w-3xl` = 768 px; the CTA wrapper, a `div`, stays uncapped so its button remains centred in the content column), and the headings are forced left with `[&>h2]:text-left!` etc. because the global rule centres h1–h4. Below `lg` the wrapper is a flex column and the picture moves behind the headline (`order`), so the mobile order stays headline → lead → photograph → article. |
+
+### Deliberately kept unchanged (9 routes)
+
+| Route | Why nothing was changed |
+|---|---|
+| `/agb/` | The legal page renders the signed PDF as a link + bounded embed; the H1 and the section rhythm are clean. The signed-PDF decision of 2026-10-18 stands. |
+| `/eventfotografie/` | Headline, lead, bullet list and the portal link form one consistent left-aligned column; no gap, overflow or hierarchy defect. |
+| `/impressum/` | The open "vertical rhythm" item was **re-evaluated and is not reproducible** (uniform computed margins, see the row in §5). The contact block, the legal fields and the official WKO image stay as they are. |
+| `/portal/` | Text page with one clear hierarchy (H1 → two intro paragraphs → H2 → list); no defect in the captured sections. |
+| `/preise/` | The pricing configurator is **unchanged by this round** (the discount labels changed in the parallel pricing round — see rules/06 §Display decisions); the seven reload states of `e2e/pricing-deeplink.spec.ts` and the friend deep link (`rules/06`, `rules/07`) are covered by the E2E suite (49/49 green). The H1/H2 hierarchy was fixed on 2026-10-18 and still holds. |
+| `/share/` | The campaign layout (uppercase hint line, three "Schritt" steps, tier cards) is intentional. The English H1 "Love it? Share it." remains an **open owner decision** (copy, not layout) — not changed here. |
+| `/testimonials/` | The unified review card (2026-10-19, previous round) plus the AI summary read consistently; the narrower AI-summary box is a known `low` item (§7), not a rebuild. |
+| `/ueber-mich/` | One left-aligned column with a pull quote; measure, rhythm and hierarchy are correct. |
+| `/akt/ablauf/` | The long-form guide with its photo sequence is deliberate (owner note) — the `HeroBanner` band above it was kept unchanged because the guide's own first screen works with it. |
+
+### Open items that stay open (not layout defects, or out of scope)
+
+* `/share/` English H1 — **owner decision** on copy (unchanged).
+* `/impressum/` contact lines: the "Unternehmensdaten" block still joins the GISA line with
+  "Zuständige Aufsichtsbehörde:" (missing hard break). The file is **git-ignored content** and was
+  therefore not touched here — it needs a content-store fix, not a template fix.
+* Homepage hero action weight (§1), floating chat bubble (§9), KI-summary measure (§7),
+  WKO logo on the dark surface (§5) — outside this commission.
+* `/preise/` deep links, prices, discount logic: untouched, E2E green.
+
+### Coverage — what was actually looked at
+
+* **Full manifest suite** after the change: 32 routes × 6 projects = **192/192** cases, output
+  `ui-review-simple-2026-10-19` (dev server `http://localhost:44345`, started with the project-owned
+  `tests/screenshots/dev-server.mjs`). All 12 simple routes were captured in **light and dark** at
+  **desktop (1920×950), intermediate (1024×900) and mobile (480×1040)**.
+* **Visually re-opened** (light + dark where the change is visible): the new captures of `dsb`
+  (mobile sec0, intermediate sec0, desktop sec0), `personal-branding` (desktop sec0/sec1,
+  intermediate sec0, mobile sec0) and `tfp` (desktop sec0/sec1, intermediate sec0, mobile sec0);
+  the changed pages were additionally inspected by scrolling in the browser (personal-branding at
+  700 px and at the page end). The nine deliberately unchanged pages were looked at individually
+  in the audited baseline run (light **and** dark desktop sec0, plus mobile sec0 for `dsb`,
+  `share`, `ueber-mich`, `eventfotografie`, `portal` and `pricing-default`) and are pixel-identical
+  in the new run.
+* **Measured in the browser** (not only screenshots): the DSB H1 at 9 viewport widths (320–1920) and
+  the personal-branding hero geometry at 1920/1024/480, plus the `/impressum/` margin table.
+* **Objective pixel comparison** (new run vs. the audited baseline `ui-review-redesign-2026-10-19`,
+  per PNG, tolerance > 2/255): differences **only** on `dsb` (mobile only — the intended H1 fix),
+  `personal-branding` and `tfp` (all six projects — the intended changes) and `home`
+  (6 px in one intermediate frame, known render non-determinism). Every other route of the manifest
+  is pixel-identical to the baseline, including all nine simple routes that were deliberately kept.
+  Two deviations belong to the **parallel pricing/area round** in the same working tree, not to this
+  round: `pricing-default`, `pricing-standard`, `pricing-standard-student`, `pricing-standard-friend`
+  (discount labels) and `shootings` (the "Ablauf-Leitfaden" entry in the route block). One further
+  deviation is unrelated and not reproducible from the code: `content-example` at intermediate differs
+  in the breadcrumb row (different line wrapping of the same four levels; the live DOM and the new
+  capture agree, the route is untouched here and renders pixel-identical at desktop and mobile).
+* **Owner change after the round (2026-10-19):** on the owner's request the article text on
+  `/personal-branding/` now **flows around the portrait** — the picture floats right from `lg` on
+  instead of standing in a grid column, so the text fills the space next to it and widens below it.
+  The change touches that one route only (`EditorialHero.astro` + the route wrapper). The route was
+  re-captured afterwards (6/6 cases) in `ui-review-pb3-2026-10-19` and measured in the browser at
+  1920/1024/480 (image 512×768 at x=1108 at 1920 with the 768 px text measure of the other simple
+  pages, headline and lead wrapping beside it, article text ending at the picture's margin; stacked
+  below `lg` with a 24 px gap; no horizontal overflow). The nine
+  deliberately unchanged routes and the two other changed routes are not affected by it.
+* **Limits of this pass:** the harness samples the page top and the footer of long pages, so the
+  interior of `/dsb/`, `/agb/`, `/impressum/`, `/akt/ablauf/`, `/testimonials/` and `/tfp/` was **not**
+  re-inspected section by section; the interior of `/personal-branding/` was opened once by scrolling
+  (700 px and the page end). No claim is made about the un-inspected sections.
+
+### Verification
+
+`test:unit` 108/108 · `lint` clean · `astro check` 0 errors/0 warnings · `build` 280 pages,
+`check_links` "No missing links found!" · `test:contrast` 10/10 · app E2E 49/49 (TFP disclosure,
+pricing deep links, homepage, contact, private areas) · `git diff --check` clean.
+
+UI evidence: **192/192** cases of the full manifest suite (18:43, `ui-review-simple-2026-10-19`) for
+the state of this round, plus a **6/6** re-capture of the one route the owner changed afterwards
+(`/personal-branding/`, 19:04, `ui-review-pb2-2026-10-19`). The build, unit, lint and E2E figures
+above were re-run after that owner change and cover the final source; `test:contrast` and the
+192-case suite do not touch `/personal-branding/` (contrast routes: beauty, couples, preise ×2),
+so the re-capture is the UI evidence for that route.
