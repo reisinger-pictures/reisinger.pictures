@@ -1,14 +1,13 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–5 DONE; STEPS 6–14 NOT STARTED.** The owner answered
-D1–D10 on 2026-10-18 and clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4
-are implemented and committed (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was
-done. Step 5's map, directory component and overview presentation change are local and uncommitted;
-the first independent review returned CHANGES REQUIRED, and the independent redo review APPROVED the
-addressed changes on 2026-10-19. One overview MDX was changed and backed up; no publication or
-deployment has occurred. The backup remains until publication and final owner approval. The owner
-authorized continuing the released implementation steps through a local preview, except for the
-explicit image and text/name gates below.
+**Status: STEPS 1–6 DONE; STEPS 7–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
+clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
+(`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
+is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
+tree and is backed up. Step 6's D2 schema, rule, skill and evidence-backed assignments were
+independently approved on 2026-10-19. No publication or deployment has occurred. The content backup
+remains until publication and final owner approval. The owner authorized continuing the released
+implementation steps through a local preview, except for the explicit image and text/name gates below.
 
 - **Date:** 2026-10-18
 - **Author:** planning subagent (not the owner, not the implementer)
@@ -523,7 +522,7 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
    `steelvolleys`, which carry no `priority` (§8 D1; implementer's call). Exit: hub unit tests
    (`pnpm --filter reisinger.pictures test:unit`) cover the new map; all 14 children resolve;
    `pnpm test:ui` desktop grid shows no mixed label/photo rhythm.
-     **Implementation note (2026-10-19, independently approved — DONE).**
+     **Implementation note (2026-10-19, independently approved and committed — DONE).**
     `src/data/sport-areas.ts` holds the map (`SPORT_ART_HUBS`, `SPORT_CHILDREN`, `sportChildIds`,
     `orderSportAreas`, `groupSportAreas`), unit-tested in `src/data/sport-areas.test.ts`.
     `src/components/areas/SportAreaDirectory.astro` renders the art grid and the grouped team
@@ -541,10 +540,19 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
       "American Football & Cheerleading" remains on one line in the three-column grid; other
       `ContentCard` consumers retain the existing `text-lg` default.
 6. **Tag work (D2)** — the controlled `tags` frontmatter field plus its schema entry, the project
-   rule for it, the update to the project-local `blog-beitrag` skill, and the evidenced per-post
-   assignments. Only tags that are evidenced in the content are set; a post without evidence stays
-   untagged. Exit: the schema accepts `tags`; the rule and the skill carry the assignment; every set
-   tag is traceable to the post's own content, none is guessed.
+    rule for it, the update to the project-local `blog-beitrag` skill, and the evidenced per-post
+    assignments. Only tags that are evidenced in the content are set; a post without evidence stays
+    untagged. Exit: the schema accepts `tags`; the rule and the skill carry the assignment; every set
+    tag is traceable to the post's own content, none is guessed.
+     **Implementation note (2026-10-19, independently approved — DONE).**
+     `src/data/portfolio-tags.ts` is the single controlled vocabulary (`dragons`, `vikings`, `acsl`,
+     `steelvolleys`); the optional `portfolio.tags` schema imports it. The project rule and local
+     `blog-beitrag` skill document the evidence policy. Exactly ten portfolio entries have local,
+     git-ignored tag assignments: four Dragons, six Vikings (including the two shared AFL posts),
+     and two ACSL. No Steelvolleys post has direct evidence, so none is tagged. Independent review
+     on 2026-10-19 APPROVED the change; `astro check` reported 0 errors/warnings/hints, lint was
+     clean, and unit tests passed (10 files, 93 tests). The review's low-severity wording advisory
+     about distinguishing an event post from a post that merely mentions a team is non-blocking.
 7. **Related-posts extension** (limit parameter, per-page heading, optional date on the card), now
    driven by the D2 tag mapping. Exit: unit tests for `selectRelatedPosts` still pass; the card shows
    a locale-formatted date (de-AT) in both themes; no other consumer of `ContentCard` regresses

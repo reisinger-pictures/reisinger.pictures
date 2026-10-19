@@ -2,6 +2,8 @@ import { file, glob } from "astro/loaders";
 import { z } from "astro/zod";
 import { defineCollection, reference } from "astro:content";
 
+import { PORTFOLIO_TAGS } from "./data/portfolio-tags";
+
 const portfolio = defineCollection({
   // Verwende einen puren String-Glob: **/[^_]*.{md,mdx} schließt alle Dateien aus, die mit _ beginnen
   loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: "./src/content/portfolio" }),
@@ -9,6 +11,9 @@ const portfolio = defineCollection({
     title: z.string(),
     description: z.string().optional(),
     keywords: z.array(z.string()).optional(),
+    // Controlled team/league tags (D2). The vocabulary lives in
+    // `src/data/portfolio-tags.ts`; see `rules/09-shooting-areas.md`.
+    tags: z.array(z.enum(PORTFOLIO_TAGS)).optional(),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
     heroImage: z.string()

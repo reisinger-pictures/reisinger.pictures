@@ -62,6 +62,36 @@ the related-post filter/sort/limit behaviour are identical to before, so the
 "Aktuelle Einblicke" block (shared `AreaRelatedPosts.astro`) keeps working for
 every area.
 
+## Portfolio post tags (`tags`, D2)
+
+The `portfolio` collection carries an optional, controlled `tags` field
+(`apps/reisinger.pictures/src/content.config.ts`). It exists for one purpose: to
+attach a post to a sport team/league area whose portfolio prefix is only the
+broad `sport` bucket — Dragons, Vikings, ACSL and SteelVolleys
+(`rules/11-sport-area-redesign-proposal.md` §8, D2). Step 7 consumes the tags in
+the related-posts block; step 6 introduces only the field, the vocabulary and the
+evidenced assignments, and leaves the prefix mapping and the filtering unchanged.
+
+- **Controlled vocabulary.** The allowed values are the single source of truth in
+  `src/data/portfolio-tags.ts` (`PORTFOLIO_TAGS`), imported by the schema. Each
+  value equals the suffix of its `/shootings/sport/<team>/` area id: `dragons`,
+  `vikings`, `acsl`, `steelvolleys`. All four are allowed by the schema even
+  where no post carries the tag yet — there is no SteelVolleys portfolio post
+  today. Never widen the vocabulary without the owner decision and the schema.
+- **Evidence requirement.** A tag may be set only when the post's own `title`,
+  `description` or body names the team or league. Never infer a tag from the
+  sport, the opponent, an image slug, a filename or an unrelated page. A post
+  that does not name a team stays **untagged**; it is not attached to a team area
+  by guesswork.
+- **Single and multiple tags.** A post may carry one or several tags: a game that
+  names two teams (e.g. the shared Dragons-vs-Vikings AFL entries) carries both
+  `dragons` and `vikings`. Set every evidenced tag, in `PORTFOLIO_TAGS` order.
+- **Boundary.** Tags serve the team-area related posts only. They do not replace
+  `getPortfolioPrefix`, and the five other team pages keep their existing narrower
+  portfolio prefixes and get no tags. A tag changes no URL, no slug, no image and
+  no other frontmatter. The author-facing assignment policy lives in the
+  project-local `blog-beitrag` skill.
+
 ## Two compositions, shared building blocks
 
 - `src/components/areas/PrivateAreaPage.astro` — the redesigned private offer
