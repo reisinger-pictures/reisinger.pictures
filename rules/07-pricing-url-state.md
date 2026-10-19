@@ -42,6 +42,21 @@ Pure parsing/serialization lives in `src/solid/pricing-url-state.ts`.
   Back/forward reread both configurations and the tariff without remapping counts.
   These are normal browser history operations, not a separate application router.
 
+## Deep links and redirects
+- `/preise/friends` (owner decision 2026-10-19) redirects to
+  `/preise/?tarif=flex&code=friend&friend=true`: the Flex tab opens, the friend
+  code is unlocked (`code=friend` reveals the option) and the friend discount is
+  pre-armed in the Standard tab (`friend=true`). The friend option exists **only
+  in the Standard tariff** — the redirect adds no discount to Flex. It is
+  declared in the `redirects` map of `apps/reisinger.pictures/astro.config.mjs`,
+  like `/live`, `/privat/preise` and `/tfp/resident-model`.
+- A redirect target may carry calculator parameters; the query string of the
+  target must survive the redirect unchanged.
+- A **static** redirect cannot merge an inbound query: `/preise/friends?utm_source=x`
+  keeps the fixed target query (`?tarif=flex&code=friend&friend=true`) and drops
+  `utm_source`. The redirect is a generated meta-refresh page, not a server-side
+  rewrite — the same limitation applies to `/live` and `/tfp/resident-model`.
+
 ## Price examples and inquiry boundary
 - `/preise/?tarif=standard&h=1&img=15&location=outdoor`: **249 €**.
 - `/preise/?tarif=flex`: **149 €**.

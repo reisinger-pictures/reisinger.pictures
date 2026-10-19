@@ -103,6 +103,25 @@ a later legal alignment is pending.
   non-deterministic and therefore not a unit test. `pricing-parity.test.ts` links
   the constants to the snapshot.
 
+## Display decisions (owner, 2026-10-19)
+- **The discount rate is not shown as text.** The student option reads
+  “Studenten-Rabatt”, the friend option reads “Freunde-Rabatt”; the rates
+  (“ein Drittel”, “50 %”) are no longer spelled out in the calculator labels or in
+  the contact-request message. The **rates themselves stay unchanged** — they are
+  the pricing rule in `packages/shared/utils/pricing.ts` and are not a copy
+  detail. The publication condition next to the selected discount stays visible.
+- **The struck-through base price stays** as the price affordance above the final
+  price; only the *rate as text* is removed. If the base price should disappear
+  as well, that is a separate owner decision.
+- **Deep link `/preise/friends`:** the route did not exist (404). It now
+  redirects to `/preise/?tarif=flex&code=friend&friend=true` — the Flex tab
+  opens, the friend code is unlocked and the friend discount is pre-armed in the
+  Standard tab. The friend option itself lives **only in the Standard tariff**
+  (the Flex configuration has no discount); the redirect therefore does not add
+  a friend discount to Flex. Implemented via the `redirects` map in
+  `apps/reisinger.pictures/astro.config.mjs` (pattern of `/live`,
+  `/privat/preise`, `/tfp/resident-model`).
+
 ## Where the rule is visible
 - `src/content/simple/preise.mdx` (local, git-ignored): page-level summary of the
   rule for Standard vs. Flex and the discount condition.
@@ -115,7 +134,10 @@ a later legal alignment is pending.
 - `src/solid/PricingCalculatorProfi.tsx`: the publication condition is shown
   next to the selected discount and added to the contact request **only when a
   discount actually applies**. Without a discount the request claims no
-  publication grant. The student option is labelled "(ein Drittel)".
+  publication grant. **Owner decision 2026-10-19 (implemented):** the student
+  option reads “Studenten-Rabatt”, the friend option “Freunde-Rabatt”; the
+  rates are no longer spelled out — neither in the labels nor in the request
+  message (see "Display decisions").
 - `src/solid/PricingCalculator.tsx`: configuration-aware rights summary and
   request message (private / no commercial use + agreed publication, or the
   1:1 on-device exception when Act + the option is flagged).

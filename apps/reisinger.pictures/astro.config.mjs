@@ -10,7 +10,17 @@ export default defineConfig({
   image: {
     dangerouslyProcessSVG: true
   },
-  redirects: { "/live": "/portal", "/privat/preise": "/preise", "/tfp/resident-model": "/tfp/" },
+  // `/preise/friends` is the friend deep link: it opens the Flex tab and
+  // pre-arms the friend discount in the Standard tab (`code=friend` unlocks the
+  // option, `friend=true` selects it). The friend option exists only in the
+  // Standard tariff — the redirect does not add a discount to Flex.
+  // Owner decision 2026-10-19, rules/06-pricing-publication.md.
+  redirects: {
+    "/live": "/portal",
+    "/privat/preise": "/preise",
+    "/tfp/resident-model": "/tfp/",
+    "/preise/friends": "/preise/?tarif=flex&code=friend&friend=true"
+  },
   site: "https://reisinger.pictures",
   cacheDir: "./.cache",
   devToolbar: {

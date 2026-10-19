@@ -283,6 +283,20 @@ test("student and friend conditions still prefill the request without any POST",
   expect(posts).toBe(0);
 });
 
+test("the friend deep link redirects to the Flex tariff with the friend discount pre-armed", async ({ page }) => {
+  await page.goto("/preise/friends");
+
+  await expect(page.locator('[data-pricing-ready="true"]')).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe("/preise/");
+  expect(new URL(page.url()).search).toBe("?tarif=flex&code=friend&friend=true");
+  await assertConfiguration(page, "Flex", 149);
+
+  // The friend option lives in the Standard tariff only — the redirect pre-arms it there.
+  await page.getByRole("tab", { name: "Standard", exact: true }).click();
+  await expect(page.getByRole("checkbox", { name: /Freunde-Rabatt/ })).toBeChecked();
+  await expect(page.getByTestId("pricing-total")).toHaveText("125 €");
+});
+
 test("Standard example inquiry preserves its 249 € configuration on close/reload", async ({ page }) => {
   let posts = 0;
   page.on("request", request => { if (request.method() === "POST") posts += 1; });

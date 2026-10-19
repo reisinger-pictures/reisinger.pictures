@@ -43,8 +43,8 @@ export default function PricingCalculatorProfi(props: Props) {
     msg += "- Stunden: " + hours() + " (" + (hours() * 60) + " Minuten)\n";
     msg += "- Bilder: " + images() + " Stück\n";
     msg += "- Location: " + (location() === "indoor" ? "Indoor Studio" : "Outdoor") + "\n";
-    if (isStudent()) msg += "- Studenten-Rabatt (ein Drittel)\n";
-    if (isFriend() && showFriend()) msg += "- Freunde-Rabatt (50%)\n";
+    if (isStudent()) msg += "- Studenten-Rabatt\n";
+    if (isFriend() && showFriend()) msg += "- Freunde-Rabatt\n";
     // Nur wenn tatsächlich ein Rabatt greift: die damit verbundene Freigabe benennen.
     if (discountActive()) {
       msg += "- Hinweis: Mit diesem Rabatt ist die Freigabe ausgewählter Bilder zur Veröffentlichung Bestandteil des Angebots (Abstimmung vor der Buchung)\n";
@@ -109,7 +109,7 @@ export default function PricingCalculatorProfi(props: Props) {
           <div class="form-control border-2 rounded-xl px-4 py-3 bg-base-200/50" classList={{ "border-success/50": isStudent(), "border-base-300": !isStudent() }}>
             <label class="label grid grid-cols-[1fr_auto] items-center gap-4 cursor-pointer p-0 text-left">
               <div class="flex flex-col">
-                <span class="font-black text-sm text-base-content">Studenten-Rabatt (ein Drittel)</span>
+                <span class="font-black text-sm text-base-content">Studenten-Rabatt</span>
                 <span class="text-[11px] text-base-content/70 font-medium">Gültig für Schüler & Studierende</span>
               </div>
               <input type="checkbox" checked={isStudent()} onChange={(e) => setIsStudent(e.currentTarget.checked)} class="checkbox checkbox-success checkbox-md" />
@@ -120,7 +120,7 @@ export default function PricingCalculatorProfi(props: Props) {
             <div class="form-control border-2 rounded-xl px-4 py-3 bg-warning/10" classList={{ "border-warning/50": isFriend(), "border-base-300": !isFriend() }}>
               <label class="label grid grid-cols-[1fr_auto] items-center gap-4 cursor-pointer p-0 text-left">
                 <div class="flex flex-col">
-                  <span class="font-black text-sm text-base-content">Freunde-Rabatt (50%)</span>
+                  <span class="font-black text-sm text-base-content">Freunde-Rabatt</span>
                   <span class="text-[11px] text-base-content/70 font-medium">Spezieller Dankeschön-Preis für Freund:innen</span>
                 </div>
                 <input type="checkbox" checked={isFriend()} onChange={(e) => setIsFriend(e.currentTarget.checked)} class="checkbox checkbox-warning checkbox-md" />
