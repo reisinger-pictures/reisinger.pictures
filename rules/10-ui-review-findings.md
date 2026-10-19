@@ -449,6 +449,12 @@ Routes in scope: `/agb/`, `/dsb/`, `/eventfotografie/`, `/impressum/`, `/persona
   pages, headline and lead wrapping beside it, article text ending at the picture's margin; stacked
   below `lg` with a 24 px gap; no horizontal overflow). The nine
   deliberately unchanged routes and the two other changed routes are not affected by it.
+* **The capture folders are ephemeral.** `ui-review-*` are screenshot collections in the OS temp
+  directory, not in the repository; the owner released the temp area on 2026-10-19, so the folders of
+  the finished rounds were deleted afterwards. The measurements quoted here are the evidence — the
+  PNGs are not archived. Two collections deliberately survive until the open tasks are done:
+  `ui-review-before-sport-step5-2026-10-19` (the before-captures the open sport steps compare
+  against) and `sport-content-backup-2026-10-19` (the content backup the carry-over note refers to).
 * **Limits of this pass:** the harness samples the page top and the footer of long pages, so the
   interior of `/dsb/`, `/agb/`, `/impressum/`, `/akt/ablauf/`, `/testimonials/` and `/tfp/` was **not**
   re-inspected section by section; the interior of `/personal-branding/` was opened once by scrolling
