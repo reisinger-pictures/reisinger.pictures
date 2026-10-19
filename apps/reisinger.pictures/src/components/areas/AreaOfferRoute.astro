@@ -14,12 +14,25 @@ interface Props {
 
 const { slug, siblings, class: className } = Astro.props;
 
+// Area-specific guide pages that already exist. Only the Akt area has one:
+// until now its guide was reachable only through the inline word "hier" in the
+// body copy, which made it practically undiscoverable. Owner decision
+// 2026-10-19, rules/09-shooting-areas.md.
+const guideLinks: Record<string, OfferLink & { note: string }> = {
+  akt: {
+    href: "/akt/ablauf/",
+    label: "Ablauf-Leitfaden",
+    note: "Der ganze Ablauf Schritt für Schritt."
+  }
+};
+
 const links = [
   {
     href: "/preise/",
     label: "Preise & Tarife",
     note: "Alle Tarife und der Preisrechner."
   },
+  ...(guideLinks[slug] ? [guideLinks[slug]] : []),
   {
     href: `/shootings/${slug}/testimonials`,
     label: "Kundenbewertungen",
@@ -30,9 +43,10 @@ const links = [
 
 {/*
   Repeating element of the private offer pages: the quiet route from the
-  photograph to the existing pricing page and the existing customer reviews.
-  No prices, deliverables or usage rights are invented here — both targets are
-  pre-existing pages.
+  photograph to the existing pricing page, the existing guide page of the area
+  (Akt only) and the existing customer reviews.
+  No prices, deliverables or usage rights are invented here — every target is
+  a pre-existing page.
 */}
 <aside class:list={["not-prose", className]} aria-labelledby="weg-zum-shooting">
   <div class="border-t border-base-300 pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">

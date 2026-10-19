@@ -139,6 +139,12 @@ evidenced assignments, and leaves the prefix mapping and the filtering unchanged
     **existing** pages (`/preise/` and `/shootings/<area>/testimonials`) and to
     the sibling private offers; the sibling labels are reused from
     `src/data/Menue.ts`, never re-invented from the long marketing `name`s.
+    **Owner decision 2026-10-19:** the **Akt area additionally links its
+    existing guide page `/akt/ablauf/`** as “Ablauf-Leitfaden” in this route
+    block, because until then the only path to the guide was the inline word
+    “hier” inside the body copy — the guide was practically unreachable. The
+    entry is area-specific (only Akt has a guide); no new page is created and
+    the existing URLs stay unchanged.
   - `AreaRelatedPosts.astro` — the related-posts block, shared by both
     compositions; its heading and optional date are configurable per page.
 - Design rules for the private pages: photography-led and quiet, semantic
