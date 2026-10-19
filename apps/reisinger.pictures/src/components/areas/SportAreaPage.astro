@@ -5,6 +5,7 @@ import { loadImage } from "../../images/image-service";
 import BaseHead from "../BaseHead.astro";
 import FeaturedTestimonials from "../FeaturedTestimonials.astro";
 import Gallery from "../Gallery.astro";
+import { GalleryLayout } from "../GalleryLayout";
 import MinimalPage from "../pages/MinimalPage.astro";
 import { type SchemaCreationFunction } from "../SchemaOrg";
 import SchemaOrg from "../SchemaOrg.astro";
@@ -55,7 +56,7 @@ const createData: SchemaCreationFunction = (o, me, _, url) => createWebPageSchem
 
   <FeaturedTestimonials slug={slug} categoryTestimonials={categoryReviews} featuredTestimonials={reviewSlugs} />
   {images.length > 0 &&
-    <div class="mt-16"><Gallery sorted={images} /></div>}
+    <div class="mt-16"><Gallery sorted={images} layout={GalleryLayout.Sport} /></div>}
 
   <AreaRelatedPosts posts={relatedPosts} portfolioPrefix={portfolioPrefix} heading={heading} showDate={showDate} />
 </MinimalPage>

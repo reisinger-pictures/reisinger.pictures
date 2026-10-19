@@ -1,6 +1,6 @@
 # Sport area pages redesign — proposal
 
-**Status: STEPS 1–7 DONE; STEPS 8–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
+**Status: STEPS 1–8 DONE; STEPS 9–14 NOT STARTED.** The owner answered D1–D10 on 2026-10-18 and
 clarified step 5 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
 (`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
@@ -568,10 +568,17 @@ inputs below. Do not invent those inputs; surface the remaining gates with the l
       `DOMContentLoaded` (Astro `ClientRouter` can reload the same URL during initial navigation).
       Independent review APPROVED. No production build, publication or deployment was run.
  8. **Gallery for sport** (layout decision; if a new `GalleryLayout` value is added, the matching
-   `data-gallery` rule in `global.css` ships in the same step). Exit: `pnpm test:ui` at 480 px shows
-   the intended column count; the portrait-promotion guard from `rules/10-ui-review-findings.md` §2
-   still holds.
-9. **Overview-gallery reduction (D4)** — shrink the overview gallery to the 6–8 hand-picked images,
+    `data-gallery` rule in `global.css` ships in the same step). Exit: `pnpm test:ui` at 480 px shows
+    the intended column count; the portrait-promotion guard from `rules/10-ui-review-findings.md` §2
+    still holds.
+      **Implementation note (2026-10-19, independently approved — DONE).** Sport image
+      sizes now derive their desktop container caps from the shared `computeSizes` helper and account
+      for the 540px mobile cap and 16px inter-column gap. Default helper output is regression-tested;
+      Presentation's landscape promotion is unchanged. Unit tests passed (11 files / 107 tests),
+      package lint and `astro check` passed, and all 18 `shootings-sport` screenshots passed across
+      six projects. Reviewed the 480px light/dark gallery captures and desktop light/dark captures;
+      the gallery shows two columns without horizontal overflow. No content or image inputs changed.
+ 9. **Overview-gallery reduction (D4)** — shrink the overview gallery to the 6–8 hand-picked images,
    the full sets staying on the art hubs. This step depends on the owner-released image selection and
    does not start before it exists; nothing is trimmed on a guess. Exit: the released selection is
    in place on the overview, the full sets unchanged on the art hubs.
