@@ -47,129 +47,122 @@ export default function PricingCalculator(props: Props) {
     return props.requestHref(msg);
   });
 
+  // The Flex tab shares the exact outer framing of the Standard tab (the
+  // description paragraph and the single bordered panel are owned by
+  // `PricingTabs`), so both tabs start directly with the price summary instead
+  // of one tab carrying a second, redundant "Tarif-Konfigurator" card.
   return (
-    <div class="card shadow-2xl bg-base-100 text-base-content border-2 border-primary/30 rounded-2xl overflow-hidden">
-      <div class="card-body p-6 md:p-8 flex flex-col justify-between space-y-6">
-        
-        <div class="text-center">
-          <h2 class="text-2xl font-black uppercase tracking-wider text-primary m-0">Tarif-Konfigurator</h2>
-          <p class="opacity-70 text-xs font-bold mt-1 uppercase tracking-widest text-base-content/70">
-            Stelle deine Session zusammen
-          </p>
-        </div>
-
-        {/* Live-Leistungsanzeige */}
-        <div class="flex flex-col items-center justify-center bg-base-200 border-2 border-base-300 rounded-xl py-5 shadow-inner text-center px-4">
-          <span data-testid="pricing-total" class="text-6xl font-black tracking-tight text-primary">{finalPrice()} €</span>
-          <div class="w-full border-t border-base-300 my-3 opacity-40"></div>
-          <div class="flex flex-col gap-1 text-sm font-black text-base-content/90">
-            <span class="flex items-center justify-center gap-1.5">
-              <span class="icon-[mdi--clock-outline] text-primary text-base"></span>
-              1,5 bis 2 Stunden Shooting-Zeit
+    <div class="space-y-6">
+      {/* Live-Leistungsanzeige */}
+      <div class="flex flex-col items-center justify-center bg-base-200 border-2 border-base-300 rounded-xl py-5 shadow-inner text-center px-4">
+        <span data-testid="pricing-total" class="text-6xl font-black tracking-tight text-primary">{finalPrice()} €</span>
+        <div class="w-full border-t border-base-300 my-3 opacity-40"></div>
+        <div class="flex flex-col gap-1 text-sm font-black text-base-content/90">
+          <span class="flex items-center justify-center gap-1.5">
+            <span class="icon-[mdi--clock-outline] text-primary text-base"></span>
+            1,5 bis 2 Stunden Shooting-Zeit
+          </span>
+          <span class="flex items-center justify-center gap-1.5">
+            <span class="icon-[mdi--image-multiple-outline] text-primary text-base"></span>
+            {flexImagesIncluded} bearbeitete Bilder inklusive
+          </span>
+          <Show when={extraImages() > 0}>
+            <span class="flex items-center justify-center gap-1.5 text-warning">
+              <span class="icon-[mdi--plus-circle-outline] text-warning text-base"></span>
+              +{extraImages()} Zusatzbilder (+{extraImages() * flexImagePrice} €)
             </span>
-            <span class="flex items-center justify-center gap-1.5">
-              <span class="icon-[mdi--image-multiple-outline] text-primary text-base"></span>
-              {flexImagesIncluded} bearbeitete Bilder inklusive
-            </span>
-            <Show when={extraImages() > 0}>
-              <span class="flex items-center justify-center gap-1.5 text-warning">
-                <span class="icon-[mdi--plus-circle-outline] text-warning text-base"></span>
-                +{extraImages()} Zusatzbilder (+{extraImages() * flexImagePrice} €)
-              </span>
-            </Show>
-          </div>
-        </div>
-
-        {/* Nutzung & Rechte – passt sich der Konfiguration an */}
-        <div data-testid="flex-usage-rights" class="flex items-start gap-3 rounded-xl border border-base-300 bg-base-200/50 px-4 py-3">
-          <span class="icon-[mdi--lock-outline] text-primary text-lg shrink-0 mt-0.5"></span>
-          <p class="text-xs leading-relaxed text-base-content/80 m-0">
-            <Show
-              when={shootingType() === "akt" && isFullyPrivate()}
-              fallback={
-                <>
-                  <strong class="text-base-content">Privat & ohne kommerzielle Nutzung.</strong>{" "}
-                  Die Freigabe ausgewählter Bilder zur Veröffentlichung ist Bestandteil des Flex-Angebots
-                  – Umfang und Motive stimmen wir vor der Buchung ab.
-                </>
-              }
-            >
-              <strong class="text-base-content">Keine Online-Veröffentlichung.</strong> Deine Bilder
-              gehen nicht ins Netz. Ich darf ausgewählte Ergebnisse ausschließlich persönlich im
-              1:1-Gespräch auf meinen eigenen Geräten als Arbeitsprobe zeigen – keine digitale Weitergabe
-              an Dritte.
-            </Show>
-          </p>
-        </div>
-
-        <div class="space-y-5">
-          {/* 1. Schritt: Welcher Bereich */}
-          <div>
-            <label class="label text-sm font-black p-0 mb-2 text-base-content">1. Was wollen wir shooten?</label>
-            <div class="flex flex-col gap-2">
-              <button type="button" aria-pressed={shootingType() === "portrait"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "portrait" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("portrait")}>
-                👤 Portrait & Beauty
-              </button>
-              <button type="button" aria-pressed={shootingType() === "couples"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "couples" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("couples")}>
-                👩&zwj;❤️&zwj;👨 Pärchen & Liebe
-              </button>
-              <button type="button" aria-pressed={shootingType() === "akt"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "akt" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("akt")}>
-                🔒 Akt & Boudoir (Sicherer Raum)
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Schritt: Licht & Umgebung (Die 3 sauberen Optionen) */}
-          <div>
-            <label class="label text-sm font-black p-0 mb-2 text-base-content">2. Licht- & Setup-Wahl:</label>
-            <div class="flex flex-col gap-2">
-              <button type="button" aria-pressed={setupType() === "outdoor"} class={"btn btn-sm justify-start border-2 " + (setupType() === "outdoor" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("outdoor")}>
-                🌲 Outdoor (Natürliches Licht)
-              </button>
-              <button type="button" aria-pressed={setupType() === "outdoor_flash"} class={"btn btn-sm justify-start border-2 " + (setupType() === "outdoor_flash" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("outdoor_flash")}>
-                ⚡ Outdoor (Mobiles Blitz-Setup)
-              </button>
-              <button type="button" aria-pressed={setupType() === "indoor"} class={"btn btn-sm justify-start border-2 " + (setupType() === "indoor" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("indoor")}>
-                📸 Indoor (Fotostudio)
-              </button>
-            </div>
-          </div>
-
-          {/* 3. Schritt: Bild-Nachschlag */}
-          <div>
-            <label class="label text-sm font-black flex flex-wrap justify-between gap-x-2 gap-y-1 whitespace-normal p-0 mb-1 text-base-content">
-              <span>3. Zusätzlicher Bild-Nachschlag:</span>
-              <span class="text-primary font-black text-base">+{extraImages()} Bilder</span>
-            </label>
-            <input aria-label="Zusätzliche Bilder" type="range" min="0" max="30" step="1" value={extraImages()} onInput={(e) => setExtraImages(parseInt(e.currentTarget.value))} class="range range-primary range-sm w-full cursor-pointer border-none p-0 bg-transparent" />
-          </div>
-
-          {/* 4. Schritt: Dynamischer Schutzraum-Toggle */}
-          <Show when={shootingType() === "akt"}>
-            <div class="form-control border-2 border-base-300 rounded-xl px-4 py-4 bg-base-200/50 transition-all hover:border-primary/40">
-              <label class="label grid grid-cols-[1fr_auto] items-center gap-4 cursor-pointer p-0 text-left">
-                <div class="flex flex-col space-y-0.5">
-                  <span class="font-black text-sm text-base-content block">🔴 Absolutes Online-Verbot (+{flexPrivacyBase} €)</span>
-                  <span class="text-[11px] text-base-content/80 font-medium leading-relaxed block whitespace-normal">
-                    Stoppschild fürs Internet. Die Bilder werden niemals online veröffentlicht, dürfen aber offline im persönlichen 1:1 Gespräch als Qualitätsnachweis gezeigt werden.
-                  </span>
-                </div>
-                <input type="checkbox" checked={isFullyPrivate()} onChange={(e) => setIsFullyPrivate(e.currentTarget.checked)} class="checkbox checkbox-primary checkbox-md" />
-              </label>
-            </div>
           </Show>
         </div>
+      </div>
 
-        <div class="card-actions pt-2 flex flex-col items-center gap-1">
-          <a href={contactLink()} data-contact-open="pricing" data-astro-reload class="btn btn-primary btn-block btn-lg text-primary-content font-black uppercase tracking-wider text-sm shadow-lg border-none">
-            Anfrage absenden
-          </a>
-          <span class="text-[10px] opacity-60 font-semibold uppercase tracking-wider mt-1 text-center">
-            Richtpreis – je nach Aufwand potentiell abweichend
-          </span>
+      {/* Nutzung & Rechte – passt sich der Konfiguration an */}
+      <div data-testid="flex-usage-rights" class="flex items-start gap-3 rounded-xl border border-base-300 bg-base-200/50 px-4 py-3">
+        <span class="icon-[mdi--lock-outline] text-primary text-lg shrink-0 mt-0.5"></span>
+        <p class="text-xs leading-relaxed text-base-content/80 m-0">
+          <Show
+            when={shootingType() === "akt" && isFullyPrivate()}
+            fallback={
+              <>
+                <strong class="text-base-content">Privat & ohne kommerzielle Nutzung.</strong>{" "}
+                Die Freigabe ausgewählter Bilder zur Veröffentlichung ist Bestandteil des Flex-Angebots
+                – Umfang und Motive stimmen wir vor der Buchung ab.
+              </>
+            }
+          >
+            <strong class="text-base-content">Keine Online-Veröffentlichung.</strong> Deine Bilder
+            gehen nicht ins Netz. Ich darf ausgewählte Ergebnisse ausschließlich persönlich im
+            1:1-Gespräch auf meinen eigenen Geräten als Arbeitsprobe zeigen – keine digitale Weitergabe
+            an Dritte.
+          </Show>
+        </p>
+      </div>
+
+      <div class="space-y-5">
+        {/* 1. Schritt: Welcher Bereich */}
+        <div>
+          <label class="label text-sm font-black p-0 mb-2 text-base-content">1. Was wollen wir shooten?</label>
+          <div class="flex flex-col gap-2">
+            <button type="button" aria-pressed={shootingType() === "portrait"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "portrait" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("portrait")}>
+              👤 Portrait & Beauty
+            </button>
+            <button type="button" aria-pressed={shootingType() === "couples"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "couples" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("couples")}>
+              👩&zwj;❤️&zwj;👨 Pärchen & Liebe
+            </button>
+            <button type="button" aria-pressed={shootingType() === "akt"} class={"btn btn-sm justify-start border-2 " + (shootingType() === "akt" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setShootingType("akt")}>
+              🔒 Akt & Boudoir (Sicherer Raum)
+            </button>
+          </div>
         </div>
-        
+
+        {/* 2. Schritt: Licht & Umgebung (Die 3 sauberen Optionen) */}
+        <div>
+          <label class="label text-sm font-black p-0 mb-2 text-base-content">2. Licht- & Setup-Wahl:</label>
+          <div class="flex flex-col gap-2">
+            <button type="button" aria-pressed={setupType() === "outdoor"} class={"btn btn-sm justify-start border-2 " + (setupType() === "outdoor" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("outdoor")}>
+              🌲 Outdoor (Natürliches Licht)
+            </button>
+            <button type="button" aria-pressed={setupType() === "outdoor_flash"} class={"btn btn-sm justify-start border-2 " + (setupType() === "outdoor_flash" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("outdoor_flash")}>
+              ⚡ Outdoor (Mobiles Blitz-Setup)
+            </button>
+            <button type="button" aria-pressed={setupType() === "indoor"} class={"btn btn-sm justify-start border-2 " + (setupType() === "indoor" ? "btn-primary text-primary-content border-primary" : "btn-outline border-base-300 text-base-content")} onClick={() => setSetupType("indoor")}>
+              📸 Indoor (Fotostudio)
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Schritt: Bild-Nachschlag */}
+        <div>
+          <label class="label text-sm font-black flex flex-wrap justify-between gap-x-2 gap-y-1 whitespace-normal p-0 mb-1 text-base-content">
+            <span>3. Zusätzlicher Bild-Nachschlag:</span>
+            <span class="text-primary font-black text-base">+{extraImages()} Bilder</span>
+          </label>
+          <input aria-label="Zusätzliche Bilder" type="range" min="0" max="30" step="1" value={extraImages()} onInput={(e) => setExtraImages(parseInt(e.currentTarget.value))} class="range range-primary range-sm w-full cursor-pointer border-none p-0 bg-transparent" />
+        </div>
+
+        {/* 4. Schritt: Dynamischer Schutzraum-Toggle */}
+        <Show when={shootingType() === "akt"}>
+          <div class="form-control border-2 border-base-300 rounded-xl px-4 py-4 bg-base-200/50 transition-all hover:border-primary/40">
+            <label class="label grid grid-cols-[1fr_auto] items-center gap-4 cursor-pointer p-0 text-left">
+              <div class="flex flex-col space-y-0.5">
+                <span class="font-black text-sm text-base-content block">🔴 Absolutes Online-Verbot (+{flexPrivacyBase} €)</span>
+                <span class="text-[11px] text-base-content/80 font-medium leading-relaxed block whitespace-normal">
+                  Stoppschild fürs Internet. Die Bilder werden niemals online veröffentlicht, dürfen aber offline im persönlichen 1:1 Gespräch als Qualitätsnachweis gezeigt werden.
+                </span>
+              </div>
+              <input type="checkbox" checked={isFullyPrivate()} onChange={(e) => setIsFullyPrivate(e.currentTarget.checked)} class="checkbox checkbox-primary checkbox-md" />
+            </label>
+          </div>
+        </Show>
+      </div>
+
+      <div class="pt-2 flex flex-col items-center gap-1">
+        <a href={contactLink()} data-contact-open="pricing" data-astro-reload class="btn btn-primary btn-block btn-lg text-primary-content font-black uppercase tracking-wider text-sm shadow-lg border-none">
+          Anfrage absenden
+        </a>
+        <span class="text-[10px] opacity-60 font-semibold uppercase tracking-wider mt-1 text-center">
+          Richtpreis – je nach Aufwand potentiell abweichend
+        </span>
       </div>
     </div>
-);
+  );
 }

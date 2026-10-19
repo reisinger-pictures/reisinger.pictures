@@ -62,7 +62,9 @@ const reviewJson = JSON.stringify(businessSchema);
   <BaseHead title={title} author={name} slot="head">
     <SocialImage name={socialImage} />
   </BaseHead>
-  <div class="mb-6 mt-2">
+  {/* Constrain the single review to an editorial measure so the card panel is
+      not a full-width empty band around a portrait photo. */}
+  <div class="mb-6 mt-2 mx-auto max-w-2xl">
     <ReviewCard {...props} />
   </div>
 </MinimalPage>

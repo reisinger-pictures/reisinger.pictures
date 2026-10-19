@@ -65,7 +65,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | n/a (`preise` content + configurator) | `light/desktop/pricing-standard-sec0.png`, `light/desktop/pricing-flex-sec0.png`, `light/intermediate/pricing-default-sec0.png`, `light/mobile/pricing-default-sec0.png` | Hierarchy inversion: the section heading "Faire **Preise** – für alle" (H2) renders clearly larger and heavier than the page's own H1 "Meine Tarife – Fair, transparent, flexibel". On the most important commercial page the second heading overpowers the page title. | Reduce the H2 one step (`text-2xl`/`md:text-3xl`) or raise the H1; at minimum keep the H2 below the H1 in visual weight. **Fixed 2026-10-18** in `src/content/simple/preise.mdx`: the H2 is now `text-2xl md:text-3xl font-bold` (was `text-4xl md:text-5xl font-black`). Measured on `/preise/`: H1 36 px / 800, H2 30 px / 700. |
-| medium | n/a | `light/desktop/pricing-standard-sec0.png` vs `light/desktop/pricing-flex-sec0.png` | The two tabs are not structurally parallel: the Flex tab renders an extra bordered "TARIF-KONFIGURATOR / STELLE DEINE SESSION ZUSAMMEN" panel around the price, the Standard tab starts directly with the price block. | Give both tabs the same panel (or drop the panel on Flex). |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/solid/PricingCalculator.tsx` | `light/desktop/pricing-standard-sec0.png` vs `light/desktop/pricing-flex-sec0.png` | The two tabs are not structurally parallel: the Flex tab renders an extra bordered "TARIF-KONFIGURATOR / STELLE DEINE SESSION ZUSAMMEN" panel around the price, the Standard tab starts directly with the price block. | Give both tabs the same panel (or drop the panel on Flex). **Fixed 2026-10-19:** the redundant nested panel was removed, so the Flex calculator shares the Standard tab's exact framing (description → price summary → steps → CTA) inside the single bordered tab panel. Pricing formulas, URL parsing, settings, discounts and contact links unchanged (46/46 E2E green). |
 | low | n/a | `light/desktop/pricing-default-sec1.png`, `light/mobile/pricing-default-sec1.png` | The student/friend-discount checkbox is a pale outline circle at the far right of its row; on mobile it is visually detached from its label and is a small tap target. | Use a labelled `checkbox`/`toggle` in the same line rhythm as the location buttons. |
 | low | n/a | `light/desktop/pricing-standard-sec0.png`, `light/desktop/pricing-flex-sec0.png` | The price meta lines use emoji (🕐 🖼️) while the rest of the site uses MDI icon classes — two icon languages in one card. | Use the same `icon-[mdi--…]` set as the rest of the UI. |
 | — | n/a | `light/desktop/pricing-flex-private-sec0.png`, `dark/desktop/pricing-flex-private-sec0.png`, `light/mobile/pricing-flex-private-sec0.png` | The private Flex state (checked "Absolutes Online-Verbot") renders correctly in light, dark and mobile; the dark theme's lime active tab and lime CTA keep dark text. Not re-reported: the three testimonial/price badges were just moved to readable daisyUI variants. | none |
@@ -101,8 +101,8 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/ReviewCard.astro` (`h-full` on the card; `data-slug` at `:31`) | `light/desktop/testimonials-sec73.png`, `-sec74.png`, `-sec75.png` | A review card without a large image is stretched by `h-full` to the row height of its tall image neighbour (`mintha1`, "Martina Kremsmayr", beside the very tall `syannah1` card), so its body becomes a ~1210 px empty grey area with the footer far below the text. **Correction 2026-10-18:** an earlier revision of this document claimed the card rendered entirely empty ("no avatar, no name, no text, no image"). That was wrong: an independent check of all 87 `[data-slug]` cards found every one carrying a name and body text (shortest 110 characters). The claim came from misreading the 20 % section overlap. The real defect is the stretch, not missing content. | Do not stretch image-less cards to the row height (drop `h-full`, use `items-start`, or reserve a media area of equal height). **Fixed 2026-10-18:** `ReviewCards.astro` grid now uses `items-start`, so each card keeps its natural height and the empty grey body is gone. |
-| medium | `apps/reisinger.pictures/src/components/ReviewCard.astro:32-97` | `light/desktop/testimonials-sec0.png`, `-sec1.png`, `-sec2.png`, `light/desktop/shootings-sport-sec2.png` | Two different card layouts share one grid: the `quote` layout puts a vertically centred avatar/logo in a `sm:w-1/3` column (leaving a large empty top-left quadrant and the body confined to the right half), the default layout puts the avatar on top above a full-width body. Cards without any image are also much shorter, so a 2-column row mixes strongly different heights. | Normalise the card: same avatar slot and same body width in both layouts, or force a minimum media area so rows align. |
-| medium | n/a | `light/desktop/testimonial-detail-sec0.png` | The detail page wraps one ~500 px-wide portrait photo in a 1314 px-wide `bg-base-200` panel, so the photo is very tall and ~400 px of empty panel remain on each side. | Constrain the media column (e.g. `max-w-md`) or use the large image as the column background with the text beside it. |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/components/ReviewCard.astro` | `light/desktop/testimonials-sec0.png`, `-sec1.png`, `-sec2.png`, `light/desktop/shootings-sport-sec12.png` | Two different card layouts share one grid: the `quote` layout puts a vertically centred avatar/logo in a `sm:w-1/3` column (leaving a large empty top-left quadrant and the body confined to the right half), the default layout puts the avatar on top above a full-width body. Cards without any image are also much shorter, so a 2-column row mixes strongly different heights. | Normalise the card: same avatar slot and same body width in both layouts, or force a minimum media area so rows align. **Fixed 2026-10-19:** both layouts now use one shared card (surface `bg-base-200 border border-base-300 shadow-sm`), one centred identity slot (avatar + name + role) and one footer; the `quote` layout shows its logo centred above the name and renders its text as an italic `<blockquote>` instead of a left logo column with oversized quote glyphs. The default layout keeps avatar → name → photo → text. Image-less cards keep their natural height (`items-start`). |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/pages/testimonials/[slug].astro` | `light/desktop/testimonial-detail-sec0.png` | The detail page wraps one ~500 px-wide portrait photo in a 1314 px-wide `bg-base-200` panel, so the photo is very tall and ~400 px of empty panel remain on each side. | Constrain the media column (e.g. `max-w-md`) or use the large image as the column background with the text beside it. **Fixed 2026-10-19:** the single card is wrapped in `mx-auto max-w-2xl`, so the panel is an editorial measure instead of a full-width band. The portrait is neither enlarged nor distorted (the `object-contain` render is unchanged) and mobile stays full-width. |
 | low | n/a | `light/desktop/testimonials-sec0.png`, `light/desktop/shootings-akt-testimonials-sec0.png` | The "KI ZUSAMMENFASSUNG BASIEREND AUF 85 REVIEWS" box is centred and noticeably narrower than the left-aligned intro paragraph above it. | Align both to the same measure, or leave the difference deliberately. |
 | — | n/a | `light/desktop/shootings-akt-testimonials-sec0.png`, `-sec11.png`, `light/intermediate/testimonials-sec0.png` | The category page and the intermediate viewport render correctly (single column at 1024, cards full width, footers without the category link on category pages). | none |
 
@@ -110,7 +110,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 | Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
-| medium | n/a | `light/desktop/tfp-idea-sec0.png` vs `light/desktop/tfp-sec0.png` | The idea detail page renders its H1 in the green brand colour while every other page (including the TFP overview) uses the dark base colour. | Use the standard H1 colour; if the green is wanted as a brand accent, use it consistently. |
+| behoben 2026-10-19 | `apps/reisinger.pictures/src/pages/tfp/[slug].astro:49` | `light/desktop/tfp-idea-sec0.png` vs `light/desktop/tfp-sec0.png` | The idea detail page renders its H1 in the green brand colour while every other page (including the TFP overview) uses the dark base colour. | Use the standard H1 colour; if the green is wanted as a brand accent, use it consistently. **Fixed 2026-10-19:** the H1 colour is now `text-base-content`, matching the TFP overview and every other page H1; the title text is unchanged. |
 | low | n/a | `light/desktop/tfp-sec0.png`, `light/mobile/tfp-sec0.png` | In the idea cards there is a large empty gap between the centred card title and the left-aligned body text; title centred, body left — two alignments inside one small card. | Tighten the gap and pick one alignment for the card. |
 | — | n/a | `light/desktop/tfp-sec0.png` | The TFP content is written as "Vorschläge, keine Zusage", unpaid and mutually creative — wording and framing match the intended positioning (TFP only in the footer, no stronger promotion). No change suggested. | none |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/pages/404.astro:38` | `not-found-sec0.png` | The 404 page linked "TFP Shootings" in its closing link row, i.e. TFP appeared outside the footer, and that row used `text-base-content/60` (faint grey). | Move the TFP link out of the 404 row (keep footer only) and raise the row's contrast. **Fixed 2026-10-18:** the TFP link is removed from the row (the footer still links `/tfp/` as "TFP"); the remaining four links moved from `text-base-content/60` to `/70` in line with the share-page fix. |
@@ -317,3 +317,50 @@ detail pages**, the other **14 TFP ideas**, the other **14 sport sub-areas**, ev
 `intermediate/*` capture, gallery and page-end screens of every route, and every page of the site
 outside the 33-route manifest. No horizontal overflow, cut-off content or branding defect was
 assessed beyond the images listed above.
+
+---
+
+## Selective site-wide redesign round — 2026-10-19
+
+Owner-commissioned selective polish of the remaining public page families (open item in
+`AGENTS.todo.md`). Capture basis: the **full** manifest, 32 routes × 6 projects = **192/192**
+screenshots/cases (`ui-review-redesign-2026-10-19`, dev server `http://localhost:44345`), plus
+`pnpm test:contrast` (10/10) and the app E2E suite (46/46). Only real defects were changed; good
+layouts were left alone.
+
+### Genuinely changed
+
+| Family / route | File | Change |
+|---|---|---|
+| Testimonials list + category pages, the testimonial section of the private and sport area pages, blog `TestimonialBlock` | `apps/reisinger.pictures/src/components/ReviewCard.astro` | One shared card for **both** layouts: same surface (`bg-base-200 border border-base-300 shadow-sm`), same centred identity slot (avatar + name + role) and same footer. The `quote` layout no longer uses the `sm:w-1/3` logo column (the empty top-left quadrant / right-half-confined body of §7 are gone); its logo sits centred above the name and the text is an italic `<blockquote>` (prose) instead of the two oversized `❝/❞` glyphs. The default layout keeps avatar → name → photo → text; only its surface moved from `bg-base-300` to `bg-base-200 border`. The source badge now sits top-right on every card (was inline for quote). All review text, source, role, image, detail/category links retained; image-less cards keep their natural height (`items-start`). |
+| Testimonial detail `/testimonials/[slug]/` | `apps/reisinger.pictures/src/pages/testimonials/[slug].astro` | Single card wrapped in `mx-auto max-w-2xl`; the panel is an editorial measure instead of a 1314 px band around a ~500 px portrait (§7). The portrait is neither enlarged nor distorted; mobile stays full-width. |
+| TFP idea `/tfp/[slug]/` | `apps/reisinger.pictures/src/pages/tfp/[slug].astro:49` | H1 colour `text-primary` → `text-base-content`, matching the TFP overview and every other page H1 (§8). Title text unchanged. |
+| Pricing `/preise/` — Flex tab | `apps/reisinger.pictures/src/solid/PricingCalculator.tsx` | Removed the redundant nested `TARIF-KONFIGURATOR` card (a second `border-2 border-primary/30` card inside the tab panel) and its heading; Flex now shares the Standard tab's exact framing (description → price summary → steps → CTA) inside the single bordered panel (§4). Pricing formulas, URL parsing/query behavior, settings, discounts and contact links unchanged. |
+
+### Deliberately left unchanged
+
+- **Homepage / `HomeIntro`** (owner: liked) — verified pixel-identical to the audited baseline.
+- **Sport pages / `SportAreaPage`** — untouched; the only sport change is the shared `ReviewCard` in
+  the sport testimonial section, and its behaviour is preserved (E2E green).
+- The three **private offer pages** (`/shootings/akt|beauty|couples/`) and `/akt/ablauf/` — the
+  photo-led/editorial layouts read well and were kept; only the shared testimonial card changed.
+- The **manifest's** portfolio and blog samples (`portfolio`, `portfolio-page-mid`,
+  `portfolio-page-last`, `content-example`), plus 404, legal/text, portal, business, event photography
+  and share, were pixel-identical to the audited baseline. Blog posts outside the manifest that embed
+  `TestimonialBlock` also inherit the shared `ReviewCard` change; they were not part of this pixel
+  comparison.
+- Still-open, out-of-scope rows remain: homepage hero action weight (§1), `/impressum/` vertical
+  rhythm (§5), the English share H1 (§5, owner decision), the floating chat bubble (§9), the TFP
+  card title/body alignment (§8), the KI-summary measure (§7).
+
+### Coverage — what was actually looked at
+
+An objective pixel comparison of the post-change run against the audited baseline
+(`ui-review-all-routes-audit-2026-10-19`) shows differences **only** on these routes:
+`pricing-flex`, `pricing-flex-private`, `testimonials`, `shootings-akt-testimonials`,
+`testimonial-detail`, `tfp-idea`, and the testimonial sections of `shootings`, `shootings-beauty`,
+`shootings-couples`, `shootings-sport`. Every other route renders pixel-identical (a ≤11-value
+difference in 2 px on `home-sec1` / `portfolio-page-last-sec2|3` is render non-determinism, not
+content). Changed routes were reviewed at **desktop, intermediate and mobile** in **light and dark**;
+sampled sections only (the harness captures the page top + footer, so long-page interiors were not
+re-inspected). Other families were spot-checked rather than exhaustively re-opened.
