@@ -4,6 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import solidJs from "@astrojs/solid-js";
 import imageMetaPlugin from "./vite-plugin-image-meta.mjs";
+import containerSizesPlugin from "./vite-plugin-container-sizes.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,7 +31,7 @@ export default defineConfig({
   },
   vite: {
     cacheDir: ".cache/.vite",
-    plugins: [tailwindcss(), imageMetaPlugin()],
+    plugins: [containerSizesPlugin(), tailwindcss(), imageMetaPlugin()],
     optimizeDeps: {
       include: [
         "astro/virtual-modules/transitions-router.js",

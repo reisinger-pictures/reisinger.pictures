@@ -353,7 +353,9 @@ gates and the final real-URL review.
   and card-grid markup in `sport/index.mdx`; its frontmatter, prose, heading and CTA remain unchanged.
   The 130-file Markdown backup at
   `/private/var/folders/vq/db6hdqsx32b1xg4z2mnzt8nm0000gn/T/opencode/sport-content-backup-2026-10-19`
-  must be retained until publication and the owner's final approval.
+  was to be retained until publication and the owner's final approval — **it was deleted by mistake
+  on 2026-10-20** and re-created the same day as `sport-content-backup-2026-10-20` (82 Markdown
+  files, byte-identical to the content store).
 - **Order direction (owner, 2026-10-19):** ascending `priority`, preserving the existing visible
   overview and hub-body link order. Entries without a priority sort after ranked entries; map order
   is the deterministic fallback among them.
@@ -667,15 +669,21 @@ selections, names and descriptions, plus the real-URL review in step 14, remain 
     (`pnpm publish` / `sync.sh`) remains a separate, explicitly requested step
     (`AGENTS.md` §6).
 
-### Carried into the next component step (recorded 2026-10-18)
+### Carried items (recorded 2026-10-18) — both closed 2026-10-20
 
 Both items were in `AreaHero.astro` and did not block steps 1–4; they moved with the next component
-step. The nested `<div>` was closed there; the `sportHeroSizes` duplication is still open.
+step. Both are closed as of 2026-10-20.
 
-- **`sportHeroSizes` duplicates the `.container` caps as a CSS string.** `AreaHero.astro:27-28`
-  hard-codes `1320/1140/960/720/540 px` in the eager hero's `sizes`, mirroring the `.container` caps
-  in `global.css:134-136`. Correct today, but it silently drifts if those caps change; a shared
-  constant would remove the duplication. **Still open.**
+- **`sportHeroSizes` duplicated the `.container` caps as a CSS string.** `AreaHero.astro:27-28`
+  hard-coded `1320/1140/960/720/540 px` in the eager hero's `sizes`, mirroring the `.container` caps
+  in `global.css:134-136`. Correct at the time, but it drifted silently whenever those caps changed.
+  **Closed 2026-10-20** — the widths now live in one place,
+  `packages/shared/utils/container-sizes.mjs`. The TypeScript side imports that module, the CSS side
+  receives the values at build time through `vite-plugin-container-sizes.mjs`, which injects them as
+  `--container-site-*` custom properties into the `@theme` block of `global.css` at the marker
+  `/* @site-container-sizes */`. The plugin fails the build when the marker is missing or when the
+  stylesheet references a breakpoint the shared module does not provide, so the two sides cannot
+  diverge silently.
 - **One redundant nested `<div>` in the sport hero markup.** The sport branch opened a classless
   outer `<div>` wrapping a single inner `<div>`, left over from a replaced flex container. "No dead
   code" (`AGENTS.md` §2) collapses it into one element; the rendering is unchanged. **Closed

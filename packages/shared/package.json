@@ -7,6 +7,10 @@
     "./utils": "./utils/index.ts",
     "./utils/pricing": "./utils/pricing.ts",
     "./utils/Breakpoints": "./utils/Breakpoints.ts",
+    "./utils/container-sizes": {
+      "types": "./utils/container-sizes.d.mts",
+      "default": "./utils/container-sizes.mjs"
+    },
     "./components/*": "./components/*",
     "./seo/meta": "./seo/meta.ts"
   },

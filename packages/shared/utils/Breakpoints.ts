@@ -1,3 +1,5 @@
+import { CONTAINER_SIZES } from "./container-sizes.mjs";
+
 type BreakpointValues = "sm" | "md" | "lg" | "xl" | "2xl";
 type BreakpointValuesIncludeDefault = "default" | BreakpointValues
 
@@ -14,13 +16,7 @@ export const TAILWIND_BREAKPOINTS: Omit<BreakPoints<string>, "default"> = {
   "2xl": "1536px"
 };
 
-export const CONTAINER_SIZES: Omit<BreakPoints<string>, "default"> = {
-  sm: "540px",
-  md: "720px",
-  lg: "960px",
-  xl: "1140px",
-  "2xl": "1320px"
-};
+export { CONTAINER_SIZES };
 
 export function computeSizes(sizes: NumericBreakpoints) {
   return `(max-width: ${TAILWIND_BREAKPOINTS.sm}) 100vw ${Object.entries(sizes).reverse().map(([k, columns]) => `,(min-width: ${TAILWIND_BREAKPOINTS[k as BreakpointValues]} ) calc( ${CONTAINER_SIZES[k as BreakpointValues]} / ${columns} )`).join(" ")}`;

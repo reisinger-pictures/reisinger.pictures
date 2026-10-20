@@ -132,7 +132,7 @@
     }
 
     .container {
-        @apply w-full px-4 sm:px-0 sm:mx-auto sm:w-[540px] md:w-[720px] lg:w-[960px] xl:w-[1140px] 2xl:w-[1320px];
+        @apply w-full px-4 sm:px-0 sm:mx-auto sm:w-[var(--site-container-width-sm)] md:w-[var(--site-container-width-md)] lg:w-[var(--site-container-width-lg)] xl:w-[var(--site-container-width-xl)] 2xl:w-[var(--site-container-width-2xl)];
     }
 
     .prose {
