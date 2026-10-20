@@ -36,14 +36,12 @@ const sportHeroSizes = computeSizes({ sm: 1, md: 1, lg: 1, xl: 1, "2xl": 1 })
       existing lead below. Mobile order is heading → photograph → lead.
     */
     <div>
-      <div>
-        {eyebrow && (
-          <p class="m-0 mb-3 text-xs font-medium uppercase tracking-[0.16em] text-base-content/75">{eyebrow}</p>
-        )}
-        <h1 class="m-0 text-left! text-3xl font-semibold leading-tight tracking-tight md:text-4xl xl:text-5xl">
-          {title}
-        </h1>
-      </div>
+      {eyebrow && (
+        <p class="m-0 mb-3 text-xs font-medium uppercase tracking-[0.16em] text-base-content/75">{eyebrow}</p>
+      )}
+      <h1 class="m-0 text-left! text-3xl font-semibold leading-tight tracking-tight md:text-4xl xl:text-5xl">
+        {title}
+      </h1>
 
       {imageName && (
         <figure class="m-0 mt-6 w-full aspect-[3/2] max-h-[80vh]">

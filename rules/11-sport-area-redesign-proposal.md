@@ -667,18 +667,20 @@ selections, names and descriptions, plus the real-URL review in step 14, remain 
     (`pnpm publish` / `sync.sh`) remains a separate, explicitly requested step
     (`AGENTS.md` §6).
 
-### Carried into the next component step (recorded 2026-10-18, deliberately not fixed here)
+### Carried into the next component step (recorded 2026-10-18)
 
-Both items live in `AreaHero.astro` and do not block steps 1–4; they move with the next component step.
+Both items were in `AreaHero.astro` and did not block steps 1–4; they moved with the next component
+step. The nested `<div>` was closed there; the `sportHeroSizes` duplication is still open.
 
-- **`sportHeroSizes` duplicates the `.container` caps as a CSS string.** `AreaHero.astro:24-25`
+- **`sportHeroSizes` duplicates the `.container` caps as a CSS string.** `AreaHero.astro:27-28`
   hard-codes `1320/1140/960/720/540 px` in the eager hero's `sizes`, mirroring the `.container` caps
-  in `global.css:130-132`. Correct today, but it silently drifts if those caps change; a shared
-  constant would remove the duplication.
-- **One redundant nested `<div>` in the sport hero markup.** The sport branch opens a classless outer
-  `<div>` wrapping a single inner `<div>` (`AreaHero.astro:35-36`), left over from a replaced flex
-  container. "No dead code" (`AGENTS.md` §2) would collapse it into one element; the rendering is
-  unchanged.
+  in `global.css:134-136`. Correct today, but it silently drifts if those caps change; a shared
+  constant would remove the duplication. **Still open.**
+- **One redundant nested `<div>` in the sport hero markup.** The sport branch opened a classless
+  outer `<div>` wrapping a single inner `<div>`, left over from a replaced flex container. "No dead
+  code" (`AGENTS.md` §2) collapses it into one element; the rendering is unchanged. **Closed
+  2026-10-20** — the inner wrapper is gone, the eyebrow and the `<h1>` are direct children of the
+  outer column `<div>`.
 
 ---
 
