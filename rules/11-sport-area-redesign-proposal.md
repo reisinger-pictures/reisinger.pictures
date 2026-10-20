@@ -2,7 +2,7 @@
 
 **Status: STEPS 1–13 IMPLEMENTED/VERIFIED; STEP 14 OWNER REVIEW OPEN.** The owner answered D1–D10 on 2026-10-18 and
 clarified steps 5, 9, 11 and 12 on 2026-10-19; §8 is the binding record. Steps 1, 3 and 4 are committed
-(`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done. Step 5's directory code
+(`a0f04ea`, `1129a37`); step 2 was already satisfied before step 1 was done (`a0f04ea`). Step 5's directory code
 is committed (`222d528`); its overview MDX presentation edit remains local in the git-ignored content
 tree and is backed up. Step 6's D2 schema, rule, skill and evidence-backed assignments were
 independently approved on 2026-10-19. No publication or deployment has occurred. The content backup
@@ -498,9 +498,10 @@ selections, names and descriptions, plus the real-URL review in step 14, remain 
 2. **Extend the UI-review manifest** (`tests/screenshots/ui-review.config.ts`) with three routes:
    `/shootings/sport/`, one art hub (`/shootings/sport/eishockey/`) and one team page
    (`/shootings/sport/lask/`). Exit: `pnpm test:ui --grep 'sport'` captures all three in six
-   projects; baseline captures exist for comparison. **Already satisfied before step 1 was written:
-   the three routes are in the manifest since `f88e5d4`** — `shootings-sport`, `shootings-sport-hub`
-   and `shootings-sport-team` (`tests/screenshots/ui-review.config.ts:142-161`), so no manifest change
+   projects; baseline captures exist for comparison. **Already satisfied before step 1 was done
+   (`a0f04ea`): the three routes are in the manifest** — `shootings-sport` since `98399e6`,
+   `shootings-sport-hub` and `shootings-sport-team` since `f88e5d4`
+   (`tests/screenshots/ui-review.config.ts:142-161`), so no manifest change
    was needed. The before-captures for the redesign exist: an `18`-test run passed (3 routes × 6
    projects, 110 PNGs plus the 18 per-route JSONs). A safety copy lives outside the repo under
    `/private/var/folders/vq/db6hdqsx32b1xg4z2mnzt8nm0000gn/T/opencode/ui-review-baseline-sport-2026-10-18/`,
@@ -764,7 +765,9 @@ and all 15 entries under `src/content/sportAreas/sport/`.
   **Correction 2026-10-18:** the limit described the state when this proposal was written
   (2026-10-18 14:44); `f88e5d4` (2026-10-18 17:34) then added the hub and team routes
   (`shootings-sport-hub`, `shootings-sport-team`, `tests/screenshots/ui-review.config.ts:142-161`)
-  **afterwards**, which is why the limit no longer holds.
+  **afterwards**, which is why the *manifest-coverage* half of the limit no longer holds — the
+  `shootings-sport` `sec3–sec10` sections it also names were still never looked at
+  (`rules/10-ui-review-findings.md`, "Coverage — what was actually looked at" → "Not looked at").
 - **No assessment of search performance.** No ranking, impression, click or traffic data is
   available here, and no external SEO tool was consulted.
 - **No new imagery.** Whether enough *landscape, action-dense* hero-candidate images exist per
