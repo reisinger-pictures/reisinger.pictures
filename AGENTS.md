@@ -38,7 +38,8 @@ The following invariants hold for the whole project, including every other conte
 ## 6. Deployment & Hosting Strategy
 * **Architecture:** SSG Astro site, hosted via Nginx in a Portainer Docker stack; the image CDN is documented in `rules/03-image-cdn-caddy.md`.
 * **Sync:** `apps/reisinger.pictures/sync.sh` uploads the local build with rsync over ssh — `.imagedist/` to the image CDN, `dist/` to the website.
-* **Publishing:** the full build-and-sync cycle runs via `pnpm run publish` (this project uses **pnpm**, not npm; the `prebuild`, `postbuild` and `postpublish` hooks run automatically). Never run publishing or deployment commands unless the user explicitly asks. Do not introduce GitHub Actions CI/CD unless explicitly requested.
+* **Publishing:** the full build-and-sync cycle runs via `pnpm run publish` (this project uses **pnpm**, not npm; the `prebuild`, `postbuild` and `postpublish` hooks run automatically). Never run publishing or deployment commands unless the user explicitly asks.
+* **CI/CD:** do not introduce GitHub Actions CI/CD unless explicitly requested. The one workflow of this repository is `.github/workflows/ratchet.yml` — the gates of `rules/15-ui-findings-gate.md`, commissioned explicitly.
 
 ## 7. Rules & Edge Cases
 * **Consult first:** for unclear structures, data mappings or naming conventions, read the Markdown files in `rules/` first.

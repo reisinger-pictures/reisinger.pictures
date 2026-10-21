@@ -35,6 +35,12 @@ The reason is required and travels with the baseline record.
   unreviewed portfolio posts, the testimonial detail pages, the TFP ideas, and
   two pricing pages that were never opened). The count is the number of the
   open rows of **this** log — not the number of the open defects of the site.
+- The **registry is a hand-maintained mirror**: an open row that is added to the
+  log without an entry in `ratchet.findings.json` is invisible to the gate. The
+  drift gate compares the *report*, and the report is generated *from* the
+  registry — so a missing entry never shows up as a difference, it is simply
+  not counted. The mirror is maintained by hand, in the same commit as the
+  prose it mirrors.
 
 ## The rules of the registry
 
@@ -69,10 +75,10 @@ committed carries a note the next run does not.
 
 ## The CI
 
-`.github/workflows/ratchet.yml` runs the gates on every push to `main` and on
-every pull request against `main`: the action installs the released binary,
-verifies its SHA-256 against the checksums of the release, and a failing gate
-fails the job.
+`.github/workflows/ratchet.yml` runs the gates on every push to `main`, on
+every pull request against `main` and on every manual run
+(`workflow_dispatch`): the action installs the released binary, verifies its
+SHA-256 against the checksums of the release, and a failing gate fails the job.
 
 The **config of this repository is executable**: the drift gate runs the
 generator command from the config. A pull request from a fork therefore runs

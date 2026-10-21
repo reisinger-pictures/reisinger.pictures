@@ -41,24 +41,6 @@
       "ticket": "ui-review-2026-10-18"
     },
     {
-      "id": "UI-005",
-      "title": "The sport-art grid mixes label bars and photos across rows — reading the grid requires scrolling",
-      "severity": "low",
-      "status": "open",
-      "status_since": "2026-10-18",
-      "owner": "FlorianReisinger",
-      "ticket": "ui-review-2026-10-18"
-    },
-    {
-      "id": "UI-006",
-      "title": "The sport page's main CTA uses the event-photography wording — the label is undecided",
-      "severity": "low",
-      "status": "open",
-      "status_since": "2026-10-18",
-      "owner": "FlorianReisinger",
-      "ticket": "ui-review-2026-10-18"
-    },
-    {
       "id": "UI-007",
       "title": "Two of the 15 sport heroes are portrait and lose about 62 % of their height in the 3/2 crop at desktop width",
       "severity": "medium",
@@ -160,8 +142,19 @@
       "status_since": "2026-10-18",
       "owner": "FlorianReisinger",
       "ticket": "ui-review-2026-10-18",
-      "path": "src/components/pages/BlogPost.astro:60",
-      "note": "the row names three places: src/components/pages/BlogPost.astro:60, src/pages/[...simple].astro:55 and src/middleware/toc.ts. Owner decision 2026-10-18 (rules/12-table-of-contents.md): the automatic trigger is removed from every template and the table of contents is placed by hand. The original severity was lost with the status in the severity column; it was recovered from the row as a nitpick"
+      "path": "apps/reisinger.pictures/src/components/pages/BlogPost.astro:60",
+      "note": "the row names three places: apps/reisinger.pictures/src/components/pages/BlogPost.astro:60, apps/reisinger.pictures/src/pages/[...simple].astro:55 and apps/reisinger.pictures/src/middleware/toc.ts. Owner decision 2026-10-18 (rules/12-table-of-contents.md): the automatic trigger is removed from every template and the table of contents is placed by hand. The original severity was lost with the status in the severity column; it was recovered from the row as a nitpick"
+    },
+    {
+      "id": "UI-018",
+      "title": "The sport page's hero has no eyebrow next to the H1 — the lead is fixed, the eyebrow is deliberately not rendered yet",
+      "severity": "low",
+      "status": "accepted",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/components/areas/AreaHero.astro:39-41",
+      "note": "the original severity was lost with the status in the severity column; it was recovered from the row as a nitpick — the remaining half is the missing eyebrow label (the lead half was fixed on 2026-10-18, commit 1129a37). Half done: the open half is consciously accepted — owner decision 2026-10-18: the eyebrow arrives with the parent-art map (D1), see rules/11-sport-area-redesign-proposal.md §4.1"
     }
   ]
 }

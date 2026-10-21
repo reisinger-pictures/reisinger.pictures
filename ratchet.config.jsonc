@@ -14,7 +14,7 @@
         "incident": "UI-001: the hero's primary action is a plain text link — the button hierarchy of the header does not exist in the hero",
         "unit": "findings",
         "direction": "ceiling",
-        "description": "the counted scope is the registry `ratchet.findings.json` — the machine-readable view of the UI review of 2026-10-18. Every level counts (`critical`…`info`), and the counting statuses are `open` and `in-progress`: `accepted` and `wontfix` do not count but stay visible — a decision is not a deletion. The sport hero is an owner decision (`accepted`) and the table of contents is a decision by design (`wontfix`); the two rows whose severity was lost with their status carry that as a note — one is `info` (the level is not recoverable from the row), the other was recovered as a nitpick",
+        "description": "the counted scope is the registry `ratchet.findings.json` — the machine-readable view of the UI review of 2026-10-18. Every level counts (`critical`…`info`), and the counting statuses are `open` and `in-progress`: `accepted` and `wontfix` do not count but stay visible — a decision is not a deletion. Two rows are owner decisions and stay visible without counting: the sport hero (`accepted`, `UI-007`) and the sport eyebrow (`accepted`, `UI-018`); the table of contents is a decision by design (`wontfix`, `UI-017`). Three rows lost their severity with their status and carry that as a note: one is `info` (the level is not recoverable from the row, `UI-010`), the other two were recovered as a nitpick (`low`, `UI-017` and `UI-018`)",
         "count": {
           "registry": "ratchet.findings.json",
           "severities": ["critical", "high", "medium", "low", "info"],
