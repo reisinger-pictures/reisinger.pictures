@@ -1,0 +1,36 @@
+// The gates of this repository: the UI findings of the review of 2026-10-18,
+// counted by the registry.
+//
+// The engine owns the baseline, the direction and the monotonicity; the
+// registry owns the findings.  The prose document
+// (`rules/10-ui-review-findings.md`) stays the human record; the registry is
+// its machine-readable view.  The two are migrated in the same commit.
+[
+  {
+    "name": "reisinger.pictures",
+    "rules": {
+      "open-ui-findings": {
+        "class": "an open UI finding",
+        "incident": "UI-001: the hero's primary action is a plain text link — the button hierarchy of the header does not exist in the hero",
+        "unit": "findings",
+        "direction": "ceiling",
+        "description": "the counted scope is the registry `ratchet.findings.json` — the machine-readable view of the UI review of 2026-10-18. Every level counts (`critical`…`info`), and the counting statuses are `open` and `in-progress`: `accepted` and `wontfix` do not count but stay visible — a decision is not a deletion. The sport hero is an owner decision (`accepted`) and the table of contents is a decision by design (`wontfix`); the two rows whose severity was lost with their status carry that as a note — one is `info` (the level is not recoverable from the row), the other was recovered as a nitpick",
+        "count": {
+          "registry": "ratchet.findings.json",
+          "severities": ["critical", "high", "medium", "low", "info"],
+          "statuses": ["open", "in-progress"]
+        }
+      }
+    },
+    "generated": [
+      {
+        // The gate report is a derived artifact: the drift gate regenerates
+        // it and compares it with the committed version.  The generator writes
+        // the file **in place** — the report command only writes inside the
+        // repository root, and the engine restores the file afterwards.
+        "path": "docs/gates-report.md",
+        "command": ["ratchet", "report", "--format", "md", "--output", "docs/gates-report.md"]
+      }
+    ]
+  }
+]

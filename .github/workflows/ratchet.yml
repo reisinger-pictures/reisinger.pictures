@@ -1,0 +1,32 @@
+name: Ratchet
+
+# The gates of this repository: the UI findings of the review are counted
+# against a baseline that may only fall, and the report of the run is
+# drift-checked against the committed version.
+#
+# The action installs the released binary and verifies its SHA-256 against the
+# checksums of the release. The action is pinned to a commit SHA — the moving
+# `v1` tag would install an action that changed without this repository
+# noticing.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# The gate reads the repository and nothing else.
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: The gates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: all-the-rest/ratchet-cli@0550712cf8dba5253ced2838ec3f1bb1555b9712
+        with:
+          mode: validate

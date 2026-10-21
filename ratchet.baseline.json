@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "rules": {
+    "open-ui-findings": {
+      "value": 15
+    }
+  }
+}

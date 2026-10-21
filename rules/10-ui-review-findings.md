@@ -17,16 +17,41 @@ fixed and re-verified; new captures append here instead of into a one-off report
 
 ## Legend
 
-Severity follows `ui-review/references/findings-report.md`:
-`critical` broken/blank/cut-off · `high` visible layout/contrast/hierarchy defect · `medium` polish ·
-`low` nitpick. `File:Line` points at the source of the suggested fix where it could be identified;
+Severity uses the canonical levels of the `ratchet-gates` skill: `critical` blocks the core path
+for everyone · `high` degrades it · `medium` a real defect with a workaround · `low` a nitpick or
+an improvement · `info` an observation, nothing to fix. For a page that reads: a broken or blank
+page is `critical`, a visible layout, contrast or hierarchy defect is `high`, polish and nitpicks
+are `low`.
+
+**The grades in this log were written under the retired reading** of the levels (`medium` was
+"polish"), and the `ui-review` skill — which grades the rounds — still carries that reading. The
+re-grade of the open rows and the migration of the skill are open work (`AGENTS.todo.md`); until
+they are done, the grades here are what they are — and the machine-readable view of the open
+findings, the thing the gate counts, mirrors them row for row.
+
+The first column holds the **severity** of an open finding. A closed or decided row carries its
+**status** there instead, and the date of its last change:
+
+| Cell | Canonical status |
+|---|---|
+| `behoben <date>` | `fixed` |
+| `entschieden <date>` | `wontfix` — a decision by design |
+| `widerbestehend <date>` | `open` — still open |
+| `behoben/entschieden <date>` | `fixed` — the row lists both |
+| `—` | not a finding — a coverage record |
+
+The severity of a row that carries a status was **lost with it**: where the row still supports a
+level, it is recovered from it; where it does not, the finding is `info` with a note that says
+so. An unknown level is stated, never guessed.
+
+`File:Line` points at the source of the suggested fix where it could be identified;
 "n/a" means the screenshot alone does not identify the source.
 
 ---
 
 ## 1. Homepage (`home`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | medium | `apps/reisinger.pictures/src/components/home/HomeIntro.astro:51,53-59` | `light/desktop/home-sec0.png`, `dark/desktop/home-sec0.png`, `light/mobile/home-sec0.png`, `light/intermediate/home-sec0.png` | The hero's primary action "Fotoshootings & Preise →" is a plain underlined text link (`class="link"`); the secondary "Zum Portfolio-Blog ↓" is almost the same weight (only `text-sm` plus a down arrow). The only visually dominant CTA on the first screen is the header's `btn btn-primary` "Jetzt kontaktieren". Primary and secondary action are hard to tell apart. | Make the hero's primary action a `btn btn-primary` (or `btn btn-outline`) so the button hierarchy used in the header also exists in the hero; keep the anchor link secondary. |
 | low | `apps/reisinger.pictures/src/components/home/HomeIntro.astro:25-61` | `light/mobile/home-sec0.png` | On mobile the reading order is H1 → "Beauty & Portrait" offering card → intro paragraph → CTA, so the hero's own photo card cuts the headline from its copy. `AreaHero.astro:70-74` (default branch) and `:30-34` (sport branch) document this order as deliberate for area pages; for the homepage it reads like an accident. | Owner decision: either accept (consistent with area pages) or move the intro paragraph above the offering card on mobile. |
@@ -34,7 +59,7 @@ Severity follows `ui-review/references/findings-report.md`:
 
 ## 2. Private shootings (`shootings` = `/shootings/akt`, `shootings-beauty`, `shootings-couples`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/ImageGallery.astro:26` + `src/styles/global.css:25-28` (`section[data-gallery] img { max-h-none; object-fit: contain }`) | `light/desktop/shootings-couples-sec9.png`, `-sec10.png`, `-sec11.png` | The rule "last image and every even index gets `GalleryLayout.Full`" promotes a portrait photo to a one-per-row image at full content width (~1314 px at 1920); the gallery override removes the global `max-h-[80vh]`, so the image keeps its native aspect ratio and becomes ~2000 px tall — the end of `/shootings/couples/` is dominated by a single image spanning about three viewport sections. | Cap the promoted image (e.g. `max-h-[85vh]` + `object-cover`) or drop the `Full` promotion for portrait-native images. **Fixed 2026-10-18:** `ImageGallery.astro` resolves the native dimensions and only promotes a *landscape* last image to the full-width column (the `xl:last:odd:col-span-2` CSS rule was replaced by an `xl:col-span-2` class on that wrapper); the portrait last image now stays in the two-column grid. Measured on `/shootings/couples/`: the last tile is 652×978 instead of 1320×1980. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/ContentCard.astro:26,40,48` + `src/styles/global.css:21-23` (`img { max-h-[80vh]; object-contain }`) | `light/desktop/shootings-sec16.png` | In "Aktuelle Einblicke" every card image is forced into a `3/2` box with `fit="contain"`, so a portrait photo renders with grey bars on both sides inside a landscape frame (first card next to two landscape cards). Mixed aspect ratios look like a broken grid. | Use `fit="cover"` for card images, or give each card the image's own aspect ratio. **Fixed 2026-10-18:** `ContentCard`'s default `fit` is now `cover`; the 3/2 grid stays uniform and the letterbox bars are gone. |
@@ -44,7 +69,7 @@ Severity follows `ui-review/references/findings-report.md`:
 
 ## 3. Sport shooting (`shootings-sport`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/HeroBanner.astro:34-44` (used by `BlogPost.astro:49`, `tfp/[slug].astro:45`, `[...simple].astro:60` and `portfolio/[...overview]/[...page].astro:67`) | `light/desktop/shootings-sport-sec0.png`, `dark/desktop/shootings-sport-sec0.png`, `light/mobile/shootings-sport-sec0.png` | The hero is a full-bleed `bg-base-200` band whose photo is height-capped (`max-h-[80vh]`) and centred. At 1920 the band is much wider than the photo, so ~390 px of empty band remain on each side; the H1 follows *below* the band instead of next to it. | Constrain the band (`max-w-*` or a two-column hero) so the image width matches the 1314 px content grid below it. **Fixed 2026-10-18 for the sport pages (commit `1129a37`):** the sport composition no longer renders `HeroBanner`; `AreaHero`'s sport variant puts the photograph at content-grid width with `object-cover`, so the band and the letterbox bars are gone and the H1 sits above the photo in one editorial column. `HeroBanner` itself was not touched by that commit and keeps this defect on its other call sites (§5). |
 | low | n/a | `light/desktop/shootings-sport-sec2.png` | The sport-art grid mixes label bars and photos across rows (label bar of row 1 sits visually above the photos of the previous row). Reading the grid requires scrolling. | Optional: put the label on the photo (`overlay`) to shorten the cards. |
@@ -63,7 +88,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 4. Preis-Konfigurator (`pricing-default`, `-standard`, `-flex`, `-flex-private`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | n/a (`preise` content + configurator) | `light/desktop/pricing-standard-sec0.png`, `light/desktop/pricing-flex-sec0.png`, `light/intermediate/pricing-default-sec0.png`, `light/mobile/pricing-default-sec0.png` | Hierarchy inversion: the section heading "Faire **Preise** – für alle" (H2) renders clearly larger and heavier than the page's own H1 "Meine Tarife – Fair, transparent, flexibel". On the most important commercial page the second heading overpowers the page title. | Reduce the H2 one step (`text-2xl`/`md:text-3xl`) or raise the H1; at minimum keep the H2 below the H1 in visual weight. **Fixed 2026-10-18** in `src/content/simple/preise.mdx`: the H2 is now `text-2xl md:text-3xl font-bold` (was `text-4xl md:text-5xl font-black`). Measured on `/preise/`: H1 36 px / 800, H2 30 px / 700. |
 | behoben 2026-10-19 | `apps/reisinger.pictures/src/solid/PricingCalculator.tsx` | `light/desktop/pricing-standard-sec0.png` vs `light/desktop/pricing-flex-sec0.png` | The two tabs are not structurally parallel: the Flex tab renders an extra bordered "TARIF-KONFIGURATOR / STELLE DEINE SESSION ZUSAMMEN" panel around the price, the Standard tab starts directly with the price block. | Give both tabs the same panel (or drop the panel on Flex). **Fixed 2026-10-19:** the redundant nested panel was removed, so the Flex calculator shares the Standard tab's exact framing (description → price summary → steps → CTA) inside the single bordered tab panel. Pricing formulas, URL parsing, settings, discounts and contact links unchanged (46/46 E2E green). |
@@ -73,7 +98,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 5. Simple pages — legal and content (`agb`, `dsb`, `impressum`, `ueber-mich`, `personal-branding`, `eventfotografie`, `share`, `portal`, `akt-ablauf`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben/entschieden 2026-10-18 | `apps/reisinger.pictures/src/content/simple/agb.mdx:14`, `apps/reisinger.pictures/src/content/simple/dsb.mdx:14` | `light/desktop/agb-sec0.png`, `-sec1.png`, `light/desktop/dsb-sec0.png`, `-sec1.png`, `dark/desktop/agb-sec0.png`, `dark/desktop/dsb-sec0.png`, `light/mobile/agb-sec0.png`, `light/mobile/dsb-sec0.png` | The current AGB/DSB text is only an `<iframe src="…/agb-1.pdf#navpanes=0">` inside an `aspect-paper-vertical` box. In every capture the framed area is empty, so (a) the screenshot pass cannot verify the legal text at all, and (b) on 480 px a full A4 page in an iframe is unreadable without pinch-zoom and needs nested scrolling; iOS Safari renders only the first page of an embedded PDF. **Not a "broken page" claim** — this is a headless-Chromium PDF-plugin limitation; the concern is the chosen embedding, not an empty file. | Render AGB/DSB as HTML (or a collapsed `<details>` per section) and keep the PDF as a download/secondary link. If the iframe stays, add a visible "PDF öffnen" fallback link inside the box. **Owner decision 2026-10-18:** the signed PDF stays the authoritative document, the legal text is *not* converted to HTML. Only the presentation changed in `agb.mdx`/`dsb.mdx`: a labelled "… als PDF öffnen (signierte Fassung)" link in a new tab, a note that it is the signed original, and a bounded embed height (`h-[45vh] sm:h-[70vh] max-h-[900px]`) instead of the A4 `aspect-paper-vertical` box. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/content/simple/dsb.mdx:23` | `light/desktop/dsb-sec3.png` | On the DSB page the version list says "**AGB** gültig ab 1. Jänner 2026" — the label is copy-pasted from `agb.mdx` and names the wrong document. | Change the label to "DSB gültig ab …" (the loop variable is already called `agb`, rename it too). **Fixed 2026-10-18:** label and loop variable renamed to `DSB`/`dsb`. |
@@ -90,7 +115,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 6. Portfolio / Blog (`portfolio`, `portfolio-page-mid`, `portfolio-page-last`, `content-example`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/content/portfolioOverviews/index.md:7,9` | `light/desktop/portfolio-sec1.png`, `light/mobile/portfolio-sec1.png` | Copy bug: the H2 "Eine Idee oder Lust auf ein Shooting?" is repeated verbatim as the first paragraph line directly below it, so the text reads twice in a row. | Delete the duplicated line 9 (or turn it into real body copy). **Fixed 2026-10-18:** duplicate paragraph removed; the section keeps its H2, intro sentence, three-item list and closing line. |
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/pages/portfolio/[...overview]/[...page].astro:64` | `portfolio-page-mid.png`, `portfolio-page-last.png` | All paginated portfolio URLs shared the same browser title and the same H1 ("Mehr Einblicke & Bilder - Willkommen in meiner Fotowelt"), which also duplicates the breadcrumb parent label. | Give page 2…n a distinguishing suffix. **Fixed 2026-10-18:** `pageTitle = currentPage > 1 ? \`${title} – Seite ${currentPage}\` : title` feeds both `<title>` and `<h1>`; page 1 is unchanged, URLs and breadcrumbs are untouched. The hyphen in the base title itself is content (`portfolioOverviews/index.md`) and was deliberately left as-is. |
@@ -99,7 +124,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 7. Kundenbewertungen (`testimonials`, `testimonial-detail`, `shootings-akt-testimonials`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/ReviewCard.astro` (`h-full` on the card; `data-slug` at `:31`) | `light/desktop/testimonials-sec73.png`, `-sec74.png`, `-sec75.png` | A review card without a large image is stretched by `h-full` to the row height of its tall image neighbour (`mintha1`, "Martina Kremsmayr", beside the very tall `syannah1` card), so its body becomes a ~1210 px empty grey area with the footer far below the text. **Correction 2026-10-18:** an earlier revision of this document claimed the card rendered entirely empty ("no avatar, no name, no text, no image"). That was wrong: an independent check of all 87 `[data-slug]` cards found every one carrying a name and body text (shortest 110 characters). The claim came from misreading the 20 % section overlap. The real defect is the stretch, not missing content. | Do not stretch image-less cards to the row height (drop `h-full`, use `items-start`, or reserve a media area of equal height). **Fixed 2026-10-18:** `ReviewCards.astro` grid now uses `items-start`, so each card keeps its natural height and the empty grey body is gone. |
 | behoben 2026-10-19 | `apps/reisinger.pictures/src/components/ReviewCard.astro` | `light/desktop/testimonials-sec0.png`, `-sec1.png`, `-sec2.png`, `light/desktop/shootings-sport-sec12.png` | Two different card layouts share one grid: the `quote` layout puts a vertically centred avatar/logo in a `sm:w-1/3` column (leaving a large empty top-left quadrant and the body confined to the right half), the default layout puts the avatar on top above a full-width body. Cards without any image are also much shorter, so a 2-column row mixes strongly different heights. | Normalise the card: same avatar slot and same body width in both layouts, or force a minimum media area so rows align. **Fixed 2026-10-19:** both layouts now use one shared card (surface `bg-base-200 border border-base-300 shadow-sm`), one centred identity slot (avatar + name + role) and one footer; the `quote` layout shows its logo centred above the name and renders its text as an italic `<blockquote>` instead of a left logo column with oversized quote glyphs. The default layout keeps avatar → name → photo → text. Image-less cards keep their natural height (`items-start`). |
@@ -109,7 +134,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 8. TFP (`tfp`, `tfp-idea`) and 404 (`not-found`)
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-19 | `apps/reisinger.pictures/src/pages/tfp/[slug].astro:49` | `light/desktop/tfp-idea-sec0.png` vs `light/desktop/tfp-sec0.png` | The idea detail page renders its H1 in the green brand colour while every other page (including the TFP overview) uses the dark base colour. | Use the standard H1 colour; if the green is wanted as a brand accent, use it consistently. **Fixed 2026-10-19:** the H1 colour is now `text-base-content`, matching the TFP overview and every other page H1; the title text is unchanged. |
 | behoben 2026-10-19 | `apps/reisinger.pictures/src/components/TfpIdeaCard.astro:13` | `light/desktop/tfp-sec0.png`, `-sec1.png`, `dark/desktop/tfp-sec0.png`, `light/mobile/tfp-sec0.png` | In the idea cards there is a large empty gap between the centred card title and the left-aligned body text; title centred, body left — two alignments inside one small card. | Tighten the gap and pick one alignment for the card. **Fixed 2026-10-19:** the card title is left-aligned like the body (`items-start justify-start text-left!`), the fixed minimum height (`min-h-[4.5rem] lg:min-h-[5.5rem]`) is gone and the spacing to the description is `mb-3`. Titles, descriptions, order, the disclosure ("Weitere Ideen anzeigen") and the "Mehr erfahren" links are unchanged; the action stays at the bottom of every card (the description keeps `grow`). |
@@ -119,7 +144,7 @@ twice), and `AreaHero`'s default branch is the previous markup verbatim.
 
 ## 9. Cross-cutting observations
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/components/HeroBanner.astro:27-32` (via `HeroBanner.astro:35`; the `ResponsiveImage` contain-branch wrapper already matches its image) | `personal-branding.png`, `shootings-sport.png` (measured) | The EXIF info control is an icon-only circle anchored to the wrapper, not the photo. Wherever the image is `object-contain` inside a wider box or band, the badge floats in the empty letterbox area outside the picture. | Anchor the badge to the rendered image (or place it in a static meta row) so it cannot detach. **Fixed 2026-10-18:** the band wrapper now caps its width at `min(100%, 80vh·W/H)`, so the wrapper is exactly the contained image box and the badge sits on the picture; the image itself keeps the same size. Measured on `/personal-branding/` (1920): image 507×760, label inside; `/shootings/sport/` (1920): image 1140×760, label inside. The `showInfo` containers in `ReviewCard`/`ContentCard` already matched their image. |
 | low | n/a | all routes | The floating chat bubble (bottom-right) overlaps the last card or the footer band on every route and viewport captured. | Accept, or hide it while the footer is in view. |
@@ -133,7 +158,7 @@ Not a component: `src/middleware/toc.ts` post-processes every page's HTML, finds
 
 Measured on 2026-10-18 against the running dev server, in a real browser, on `/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/`:
 
-| Severity | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
+| Severity / Status | Stelle (Datei:Zeile) | Screenshot | Befund | Vorschlag |
 |---|---|---|---|---|
 | behoben 2026-10-18 | `apps/reisinger.pictures/src/styles/global.css` (`:is(h2, h3, h4, h5, h6)[id] { @apply scroll-mt-24 }`) | `content-toc-*` after a jump (measured) | Clicking a table-of-contents entry scrolled the target heading to `top: 0`, i.e. **directly under the sticky header** (`sticky top-0 z-50`, 69 px at 1440, 73 px at 390), so the reader arrived without seeing the heading they clicked. Applies to every ToC entry on all posts and the `simple` pages that show a ToC. | One central rule now gives every `h2–h6` anchor target `scroll-margin-top: 6rem`. **Fixed 2026-10-18** in `global.css`; measured after a real click on `/portfolio/sport/eishockey/ice/2025-26/s1-bwl-pvb/`: heading top 96.5 px vs header bottom 69 px (1440), 96.1 px vs 73 px (390) — visible below the header on both. Headings only, so the homepage's `#portfolio-blog` jump (`scroll-mt-24` on a `<div>`) is not offset twice (measured 96.1 px, not 192 px). |
 | **entschieden 2026-10-18** | `src/components/pages/BlogPost.astro:60`, `src/pages/[...simple].astro:55`, `src/middleware/toc.ts` | — (65 of 136 posts carried a ToC; 7 have exactly one entry, 12 have two) | The ToC was rendered whenever at least one heading existed. A "Inhaltsverzeichnis" heading above a **single** entry is pure noise; 19 of 65 posts were in that range. | **Owner decision 2026-10-18 (`rules/12-table-of-contents.md`): the automatic trigger is removed from every template and the table of contents is placed by hand.** No threshold was needed once nothing is automatic: `<TableOfContents />` (new, `src/components/TableOfContents.astro`) renders the placeholder, provided to MDX via the `components` prop. The middleware stays as the generator. Verified: 0 of 283 built pages carry a ToC, one hand-placed component renders a correct list and a real nested list. |
@@ -190,7 +215,8 @@ sections above and the fix round commit. What remains, ranked:
    (`rules/11-sport-area-redesign-proposal.md`), not here.
 
 Immediately after those: the paginated portfolio URLs sharing one title and H1 (§6 — **done
-2026-10-18**), the TFP idea H1 in brand green while every other H1 uses the base colour (§8 — open),
+2026-10-18**), the TFP idea H1 in brand green while every other H1 uses the base colour (§8 — **done
+2026-10-19**),
 the EXIF badge detaching from `object-contain` images (§9 — **done 2026-10-18**) and the floating
 chat bubble overlapping the last card (§9 — open).
 

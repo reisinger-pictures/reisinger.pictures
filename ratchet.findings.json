@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "findings": [
+    {
+      "id": "UI-001",
+      "title": "The hero's primary action is a plain text link — the button hierarchy of the header does not exist in the hero",
+      "severity": "medium",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/components/home/HomeIntro.astro:51,53-59"
+    },
+    {
+      "id": "UI-002",
+      "title": "On mobile the hero's photo card cuts the headline from its copy",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/components/home/HomeIntro.astro:25-61"
+    },
+    {
+      "id": "UI-003",
+      "title": "The sticky sidebar of the private area page stops with the article — the right third runs empty for many sections",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/components/areas/PrivateAreaPage.astro:73-77"
+    },
+    {
+      "id": "UI-004",
+      "title": "The breadcrumb of /shootings/akt/ shows only the start page although the page is two levels deep",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-005",
+      "title": "The sport-art grid mixes label bars and photos across rows — reading the grid requires scrolling",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-006",
+      "title": "The sport page's main CTA uses the event-photography wording — the label is undecided",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-007",
+      "title": "Two of the 15 sport heroes are portrait and lose about 62 % of their height in the 3/2 crop at desktop width",
+      "severity": "medium",
+      "status": "accepted",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/components/areas/AreaHero.astro:46",
+      "note": "owner decision 2026-10-18: a landscape hero is supplied for those two entries; until then the crop stands as documented, with no object-contain clamp"
+    },
+    {
+      "id": "UI-008",
+      "title": "The student/friend-discount checkbox is a pale outline circle — detached on mobile and a small tap target",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-009",
+      "title": "The price meta lines use emoji while the rest of the site uses MDI icon classes — two icon languages in one card",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-010",
+      "title": "Inconsistent vertical rhythm on the legal pages — the gap between a paragraph and the next H2 varies",
+      "severity": "info",
+      "status": "open",
+      "status_since": "2026-10-19",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "note": "the original severity was lost with the status in the severity column and could not be recovered — the level is info. Re-evaluated 2026-10-19: not reproducible, the computed margins are uniform"
+    },
+    {
+      "id": "UI-011",
+      "title": "The share page's H1 is English while everything below it is German",
+      "severity": "medium",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "apps/reisinger.pictures/src/content/simple/share.mdx:2"
+    },
+    {
+      "id": "UI-012",
+      "title": "The WKO logo keeps its white background and shows as a bright box on the dark surface",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-013",
+      "title": "/akt/ablauf/ ends with a single half-width image and an empty right half of the row",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-014",
+      "title": "The last portfolio row ends with a lone tile, and the closing gallery mixes portrait and landscape photos without captions",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-015",
+      "title": "The 'KI ZUSAMMENFASSUNG' box is centred and narrower than the left-aligned intro paragraph above it",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-016",
+      "title": "The floating chat bubble overlaps the last card or the footer band on every route and viewport",
+      "severity": "low",
+      "status": "open",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18"
+    },
+    {
+      "id": "UI-017",
+      "title": "The table of contents was rendered whenever at least one heading existed — a heading above a single entry is noise",
+      "severity": "low",
+      "status": "wontfix",
+      "status_since": "2026-10-18",
+      "owner": "FlorianReisinger",
+      "ticket": "ui-review-2026-10-18",
+      "path": "src/components/pages/BlogPost.astro:60",
+      "note": "the row names three places: src/components/pages/BlogPost.astro:60, src/pages/[...simple].astro:55 and src/middleware/toc.ts. Owner decision 2026-10-18 (rules/12-table-of-contents.md): the automatic trigger is removed from every template and the table of contents is placed by hand. The original severity was lost with the status in the severity column; it was recovered from the row as a nitpick"
+    }
+  ]
+}
