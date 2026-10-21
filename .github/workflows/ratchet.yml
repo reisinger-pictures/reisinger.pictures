@@ -27,6 +27,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: all-the-rest/ratchet-cli@0550712cf8dba5253ced2838ec3f1bb1555b9712
+      - uses: all-the-rest/ratchet-cli@d45867fe6b92ff1e8bdf6744e1baed3e1c77b721
         with:
           mode: validate
