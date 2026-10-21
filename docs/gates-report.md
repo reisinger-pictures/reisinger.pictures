@@ -14,7 +14,7 @@
 
 | Rule | Class | Direction | Tier | Count | Baseline | Status | Detail |
 |---|---|---|---|---|---|---|---|
-| open-ui-findings | an open UI finding | ceiling | fast | 15 | 15 | ok | — |
+| open-ui-findings | an open UI finding | ceiling | fast | 13 | 13 | ok | — |
 
 ## Findings
 
@@ -26,8 +26,6 @@
 | UI-002 | low | open | On mobile the hero's photo card cuts the headline from its copy | FlorianReisinger | ui-review-2026-10-18 |
 | UI-003 | low | open | The sticky sidebar of the private area page stops with the article — the right third runs empty for many sections | FlorianReisinger | ui-review-2026-10-18 |
 | UI-004 | low | open | The breadcrumb of /shootings/akt/ shows only the start page although the page is two levels deep | FlorianReisinger | ui-review-2026-10-18 |
-| UI-005 | low | open | The sport-art grid mixes label bars and photos across rows — reading the grid requires scrolling | FlorianReisinger | ui-review-2026-10-18 |
-| UI-006 | low | open | The sport page's main CTA uses the event-photography wording — the label is undecided | FlorianReisinger | ui-review-2026-10-18 |
 | UI-008 | low | open | The student/friend-discount checkbox is a pale outline circle — detached on mobile and a small tap target | FlorianReisinger | ui-review-2026-10-18 |
 | UI-009 | low | open | The price meta lines use emoji while the rest of the site uses MDI icon classes — two icon languages in one card | FlorianReisinger | ui-review-2026-10-18 |
 | UI-010 | info | open | Inconsistent vertical rhythm on the legal pages — the gap between a paragraph and the next H2 varies | FlorianReisinger | ui-review-2026-10-18 |
