@@ -6,6 +6,7 @@
 // (`rules/10-ui-review-findings.md`) stays the human record; the registry is
 // its machine-readable view.  The two are migrated in the same commit.
 [
+  { "preset": "agent-rules" },
   {
     "name": "reisinger.pictures",
     "rules": {

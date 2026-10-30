@@ -8,13 +8,19 @@
 
 | Rules | Failed | Executed |
 |---|---|---|
-| 1 | 0 | 1 |
+| 7 | 0 | 7 |
 
 ## Rules
 
-| Rule | Class | Direction | Tier | Count | Baseline | Status | Detail |
-|---|---|---|---|---|---|---|---|
-| open-ui-findings | an open UI finding | ceiling | fast | 13 | 13 | ok | — |
+| Rule | Scope | Description | Class | Direction | Tier | Count | Baseline | Status | Detail |
+|---|---|---|---|---|---|---|---|---|---|
+| gates-untouched | — | — | a gate disarmed by the change it should catch | ceiling | fast | 0 | 0 | ok | — |
+| open-ui-findings | — | — | an open UI finding | ceiling | fast | 13 | 13 | ok | — |
+| plan-status-line | — | — | a plan without a state | ceiling | fast | 0 | 0 | ok | — |
+| rule-file-max-lines | — | the largest `AGENTS.md` in the tree, measured in lines; the paydown is a module-local `AGENTS.md` next to the code it describes | a rule file drifting into a specification | ceiling | fast | 59 | 59 | ok | — |
+| rule-file-name | — | — | a rule file the harness cannot see | ceiling | fast | 0 | 0 | ok | — |
+| rule-file-present | — | — | a project without rules | floor | fast | 1 | 1 | ok | — |
+| unverified-commits | — | — | a commit with no verification evidence | ceiling | fast | 254 | 254 | ok | — |
 
 ## Findings
 

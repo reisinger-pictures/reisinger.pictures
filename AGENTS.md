@@ -45,3 +45,15 @@ The following invariants hold for the whole project, including every other conte
 * **Consult first:** for unclear structures, data mappings or naming conventions, read the Markdown files in `rules/` first.
 * **Extend immediately:** whenever work produces a new edge case, conflict (e.g. about URLs or labels) or architecture decision, document it in `rules/` immediately, or extend an existing rule.
 * **Maintain skills:** skills are managed via symlink in the global skill folder (`~/.agents/skills/`). Apply changes to content structures, naming conventions or the caption/review flow to the affected skill immediately.
+
+## Gates
+
+Regeln dieser Ebene. Was nur ein Verzeichnis betrifft, gehört in die
+`AGENTS.md` **dieses** Verzeichnisses — sie wird geladen, wenn eine Datei
+daraus gelesen wird.
+
+Ein Plan in `docs/plans/` beginnt mit `**Status:** Plan | In Arbeit | Done |
+Empfehlung, nicht implementiert`.
+
+Die kanonischen Agent-Regeln laufen über `ratchet` (Preset `agent-rules`):
+`ratchet check` vor jedem Commit und in der CI.

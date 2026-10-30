@@ -1,8 +1,26 @@
 {
   "version": 1,
   "rules": {
+    "gates-untouched": {
+      "value": 0
+    },
     "open-ui-findings": {
       "value": 13
+    },
+    "plan-status-line": {
+      "value": 0
+    },
+    "rule-file-max-lines": {
+      "value": 59
+    },
+    "rule-file-name": {
+      "value": 0
+    },
+    "rule-file-present": {
+      "value": 1
+    },
+    "unverified-commits": {
+      "value": 254
     }
   }
 }
