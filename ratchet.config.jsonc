@@ -33,5 +33,17 @@
         "command": ["ratchet", "report", "--format", "md", "--output", "docs/gates-report.md"]
       }
     ]
+  },
+
+  {
+    "rules": {
+      "unverified-commits": {
+        "class": "a commit with no verification evidence",
+        "incident": "the preset's rule counts the whole history, so the generated drift report changed with the checkout depth",
+        "unit": "commits without a Verify: footer since the epoch",
+        "direction": "ceiling",
+        "count": { "agent_rule": "unverified-commits", "since": "2026-10-30" }
+      }
+    }
   }
 ]

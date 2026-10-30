@@ -20,7 +20,7 @@
 | rule-file-max-lines | — | the largest `AGENTS.md` in the tree, measured in lines; the paydown is a module-local `AGENTS.md` next to the code it describes | a rule file drifting into a specification | ceiling | fast | 59 | 59 | ok | — |
 | rule-file-name | — | — | a rule file the harness cannot see | ceiling | fast | 0 | 0 | ok | — |
 | rule-file-present | — | — | a project without rules | floor | fast | 1 | 1 | ok | — |
-| unverified-commits | — | — | a commit with no verification evidence | ceiling | fast | 254 | 254 | ok | — |
+| unverified-commits | — | — | a commit with no verification evidence | ceiling | fast | 0 | 0 | ok | — |
 
 ## Findings
 
