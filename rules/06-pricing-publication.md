@@ -51,15 +51,15 @@ a later legal alignment is pending.
   label is the clear "Absolutes Online-Verbot" wording, not the variable name.
 
 ## Amounts & arithmetic (owner-confirmed, portal-imported)
-- **Standard:** base 50 €, hourly 80 €, 6 images/h indoor, 10 images/h outdoor,
-  +20 % reportage. Rounding: **psychologically round the package first, apply the
+- **Standard:** base 50 €, hourly 100 €, 6 images/h indoor, 8 images/h outdoor,
+  +25 % reportage. Rounding: **psychologically round the package first, apply the
   discount to that rounded package, then psychologically round the final**.
-  Examples: 1 h / 15 / outdoor = **249 €**, 1 h / 15 / indoor = **329 €**,
-  90 min / 15 / outdoor = **289 €**.
-- **Flex:** base 149 €, setup 50 €, +15 € per extra image, privacy option 200 €.
+  Examples: 1 h / 15 / outdoor = **339 €**, 1 h / 15 / indoor = **399 €**,
+  90 min / 15 / outdoor = **389 €**.
+- **Flex:** base 149 €, setup 50 €, +15 € per extra image, privacy option 250 €.
   Intended rule: **round once, on the raw total** (e.g. 164 → 165); setup/extra/
   privacy amounts stay raw. The 149 € base already ends in 9, so the plain setup
-  totals are psychologically round as-is (**149 €**, 199 €, 349 €).
+  totals are psychologically round as-is (**149 €**, 199 €, 399 €).
 - The single source of truth is `packages/shared/utils/pricing.ts`
   (`calculateStandardPrice`, `calculateFlexPrice`); the Solid islands delegate to
   it. `apps/reisinger.pictures/src/pricing-parity.test.ts` pins the public result
@@ -67,7 +67,7 @@ a later legal alignment is pending.
   boundaries and the `'33'`/`'50'` discounts).
 - The portal's 90-min default and the public 60-min default are **input
   selections, not a formula** — the public page keeps its 60-min example. The
-  reportage multiplier (1.2) is stored in the snapshot but is **not used by the
+  reportage multiplier (1.25) is stored in the snapshot but is **not used by the
   public UI yet** (out of scope).
 
 ## Source sync: explicit import boundary
@@ -80,6 +80,12 @@ a later legal alignment is pending.
   cookie; with neither set it reads the endpoint anonymously (it is not protected
   yet). Setting only one of the two fails loudly — no silent downgrade. Strict
   validation of the nine fields is identical in both modes.
+- **Snapshot provenance (2026-11-01):** the current values were transferred
+  **manually from the portal UI** (owner screenshot, 2026-11-01 17:10) because
+  `/api/settings/license-terms` now answers `{"message":"Unauthenticated."}` and
+  no admin credentials were available; the AUTO-GENERATED header was deliberately
+  left in place. Confirmation is pending via
+  `PORTAL_ADMIN_EMAIL=… PORTAL_ADMIN_PASSWORD=… pnpm run import:portal-terms`.
 - **Only these nine fields** are ever persisted: `calc_base_price`,
   `calc_hourly_rate`, `calc_images_per_hour`, `calc_outdoor_images_per_hour`,
   `calc_flatrate_multiplier`, `srp_base_price`, `srp_setup_fee`,

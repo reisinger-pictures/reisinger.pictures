@@ -82,7 +82,7 @@ prefills and the real modal behavior remain intact; browser tests mock form POST
   final totals**, not a second psychological-rounding pass. No euro literals in
   production markup, no modification of central pricing math or portal data.
 - Standard's central homepage example is 1 hour, 15 edited images, outdoor.
-  Current imported settings yield **249 EUR**, labelled `Beispielpreis` and
+  Current imported settings yield **339 EUR**, labelled `Beispielpreis` and
   explicitly **not a minimum**. Smaller configurations remain possible.
   Do not invent commercial/licence inclusions.
 - Main/Standard price links serialize that same configuration:

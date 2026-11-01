@@ -137,7 +137,7 @@ test("shows the centrally derived pricing card without a hardcoded minimum", asy
   ).toBeVisible();
   await expect(intro.getByText(/Online-Verzicht bei Akt & Boudoir/)).toBeVisible();
 
-  await expect(intro.getByText(/€\s?249(?:,00)?$/)).toBeVisible();
+  await expect(intro.getByText(/€\s?339(?:,00)?$/)).toBeVisible();
   await expect(intro.getByRole("heading", { name: /Flex.*€\s?149(?:,00)?$/ })).toBeVisible();
 
   await expect(
@@ -151,7 +151,7 @@ test("shows the centrally derived pricing card without a hardcoded minimum", asy
 });
 
 for (const { link, tariff, amount } of [
-  { link: "Standard berechnen", tariff: "Standard", amount: "249 €" },
+  { link: "Standard berechnen", tariff: "Standard", amount: "339 €" },
   { link: "Flex berechnen", tariff: "Flex", amount: "149 €" }
 ]) {
   test(`reproduces the advertised ${tariff} amount through its homepage link`, async ({ page }) => {

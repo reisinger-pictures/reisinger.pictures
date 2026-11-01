@@ -67,9 +67,9 @@ Pure parsing/serialization lives in `src/solid/pricing-url-state.ts`.
   `/preise/friends` has the same property: its target query is fixed.
 
 ## Price examples and inquiry boundary
-- `/preise/?tarif=standard&h=1&img=15&location=outdoor`: **249 €**.
+- `/preise/?tarif=standard&h=1&img=15&location=outdoor`: **339 €**.
 - `/preise/?tarif=flex`: **149 €**.
-- `/preise/?tarif=flex&type=akt&private=true`: **349 €**.
+- `/preise/?tarif=flex&type=akt&private=true`: **399 €**.
 - These are selected inputs to the existing shared formulas, not new formulas.
 - Calculator inquiry links include the current tariff/configuration and the
   configuration-aware message/price. The shared contact modal must preserve all
@@ -82,8 +82,8 @@ Pure parsing/serialization lives in `src/solid/pricing-url-state.ts`.
   consent, booking acceptance or a licence grant. Rule 06 remains authoritative.
 
 ## Regression evidence
-Before the fix, loading `?location=indoor` displayed 329 € but deleted that query
-parameter; a reload then selected Outdoor and displayed 249 €. The serializer
+Before the fix, loading `?location=indoor` displayed 399 € but deleted that query
+parameter; a reload then selected Outdoor and displayed 339 €. The serializer
 incorrectly treated Indoor as the default while the UI default was Outdoor.
 `?tarif=flex` also selected Standard because the tab container did not read or
 persist a tariff. Browser coverage lives in `e2e/pricing-deeplink.spec.ts`.

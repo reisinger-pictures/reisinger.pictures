@@ -34,7 +34,7 @@ describe("homepage pricing derivations", () => {
   });
 
   it("renders both figures as formatted euro amounts", () => {
-    // de-AT places the currency symbol before the number ("€ 249").
+    // de-AT places the currency symbol before the number ("€ 339").
     expect(standardExamplePrice()).toMatch(/€\s?\d+/);
     expect(flexEntryPrice()).toMatch(/€\s?\d+/);
   });

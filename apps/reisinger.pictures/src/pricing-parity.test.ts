@@ -19,10 +19,11 @@ import { describe, expect, it } from "vitest";
 // one place so the parity claim is explicit about its unit boundary.
 const CENTS_PER_EURO = 100;
 
-// Owner-confirmed portal settings (2026-10-18), kept literal here on purpose so
-// the parity test is an independent reference rather than a re-read of config.
+// Owner-confirmed portal settings (2026-10-18, amounts re-set 2026-11-01), kept
+// literal here on purpose so the parity test is an independent reference rather
+// than a re-read of config.
 const imagesPerHourIndoor = 6;
-const imagesPerHourOutdoor = 10;
+const imagesPerHourOutdoor = 8;
 
 /** Verbatim portal `roundToPsychologicalValue`, in cents. */
 function portalRoundCents(value: number): number {
@@ -61,17 +62,18 @@ function euro(cents: number): number {
   return cents / CENTS_PER_EURO;
 }
 
-describe("Standard tariff parity with the portal (owner-confirmed 2026-10-18)", () => {
+describe("Standard tariff parity with the portal (owner-confirmed 2026-11-01)", () => {
   it("keeps the public EUR rounding identical to the portal cents rounding for whole-euro values >= 12", () => {
     for (let euros = 12; euros <= 1200; euros += 1) {
       expect(roundToPsychologicalValue(euros)).toBe(euro(portalRoundCents(euros * CENTS_PER_EURO)));
     }
   });
 
-  it("matches the portal for the advertised example (1 h / 15 images / outdoor = 249)", () => {
+  it("matches the portal for the advertised example (1 h / 15 images / outdoor = 339)", () => {
+    // 50 + 1*100 + 15*(100/8) = 50 + 100 + 187.5 = 337.5 -> 340 -> 339
     const result = calculateStandardPrice({ hours: 1, images: 15, location: "outdoor" });
-    expect(result.packagePrice).toBe(249);
-    expect(result.finalPrice).toBe(249);
+    expect(result.packagePrice).toBe(339);
+    expect(result.finalPrice).toBe(339);
   });
 
   it("matches the portal across configurations, including rounding boundaries", () => {
@@ -103,12 +105,12 @@ describe("Standard tariff parity with the portal (owner-confirmed 2026-10-18)", 
   });
 
   it("applies the discount to the rounded package, not the raw total", () => {
-    // package 249 -> -50% = 124.5 -> 125
-    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isFriend: true }).finalPrice).toBe(125);
-    // student is EXACTLY one third off (portal '33'): 249 * 2/3 = 166 -> 165
-    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isStudent: true }).finalPrice).toBe(165);
-    // both discounts combine multiplicatively, like the existing public UI: 249/3 = 83 -> 85
-    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isStudent: true, isFriend: true }).finalPrice).toBe(85);
+    // package 339 -> -50% = 169.5 -> 169
+    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isFriend: true }).finalPrice).toBe(169);
+    // student is EXACTLY one third off (portal '33'): 339 * 2/3 = 226 -> 225
+    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isStudent: true }).finalPrice).toBe(225);
+    // both discounts combine multiplicatively, like the existing public UI: 339/3 = 113 -> 115
+    expect(calculateStandardPrice({ hours: 1, images: 15, location: "outdoor", isStudent: true, isFriend: true }).finalPrice).toBe(115);
   });
 });
 
@@ -118,14 +120,14 @@ describe("Flex tariff intended rule (final-total rounding only)", () => {
     // psychologically round as-is.
     expect(calculateFlexPrice({ extraImages: 0, setup: "outdoor", isPrivacyOption: false })).toBe(149); // 149 -> 149
     expect(calculateFlexPrice({ extraImages: 0, setup: "indoor", isPrivacyOption: false })).toBe(199); // 199 -> 199
-    expect(calculateFlexPrice({ extraImages: 0, setup: "outdoor", isPrivacyOption: true })).toBe(349); // 349 -> 349
+    expect(calculateFlexPrice({ extraImages: 0, setup: "outdoor", isPrivacyOption: true })).toBe(399); // 399 -> 399
   });
 
   it("keeps setup and extra-image amounts raw and rounds only their sum", () => {
     // 149 + 50 + 3*15 = 244 -> 245
     expect(calculateFlexPrice({ extraImages: 3, setup: "outdoor_flash", isPrivacyOption: false })).toBe(245);
-    // 149 + 50 + 2*15 + 200 = 429 -> 429
-    expect(calculateFlexPrice({ extraImages: 2, setup: "indoor", isPrivacyOption: true })).toBe(429);
+    // 149 + 50 + 2*15 + 250 = 479 -> 480 -> 479
+    expect(calculateFlexPrice({ extraImages: 2, setup: "indoor", isPrivacyOption: true })).toBe(479);
   });
 
   it("documents the current portal defect (raw total, no rounding) as NOT the reference", () => {
@@ -137,7 +139,7 @@ describe("Flex tariff intended rule (final-total rounding only)", () => {
     const rawSums = [
       { extraImages: 0, setup: "outdoor" as const, isPrivacyOption: false, raw: 149 },
       { extraImages: 0, setup: "indoor" as const, isPrivacyOption: false, raw: 199 },
-      { extraImages: 0, setup: "outdoor" as const, isPrivacyOption: true, raw: 349 }
+      { extraImages: 0, setup: "outdoor" as const, isPrivacyOption: true, raw: 399 }
     ];
     for (const c of rawSums) {
       expect(calculateFlexPrice(c)).toBe(roundToPsychologicalValue(c.raw));
@@ -153,14 +155,14 @@ describe("Portal terms snapshot link (single source, no duplicated constants)", 
   it("stores the owner-confirmed values as raw cent/count strings", () => {
     expect(portalLicenseTerms.terms).toEqual({
       calc_base_price: "5000",
-      calc_hourly_rate: "8000",
+      calc_hourly_rate: "10000",
       calc_images_per_hour: "6",
-      calc_outdoor_images_per_hour: "10",
-      calc_flatrate_multiplier: "1.2",
+      calc_outdoor_images_per_hour: "8",
+      calc_flatrate_multiplier: "1.25",
       srp_base_price: "14900",
       srp_setup_fee: "5000",
       srp_extra_image_fee: "1500",
-      srp_privacy_fee: "20000"
+      srp_privacy_fee: "25000"
     });
   });
 

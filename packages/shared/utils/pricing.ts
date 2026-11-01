@@ -30,7 +30,7 @@ export const friendDiscountMultiplier = 0.5;
  * Zentralisierte Preis-Berechnung für Shootings
  * @param durationMinutes Dauer des Shootings in Minuten
  * @param images Anzahl der inkludierten Bilder
- * @param multiplier Multiplikator für Rabatte (z.B. 0.5) oder Aufschläge (z.B. 1.2)
+ * @param multiplier Multiplikator für Rabatte (z.B. 0.5) oder Aufschläge (z.B. 1.25)
  * @param location "indoor" (Studio) oder "outdoor" (unterschiedliche Bilder pro Stunde)
  */
 export function calculatePackagePrice(
@@ -150,7 +150,7 @@ export interface FlexPriceInput {
  * Intended shared rule (owner-confirmed 2026-10-18): the raw sum is
  * psychologically rounded ONCE — on the final total. Setup, extra-image and
  * privacy amounts stay raw; only the sum is rounded (e.g. 164 → 165). With the
- * current 149 € base the plain setup totals are already round (149, 199, 349).
+ * current 149 € base the plain setup totals are already round (149, 199, 399).
  *
  * Note: the portal's `calculateB2CFlexPrice` currently returns the raw sum
  * WITHOUT this rounding. That is a known portal defect awaiting its own fix —
