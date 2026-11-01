@@ -6,8 +6,9 @@ import {
 } from "@reisinger/shared/utils/portal-license-terms";
 import { describe, expect, it } from "vitest";
 
-// The live endpoint (HTTP 200) serves far more than the nine allowed fields;
-// extra keys must never be persisted.
+// The live endpoint serves exactly the nine allowed fields. The extra keys below
+// are artificial test data for the boundary rule: should the endpoint ever grow
+// a field, it must never be persisted.
 const VALID_PAYLOAD: Record<string, unknown> = {
   editorial: "Nur für redaktionelle Berichterstattung zugelassen.",
   commercial: "Uneingeschränkte kommerzielle Nutzung ist gestattet.",
@@ -69,15 +70,25 @@ describe("validatePortalTerms", () => {
     expect(() => validatePortalTerms(withoutHourly)).toThrow(/"calc_hourly_rate" is missing/);
   });
 
-  it("rejects malformed money (fractional or non-positive cents)", () => {
-    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_base_price: 5000.5 })).toThrow(/positive integer of cents/);
-    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, srp_privacy_fee: -1 })).toThrow(/positive integer of cents/);
+  it("rejects malformed money (fractional, non-positive or unsafe cents)", () => {
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_base_price: 5000.5 })).toThrow(/positive safe integer of cents/);
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, srp_privacy_fee: -1 })).toThrow(/positive safe integer of cents/);
+    // 2^53 + 1 rounds to 2^53 in `Number()`, so a plain `isInteger` check would
+    // silently store a different amount than the portal sent.
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, srp_setup_fee: "9007199254740993" })).toThrow(
+      /positive safe integer of cents/
+    );
     expect(() => validatePortalTerms({ ...VALID_PAYLOAD, srp_setup_fee: "abc" })).toThrow(/not a finite number/);
   });
 
   it("rejects malformed counts and multipliers", () => {
-    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_images_per_hour: "0" })).toThrow(/positive integer count/);
-    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_outdoor_images_per_hour: "10.5" })).toThrow(/positive integer count/);
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_images_per_hour: "0" })).toThrow(/positive safe integer count/);
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_outdoor_images_per_hour: "10.5" })).toThrow(
+      /positive safe integer count/
+    );
+    expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_images_per_hour: "9007199254740993" })).toThrow(
+      /positive safe integer count/
+    );
     expect(() => validatePortalTerms({ ...VALID_PAYLOAD, calc_flatrate_multiplier: "0" })).toThrow(/positive finite factor/);
   });
 

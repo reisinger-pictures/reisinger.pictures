@@ -1,5 +1,5 @@
 import { formatExactPrice } from "@reisinger/shared/utils";
-import { flexPrivacyBase } from "@reisinger/shared/utils/pricing";
+import { flexPrivacyBase, flexSetupSurcharge } from "@reisinger/shared/utils/pricing";
 import { createSignal, createUniqueId, onCleanup, onMount, Show } from "solid-js";
 
 import { parsePricingUrl, type PricingTariff, type PricingUrlState, serializePricingUrl, switchPricingTariff } from "./pricing-url-state";
@@ -198,7 +198,7 @@ export default function PricingTabs() {
                 <summary class="flex items-center justify-between px-4 py-3 bg-base-200/50 cursor-pointer text-sm font-black text-base-content hover:bg-base-200 transition-colors">
                   <span class="flex items-center gap-2">
                     <span>&#x1F91D;</span>
-                    Licht- & Setup-Pakt (+50 €)
+                    Licht- & Setup-Pakt (+{formatExactPrice(flexSetupSurcharge)})
                   </span>
                   <span class="text-base-content/40 group-open:rotate-180 transition-transform text-xs">&#x25BC;</span>
                 </summary>

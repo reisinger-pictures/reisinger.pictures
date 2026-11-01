@@ -70,44 +70,59 @@ a later legal alignment is pending.
   reportage multiplier (1.25) is stored in the snapshot but is **not used by the
   public UI yet** (out of scope).
 
-## Source sync: explicit import boundary
-- `pnpm run import:portal-terms` (`packages/tools/scripts/import-portal-license-terms.ts`)
-  fetches `https://portal.reisinger.pictures/api/settings/license-terms` (public,
-  no auth) and writes the checked-in snapshot
-  `packages/shared/data/portal-license-terms.ts`.
-- The importer authenticates **optionally**: with both `PORTAL_ADMIN_EMAIL` and
-  `PORTAL_ADMIN_PASSWORD` set it logs in and forwards the super-admin `rp_jwt`
-  cookie; with neither set it reads the endpoint anonymously (it is not protected
-  yet). Setting only one of the two fails loudly — no silent downgrade. Strict
-  validation of the nine fields is identical in both modes.
-- **Snapshot provenance (2026-11-01):** the current values were transferred
-  **manually from the portal UI** (owner screenshot, 2026-11-01 17:10) because
-  `/api/settings/license-terms` now answers `{"message":"Unauthenticated."}` and
-  no admin credentials were available; the AUTO-GENERATED header was deliberately
-  left in place. Confirmation is pending via
-  `PORTAL_ADMIN_EMAIL=… PORTAL_ADMIN_PASSWORD=… pnpm run import:portal-terms`.
+## Source sync: live import in `prebuild`
+- The portal is the **single source of truth** for the amounts. The importer
+  (`packages/tools/scripts/import-portal-license-terms.ts`) reads
+  `https://portal.reisinger.pictures/api/settings/calculator-terms` on **every
+  build** and writes the checked-in snapshot
+  `packages/shared/data/portal-license-terms.ts`. It is the first step of
+  `prebuild` (`import-portal-license-terms.ts` → `add-metadata.mjs` →
+  `process-images.mjs`), so `pnpm run build` and `pnpm run publish` always load
+  the live prices. `pnpm run import:portal-terms` still exists for a manual run
+  (same code, same result).
+- The endpoint is **public — no auth, no credentials, no cookies**. There is
+  nothing to configure and no credential to store: neither in the repo nor in
+  the environment.
+- **Fail loud:** an HTTP, parse or validation failure aborts the importer with a
+  non-zero exit code and therefore aborts `prebuild` and the whole build. Errors
+  are never caught or downgraded, and there is no silent fallback to the
+  committed values.
+- **The snapshot stays committed (generated, but versioned):** it is the
+  reviewable diff of a price change and the **last known good state** — what a
+  failed build still shows, and what a deployed build was built from. It is never
+  edited by hand; the AUTO-GENERATED header names the source endpoint.
 - **Only these nine fields** are ever persisted: `calc_base_price`,
   `calc_hourly_rate`, `calc_images_per_hour`, `calc_outdoor_images_per_hour`,
   `calc_flatrate_multiplier`, `srp_base_price`, `srp_setup_fee`,
-  `srp_extra_image_fee`, `srp_privacy_fee`. The endpoint serves many more fields
-  (legal texts, prices, multipliers) — **none of those may be stored**.
+  `srp_extra_image_fee`, `srp_privacy_fee`. The endpoint currently serves exactly
+  these; any additional endpoint field is ignored by the validator and **must
+  never be stored**.
 - **Validation before write:** money must be positive integer **cents**, counts
   positive integers, the multiplier a positive finite number. The write is
-  **atomic** (temp file + rename). On an HTTP/parse/validation failure the
-  existing snapshot is left **untouched** — no silent fallback.
-- **Explicit only:** never part of `prebuild`, the runtime or CI. **Idempotent:**
-  if the normalised terms are unchanged, the snapshot (and its timestamp) is not
-  rewritten.
+  **atomic** (temp file + rename), so a reader never sees a half file and a
+  failure leaves the existing snapshot untouched.
+- **Idempotent:** if the normalised terms are unchanged, the snapshot (and its
+  timestamp) is not rewritten — a build without a price change produces no diff.
+- **Provenance:** the values committed on 2026-11-01 were transferred **manually
+  from the portal UI** (owner screenshot) because the former, protected
+  `/api/settings/license-terms` endpoint answered `{"message":"Unauthenticated."}`.
+  That interim state is **superseded**: since the switch to the public
+  `calculator-terms` endpoint, values are imported automatically on every build
+  and the manual route is gone.
+- **Builds need the endpoint:** because `prebuild` fetches it, `pnpm run build`
+  (and every workflow that runs `prebuild`, e.g. the blog/testimonial
+  regeneration steps) requires the portal endpoint to be reachable. An offline or
+  erroring build fails by design instead of shipping stale or guessed prices.
 - `packages/shared/utils/pricing.ts` **consumes the snapshot** and derives every
   constant from it — the numbers are never duplicated by hand. Raw values are
   stored unchanged (e.g. Flex base 149 € = `"14900"` cents); the display rounds.
 - The pure boundary logic lives in `packages/shared/utils/portal-license-terms.ts`
   and is unit-tested in `apps/reisinger.pictures/src/portal-terms-import.test.ts`
   (units, missing/malformed fields, HTTP failure, no-overwrite).
-- **The snapshot does not guarantee live freshness by itself.** Import + review +
-  build are required to pick up a settings change; an optional live comparison is
-  non-deterministic and therefore not a unit test. `pricing-parity.test.ts` links
-  the constants to the snapshot.
+- **Freshness is a build-time property:** every build re-fetches, so a deployed
+  build reflects the portal state at its build time. There is no runtime live
+  comparison (the site is static); `pricing-parity.test.ts` links the derived
+  constants to the snapshot.
 
 ## Display decisions (owner, 2026-10-19)
 - **The discount rate is not shown as text.** The student option reads
