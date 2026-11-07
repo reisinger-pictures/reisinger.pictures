@@ -51,6 +51,8 @@ export default defineConfig({
     widths: [256, 640, 828, 1080, 1200, 1920, 2048],
     formats: ["webp"],
     quality: 75,
+    webpEffort: 4,
+    avifEffort: 4,
     includeSourceFormat: false,
     includeNativeWidth: false,
     autoRotate: false
