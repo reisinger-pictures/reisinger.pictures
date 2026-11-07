@@ -144,6 +144,7 @@ apps/reisinger.pictures/public/agb
 apps/reisinger.pictures/public/dsb
 .imagecache
 .imagedist
+.astro-image-cdn
 test-results
 playwright-report
 playwright/.cache

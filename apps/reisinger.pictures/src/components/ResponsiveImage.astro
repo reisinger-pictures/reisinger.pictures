@@ -89,7 +89,14 @@ const data = imageWithMeta?.description
 const darkInvert = data?.darkInvert ?? false;
 const resolvedAlt = alt ?? data?.description ?? "";
 const computedSizes = sizes ?? computeSizes(mergeBreakpoints(GALLERY_BREAKPOINTS[GalleryLayout.Full], sizeModifiers));
-const widths: number[] = (widthsOverride ?? DEFAULT_IMAGE_SIZES).filter(s => s <= nativeWidth);
+// CDN variants only exist at configured widths; match its next-larger-or-last fallback.
+const availableWidths = DEFAULT_IMAGE_SIZES.filter(s => s <= nativeWidth);
+const requestedWidths = (widthsOverride ?? DEFAULT_IMAGE_SIZES).filter(s => s <= nativeWidth);
+const widths: number[] = Array.from(new Set(requestedWidths.map(requestedWidth =>
+  availableWidths.find(availableWidth => availableWidth >= requestedWidth)
+    ?? availableWidths[availableWidths.length - 1]
+    ?? requestedWidth
+)));
 
 const maxOptimizedWidth = widths[widths.length - 1] ?? nativeWidth;
 const maxOptimizedHeight = maxOptimizedWidth * nativeHeight / nativeWidth;
@@ -121,7 +128,7 @@ if (isBuild && name && buildHash && buildVariants) {
     throw new Error("ResponsiveImage: Kein Bild verfügbar. image-prop oder name muss gesetzt sein.");
   }
   const imageVariants = await Promise.all(
-    widths.map(w => getImage({ src: image, format: "webp", width: w, quality: "mid" }))
+    widths.map(w => getImage({ src: image, format: "webp", width: w, quality: 75 }))
   );
   src = imageVariants[imageVariants.length - 1].src;
   srcset = imageVariants.map((v, i) => `${v.src} ${widths[i]}w`).join(", ");

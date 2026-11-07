@@ -22,6 +22,8 @@ Die Bild-Pipeline unterstützt seit 2026-08 auch SVG-Quellen (z. B. Vereins-Logo
 - **Slug-Map:** `apps/reisinger.pictures/vite-plugin-image-meta.mjs` (`IMAGE_RE`) enthält `.svg` → SVG-Dateien mit Companion-YAML-Slug werden wie Rasterbilder in `virtual:image-slug-map` registriert.
 - **Dev:** Astro rasiert SVG via Sharp-Dienst (`image.dangerouslyProcessSVG: true` in `astro.config.mjs`) zu WebP.
 - **Build/CDN:** `packages/tools/scripts/process-images.mjs` (`IMAGE_EXTENSIONS`) rasiert SVG zu WebP-Varianten im `.imagedist`-Manifest; `ResponsiveImage` baut daraus die CDN-URL. Der Slug liegt unter `src/images/vereine/` (Beispiel: `bwl.svg` → Slug `vereine-bwl`).
+- **Fingerprint migration:** The public `.imagedist/manifest.json` keeps its slug map and stores the full `@all-the.rest/astro-image-cdn` fingerprint in `hash`; `sourceHash` and `migrationProfile` gate safe reuse. Set `LEGACY_IMAGEDIST_DIR` to a separate, read-only legacy `.imagedist` directory to migrate from it. The process reads its manifest and variants but writes only to the current app worktree.
+- **Deploy ordering:** `apps/reisinger.pictures/sync.sh` uploads image files without deleting old hashes, syncs the new site, then mirrors `.imagedist` with `--delete`. This keeps old page URLs available during the CDN/site cutover.
 
 ## Deployment / Validierung
 - Validierung der Caddyfile vor jedem Reload mit einem temporären Container:

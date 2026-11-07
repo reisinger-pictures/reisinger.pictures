@@ -5,6 +5,8 @@ import { IMAGE_BASE_URL } from "./image-config";
 
 export type ManifestImage = {
   hash: string;
+  sourceHash: string;
+  migrationProfile: string;
   width: number;
   height: number;
   variants: number[];

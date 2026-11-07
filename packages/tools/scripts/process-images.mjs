@@ -1,166 +1,364 @@
-import fs from "fs/promises";
-import fsSync from "node:fs";
-import path from "path";
-import crypto from "crypto";
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { load as parseYaml } from "js-yaml";
 import sharp from "sharp";
 
-const ROOT = process.cwd();
 const IMAGE_SOURCE_DIRS = [
-  path.join(ROOT, "src", "images"),
-  path.join(ROOT, "src", "content", "portfolio"),
-  path.join(ROOT, "src", "content", "simple"),
+  path.join("src", "images"),
+  path.join("src", "content", "portfolio"),
+  path.join("src", "content", "simple"),
 ];
-const IMAGE_DIST = path.join(ROOT, ".imagedist");
-const MANIFEST_PATH = path.join(IMAGE_DIST, "manifest.json");
 const TARGET_WIDTHS = [256, 640, 828, 1080, 1200, 1920, 2048];
 const WEBP_QUALITY = 75;
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".svg"]);
-const CONCURRENCY = 32;
+const PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.2.3";
+const ADOPTION_OPTIONS = {
+  sources: ["src"],
+  outputDir: ".imagedist",
+  cacheDir: ".astro-image-cdn",
+  widths: TARGET_WIDTHS,
+  formats: ["webp"],
+  quality: WEBP_QUALITY,
+  includeSourceFormat: false,
+  includeNativeWidth: false,
+  autoRotate: false,
+  dangerouslyProcessSVG: true,
+};
+
+export const MIGRATION_PROFILE = JSON.stringify({
+  version: 1,
+  package: PACKAGE_VERSION,
+  widths: ADOPTION_OPTIONS.widths,
+  formats: ADOPTION_OPTIONS.formats,
+  quality: ADOPTION_OPTIONS.quality,
+  includeSourceFormat: ADOPTION_OPTIONS.includeSourceFormat,
+  includeNativeWidth: ADOPTION_OPTIONS.includeNativeWidth,
+  autoRotate: ADOPTION_OPTIONS.autoRotate,
+  dangerouslyProcessSVG: ADOPTION_OPTIONS.dangerouslyProcessSVG,
+  legacyTransform: "sharp-resize-webp-q75-no-autorotate-v1",
+  sharp: sharp.versions.sharp,
+  libvips: sharp.versions.vips,
+});
+
+function getHash(buffer) {
+  return crypto.createHash("sha256").update(buffer).digest("hex");
+}
 
 async function getAllFiles(dirPath) {
-  let filesArray = [];
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fs.readdir(dirPath, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+
+  const files = [];
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      filesArray = filesArray.concat(await getAllFiles(fullPath));
-    } else {
-      filesArray.push(fullPath);
+    if (entry.isDirectory()) files.push(...await getAllFiles(fullPath));
+    else if (entry.isFile()) files.push(fullPath);
+  }
+  return files;
+}
+
+async function readSidecar(imagePath) {
+  const basename = path.join(path.dirname(imagePath), path.basename(imagePath, path.extname(imagePath)));
+  for (const extension of [".yaml", ".yml"]) {
+    try {
+      return parseYaml(await fs.readFile(`${basename}${extension}`, "utf8")) ?? {};
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw error;
     }
   }
-  return filesArray;
+  return undefined;
 }
 
-function computeHash(buffer) {
-  return crypto.createHash("sha256").update(buffer).digest("hex").substring(0, 16);
+async function getSluggedImages(rootDir) {
+  const imageFiles = [];
+  for (const sourceDirectory of IMAGE_SOURCE_DIRS) {
+    imageFiles.push(...await getAllFiles(path.join(rootDir, sourceDirectory)));
+  }
+
+  const bySlug = new Map();
+  for (const imagePath of imageFiles
+    .filter(file => IMAGE_EXTENSIONS.has(path.extname(file).toLowerCase()))
+    .sort((left, right) => left.localeCompare(right))) {
+    const yamlData = await readSidecar(imagePath);
+    const slug = yamlData?.slug;
+    if (!slug) continue;
+    if (typeof slug !== "string") {
+      throw new Error(`Image slug must be a string in the sidecar for ${imagePath}`);
+    }
+    if (bySlug.has(slug)) {
+      throw new Error(`Duplicate image slug "${slug}" in ${bySlug.get(slug)} and ${imagePath}`);
+    }
+    bySlug.set(slug, imagePath);
+  }
+
+  return [...bySlug.entries()].map(([slug, imagePath]) => ({ slug, imagePath }));
 }
 
-async function readManifest() {
+async function readManifest(manifestPath) {
+  let content;
   try {
-    return JSON.parse(await fs.readFile(MANIFEST_PATH, "utf8"));
+    content = await fs.readFile(manifestPath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return undefined;
+    throw error;
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(content);
+  } catch (error) {
+    throw new Error(`Could not parse image manifest ${manifestPath}: ${error.message}`, { cause: error });
+  }
+  if (!manifest || typeof manifest !== "object" || !manifest.images || typeof manifest.images !== "object") {
+    throw new Error(`Invalid image manifest shape in ${manifestPath}`);
+  }
+  return manifest;
+}
+
+function targetWidths(sourceWidth) {
+  return TARGET_WIDTHS.filter(width => width <= sourceWidth);
+}
+
+function expectedHeight(width, sourceWidth, sourceHeight) {
+  return Math.max(1, Math.round(width * sourceHeight / sourceWidth));
+}
+
+async function isValidWebp(filePath, width, height) {
+  try {
+    const info = await fs.lstat(filePath);
+    if (!info.isFile() || info.isSymbolicLink()) return false;
+    const metadata = await sharp(await fs.readFile(filePath), { failOn: "none" }).metadata();
+    return metadata.format === "webp" && metadata.width === width && Number.isSafeInteger(metadata.height)
+      && Math.abs(metadata.height - height) <= 1;
   } catch {
-    return { version: 1, generated: new Date().toISOString(), images: {} };
+    return false;
   }
 }
 
-async function writeManifest(manifest) {
-  manifest.generated = new Date().toISOString();
-  await fs.mkdir(IMAGE_DIST, { recursive: true });
-  await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2), "utf8");
+function packageVariantsAreReusable(entry, sourceHash, widths) {
+  return entry?.sourceHash === sourceHash
+    && entry?.migrationProfile === MIGRATION_PROFILE
+    && typeof entry.hash === "string"
+    && /^[a-f0-9]{64}$/.test(entry.hash)
+    && Array.isArray(entry.variants)
+    && entry.variants.length === widths.length
+    && entry.variants.every((width, index) => width === widths[index]);
 }
 
-async function processFiles() {
-  let allImageFiles = [];
-  for (const dir of IMAGE_SOURCE_DIRS) {
-    try {
-      allImageFiles = allImageFiles.concat(await getAllFiles(dir));
-    } catch {
-      // directory doesn't exist, skip
-    }
+function legacyHashIsReusable(entry, sourceHash) {
+  return typeof entry?.hash === "string"
+    && entry.hash.length === 16
+    && entry.hash.slice(0, 16) === sourceHash.slice(0, 16);
+}
+
+function variantPath(directory, hash, width) {
+  return path.join(directory, hash.slice(0, 2), `${hash}_${width}.webp`);
+}
+
+async function getReusableVariant({
+  width,
+  height,
+  sourceHash,
+  currentEntry,
+  legacyEntry,
+  imageDist,
+  legacyImageDist,
+  widths,
+}) {
+  if (packageVariantsAreReusable(currentEntry, sourceHash, widths)) {
+    const packagePath = variantPath(imageDist, currentEntry.hash, width);
+    if (await isValidWebp(packagePath, width, height)) return packagePath;
   }
 
-  const imageFiles = allImageFiles.filter(file =>
-    IMAGE_EXTENSIONS.has(path.extname(file).toLowerCase())
-  );
+  if (legacyHashIsReusable(legacyEntry, sourceHash)
+    && Array.isArray(legacyEntry.variants)
+    && legacyEntry.variants.includes(width)) {
+    const legacyPath = variantPath(legacyImageDist, legacyEntry.hash, width);
+    if (await isValidWebp(legacyPath, width, height)) return legacyPath;
+  }
 
-  console.log(`📷 Verarbeite ${imageFiles.length} Bilder...`);
+  return undefined;
+}
 
-  const manifest = await readManifest();
+async function makeLegacyVariant(sourceBuffer, width, targetPath) {
+  const result = await sharp(sourceBuffer)
+    .resize(width)
+    .webp({ quality: WEBP_QUALITY })
+    .toBuffer();
+  await fs.writeFile(targetPath, result, { flag: "wx" });
+}
+
+export async function resolveAdoptImageVariants(rootDir) {
+  const packageRoot = await fs.realpath(path.join(
+    rootDir,
+    "node_modules",
+    "@all-the.rest",
+    "astro-image-cdn",
+  ));
+  const packageJson = JSON.parse(await fs.readFile(path.join(packageRoot, "package.json"), "utf8"));
+  const entry = packageJson.exports?.["."];
+  const importTarget = typeof entry === "string" ? entry : entry?.import;
+  if (typeof importTarget !== "string") {
+    throw new Error(`Could not resolve the ESM export for ${PACKAGE_VERSION} from ${packageRoot}`);
+  }
+  const packageEntry = path.resolve(packageRoot, importTarget);
+  const relativeEntry = path.relative(packageRoot, packageEntry);
+  if (relativeEntry === ".." || relativeEntry.startsWith(`..${path.sep}`) || path.isAbsolute(relativeEntry)) {
+    throw new Error(`Refusing to import ${PACKAGE_VERSION} outside its installed package directory`);
+  }
+  const packageModule = await import(pathToFileURL(packageEntry).href);
+  if (typeof packageModule.adoptImageVariants !== "function") {
+    throw new Error(`${PACKAGE_VERSION} does not export adoptImageVariants()`);
+  }
+  return packageModule.adoptImageVariants;
+}
+
+async function atomicWriteManifest(manifestPath, manifest) {
+  const temporaryPath = `${manifestPath}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  try {
+    await fs.writeFile(temporaryPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
+    await fs.rename(temporaryPath, manifestPath);
+  } catch (error) {
+    await fs.unlink(temporaryPath).catch(() => {});
+    throw error;
+  }
+}
+
+function manifestsMatchWithoutGenerated(current, next) {
+  if (!current) return false;
+  const currentComparable = { ...current };
+  const nextComparable = { ...next };
+  delete currentComparable.generated;
+  delete nextComparable.generated;
+  return JSON.stringify(currentComparable) === JSON.stringify(nextComparable);
+}
+
+/** Migrate custom CDN entries while preserving the pre-existing public manifest on failure. */
+export async function migrateImages({
+  rootDir = process.cwd(),
+  legacyImageDist = process.env.LEGACY_IMAGEDIST_DIR,
+  adoptImageVariants,
+} = {}) {
+  rootDir = path.resolve(rootDir);
+  const imageDist = path.join(rootDir, ".imagedist");
+  const manifestPath = path.join(imageDist, "manifest.json");
+  const legacyDist = path.resolve(legacyImageDist || imageDist);
+  const currentManifest = await readManifest(manifestPath);
+  const legacyManifest = await readManifest(path.join(legacyDist, "manifest.json")) ?? currentManifest;
+  const currentImages = currentManifest?.images ?? {};
+  const legacyImages = legacyManifest?.images ?? {};
+  const images = await getSluggedImages(rootDir);
+  const adopt = adoptImageVariants ?? await resolveAdoptImageVariants(rootDir);
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "reisinger-image-migration-"));
+  const nextManifest = {
+    ...(currentManifest ?? {}),
+    version: 2,
+    generated: currentManifest?.generated ?? new Date().toISOString(),
+    images: { ...currentImages },
+  };
+
   let processedCount = 0;
-  let skippedCount = 0;
+  let reusedCount = 0;
+  try {
+    console.log(`📷 Migriere ${images.length} Bilder in das astro-image-cdn-Format...`);
 
-  async function processOneImage(imagePath) {
-    const dir = path.dirname(imagePath);
-    const basename = path.basename(imagePath, path.extname(imagePath));
-
-    let yamlContent;
-    let yamlPath = path.join(dir, `${basename}.yaml`);
-    try {
-      yamlContent = await fs.readFile(yamlPath, "utf8");
-    } catch {
-      yamlPath = path.join(dir, `${basename}.yml`);
+    for (const { slug, imagePath } of images) {
+      const sourceBuffer = await fs.readFile(imagePath);
+      const sourceHash = getHash(sourceBuffer);
+      let metadata;
       try {
-        yamlContent = await fs.readFile(yamlPath, "utf8");
-      } catch {
-        return;
+        metadata = await sharp(sourceBuffer).metadata();
+      } catch (error) {
+        throw new Error(`Could not read source image for "${slug}" (${imagePath}): ${error.message}`, { cause: error });
       }
-    }
-
-    const yamlData = parseYaml(yamlContent) ?? {};
-    const slug = yamlData.slug;
-    if (!slug) return;
-
-    const imageBuffer = await fs.readFile(imagePath);
-    const hash = computeHash(imageBuffer);
-
-    let imgInfo;
-    try {
-      imgInfo = await sharp(imageBuffer).metadata();
-    } catch {
-      console.error(`  ❌ ${slug}: korrupte Bilddatei, übersprungen (${path.basename(imagePath)})`);
-      return;
-    }
-
-    const originalWidth = imgInfo.width;
-    const originalHeight = imgInfo.height;
-    if (!originalWidth || !originalHeight) {
-      console.error(`  ❌ ${slug}: konnte Abmessungen nicht lesen, überspringe`);
-      return;
-    }
-
-    const widths = TARGET_WIDTHS.filter(w => w <= originalWidth);
-    const prefix = hash.substring(0, 2);
-    const distDir = path.join(IMAGE_DIST, prefix);
-
-    const allVariantsExist = widths.every(w =>
-      fsSync.existsSync(path.join(distDir, `${hash}_${w}.webp`))
-    );
-
-    if (allVariantsExist) {
-      console.log(`  ── ${slug}: bereits konvertiert, überspringe`);
-      manifest.images[slug] = { hash, width: originalWidth, height: originalHeight, variants: widths };
-      skippedCount++;
-      return;
-    }
-
-    console.log(`  ▶ ${slug}: verarbeite... (${originalWidth}×${originalHeight})`);
-
-    await fs.mkdir(distDir, { recursive: true });
-
-    const variants = await Promise.all(
-      widths.map(async (width) => {
-        const resizedBuffer = await sharp(imageBuffer)
-          .resize(width)
-          .webp({ quality: WEBP_QUALITY })
-          .toBuffer();
-
-        const filename = `${hash}_${width}.webp`;
-        await fs.writeFile(path.join(distDir, filename), resizedBuffer);
-        return width;
-      })
-    );
-
-    manifest.images[slug] = { hash, width: originalWidth, height: originalHeight, variants };
-    await writeManifest(manifest);
-    processedCount++;
-  }
-
-  const queue = [...imageFiles];
-  async function worker() {
-    while (queue.length > 0) {
-      const imgPath = queue.shift();
-      try {
-        await processOneImage(imgPath);
-      } catch (err) {
-        console.error(`  ❌ Fehler bei ${path.basename(imgPath)}: ${err.message}`);
+      if (!metadata.width || !metadata.height) {
+        throw new Error(`Could not determine source dimensions for "${slug}" (${imagePath})`);
       }
-    }
-  }
 
-  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
-  await writeManifest(manifest);
-  console.log(`✅ ${processedCount} verarbeitet, ${skippedCount} übersprungen.`);
+      const widths = targetWidths(metadata.width);
+      const currentEntry = currentImages[slug];
+      const legacyEntry = legacyImages[slug];
+      const variants = [];
+
+      for (let index = 0; index < widths.length; index++) {
+        const width = widths[index];
+        const height = expectedHeight(width, metadata.width, metadata.height);
+        let inputPath = await getReusableVariant({
+          width,
+          height,
+          sourceHash,
+          currentEntry,
+          legacyEntry,
+          imageDist,
+          legacyImageDist: legacyDist,
+          widths,
+        });
+
+        if (inputPath) {
+          reusedCount++;
+        } else {
+          inputPath = path.join(tempDir, `${crypto.randomUUID()}_${width}.webp`);
+          await makeLegacyVariant(sourceBuffer, width, inputPath);
+        }
+        variants.push({ path: inputPath, width, format: "webp" });
+      }
+
+      const sourcePath = path.relative(rootDir, imagePath);
+      const adoption = await adopt({ ...ADOPTION_OPTIONS, rootDir }, {
+        sourcePath,
+        sourceHash,
+        variants,
+      });
+      if (!/^[a-f0-9]{64}$/.test(adoption.fingerprint ?? "")) {
+        throw new Error(`astro-image-cdn returned an invalid fingerprint for "${slug}"`);
+      }
+
+      for (const width of widths) {
+        const targetPath = variantPath(imageDist, adoption.fingerprint, width);
+        const height = expectedHeight(width, metadata.width, metadata.height);
+        if (!await isValidWebp(targetPath, width, height)) {
+          throw new Error(`astro-image-cdn did not produce a valid ${width}px WebP for "${slug}"`);
+        }
+      }
+
+      nextManifest.images[slug] = {
+        hash: adoption.fingerprint,
+        sourceHash,
+        migrationProfile: MIGRATION_PROFILE,
+        width: metadata.width,
+        height: metadata.height,
+        variants: widths,
+      };
+      processedCount++;
+      console.log(`  ✅ ${slug}: ${widths.length} Variante(n), ${adoption.fingerprint}`);
+    }
+
+    if (!manifestsMatchWithoutGenerated(currentManifest, nextManifest)) {
+      nextManifest.generated = new Date().toISOString();
+      await fs.mkdir(imageDist, { recursive: true });
+      await atomicWriteManifest(manifestPath, nextManifest);
+    }
+
+    console.log(`✅ ${processedCount} Bilder migriert, ${reusedCount} Variante(n) wiederverwendet.`);
+    return { processed: processedCount, reused: reusedCount, manifestPath };
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
 }
 
-processFiles();
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  migrateImages().catch(error => {
+    console.error(`❌ Bildmigration fehlgeschlagen: ${error.stack ?? error.message}`);
+    process.exitCode = 1;
+  });
+}

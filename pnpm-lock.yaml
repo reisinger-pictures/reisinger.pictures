@@ -58,6 +58,9 @@ importers:
         specifier: ^1.9.17
         version: 1.9.17
     devDependencies:
+      '@all-the.rest/astro-image-cdn':
+        specifier: 0.2.3
+        version: 0.2.3(@types/node@26.6.5)(astro@7.4.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: ^4.8.1
         version: 4.8.1(eslint@10.13.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -171,6 +174,12 @@ importers:
         version: 0.35.5(@types/node@26.6.5)
 
 packages:
+
+  '@all-the.rest/astro-image-cdn@0.2.3':
+    resolution: {integrity: sha512-eHmkLxGD1uLdE6l2J0I6ra0Xd+CFD5ZIUKfkmeDz4ipqrkoYqHl6ABSMk93Cr8R07ACpId6FVhuW4Ru2oWRcTQ==}
+    engines: {node: '>=22.22.0'}
+    peerDependencies:
+      astro: '>=7.4.0'
 
   '@antfu/install-pkg@2.1.0':
     resolution: {integrity: sha512-sdg9NxU3zR4Mnawfbc/x6GB5Wf17WYud5qOuEuxXjaKpYpMkISSJEjItGebXJ2bQ4DIcly4NYH23mtkGJjvKUw==}
@@ -3530,6 +3539,13 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@all-the.rest/astro-image-cdn@0.2.3(@types/node@26.6.5)(astro@7.4.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+    dependencies:
+      astro: 7.4.1(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      sharp: 0.35.5(@types/node@26.6.5)
+    transitivePeerDependencies:
+      - '@types/node'
 
   '@antfu/install-pkg@2.1.0':
     dependencies:
