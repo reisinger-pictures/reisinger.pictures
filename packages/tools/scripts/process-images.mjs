@@ -13,8 +13,11 @@ const IMAGE_SOURCE_DIRS = [
 ];
 const TARGET_WIDTHS = [256, 640, 828, 1080, 1200, 1920, 2048];
 const WEBP_QUALITY = 75;
+const WEBP_EFFORT = 4;
+const AVIF_EFFORT = 4;
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".svg"]);
-const PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.2.3";
+const PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.3.0";
+const PREVIOUS_PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.2.3";
 const ADOPTION_OPTIONS = {
   sources: ["src"],
   outputDir: ".imagedist",
@@ -22,6 +25,8 @@ const ADOPTION_OPTIONS = {
   widths: TARGET_WIDTHS,
   formats: ["webp"],
   quality: WEBP_QUALITY,
+  webpEffort: WEBP_EFFORT,
+  avifEffort: AVIF_EFFORT,
   includeSourceFormat: false,
   includeNativeWidth: false,
   autoRotate: false,
@@ -31,6 +36,23 @@ const ADOPTION_OPTIONS = {
 export const MIGRATION_PROFILE = JSON.stringify({
   version: 1,
   package: PACKAGE_VERSION,
+  widths: ADOPTION_OPTIONS.widths,
+  formats: ADOPTION_OPTIONS.formats,
+  quality: ADOPTION_OPTIONS.quality,
+  webpEffort: ADOPTION_OPTIONS.webpEffort,
+  avifEffort: ADOPTION_OPTIONS.avifEffort,
+  includeSourceFormat: ADOPTION_OPTIONS.includeSourceFormat,
+  includeNativeWidth: ADOPTION_OPTIONS.includeNativeWidth,
+  autoRotate: ADOPTION_OPTIONS.autoRotate,
+  dangerouslyProcessSVG: ADOPTION_OPTIONS.dangerouslyProcessSVG,
+  legacyTransform: "sharp-resize-webp-q75-no-autorotate-v1",
+  sharp: sharp.versions.sharp,
+  libvips: sharp.versions.vips,
+});
+
+const PREVIOUS_MIGRATION_PROFILE = JSON.stringify({
+  version: 1,
+  package: PREVIOUS_PACKAGE_VERSION,
   widths: ADOPTION_OPTIONS.widths,
   formats: ADOPTION_OPTIONS.formats,
   quality: ADOPTION_OPTIONS.quality,
@@ -132,26 +154,45 @@ function expectedHeight(width, sourceWidth, sourceHeight) {
   return Math.max(1, Math.round(width * sourceHeight / sourceWidth));
 }
 
-async function isValidWebp(filePath, width, height) {
+async function isValidWebp(filePath, width, height, { allowOnePixelHeightDifference = true } = {}) {
   try {
     const info = await fs.lstat(filePath);
     if (!info.isFile() || info.isSymbolicLink()) return false;
-    const metadata = await sharp(await fs.readFile(filePath), { failOn: "none" }).metadata();
-    return metadata.format === "webp" && metadata.width === width && Number.isSafeInteger(metadata.height)
-      && Math.abs(metadata.height - height) <= 1;
+    const buffer = await fs.readFile(filePath);
+    const metadata = await sharp(buffer, { failOn: "warning" }).metadata();
+    const heightMatches = allowOnePixelHeightDifference
+      ? Math.abs(metadata.height - height) <= 1
+      : metadata.height === height;
+    if (metadata.format !== "webp" || metadata.width !== width || !Number.isSafeInteger(metadata.height) || !heightMatches) {
+      return false;
+    }
+    await sharp(buffer, { failOn: "warning" }).raw().toBuffer();
+    return true;
   } catch {
     return false;
   }
 }
 
-function packageVariantsAreReusable(entry, sourceHash, widths) {
+function packageVariantsAreReusable(entry, sourceHash, widths, migrationProfile) {
   return entry?.sourceHash === sourceHash
-    && entry?.migrationProfile === MIGRATION_PROFILE
+    && entry?.migrationProfile === migrationProfile
     && typeof entry.hash === "string"
     && /^[a-f0-9]{64}$/.test(entry.hash)
     && Array.isArray(entry.variants)
     && entry.variants.length === widths.length
     && entry.variants.every((width, index) => width === widths[index]);
+}
+
+async function previousPackageVariantsAreReusable({ entry, sourceHash, widths, imageDist, sourceWidth, sourceHeight }) {
+  if (!packageVariantsAreReusable(entry, sourceHash, widths, PREVIOUS_MIGRATION_PROFILE)) return false;
+
+  for (const width of widths) {
+    const filePath = variantPath(imageDist, entry.hash, width);
+    if (!await isValidWebp(filePath, width, expectedHeight(width, sourceWidth, sourceHeight), {
+      allowOnePixelHeightDifference: false,
+    })) return false;
+  }
+  return true;
 }
 
 function legacyHashIsReusable(entry, sourceHash) {
@@ -173,10 +214,15 @@ async function getReusableVariant({
   imageDist,
   legacyImageDist,
   widths,
+  previousPackageReusable,
 }) {
-  if (packageVariantsAreReusable(currentEntry, sourceHash, widths)) {
+  if (packageVariantsAreReusable(currentEntry, sourceHash, widths, MIGRATION_PROFILE)) {
     const packagePath = variantPath(imageDist, currentEntry.hash, width);
     if (await isValidWebp(packagePath, width, height)) return packagePath;
+  }
+
+  if (previousPackageReusable) {
+    return variantPath(imageDist, currentEntry.hash, width);
   }
 
   if (legacyHashIsReusable(legacyEntry, sourceHash)
@@ -192,7 +238,7 @@ async function getReusableVariant({
 async function makeLegacyVariant(sourceBuffer, width, targetPath) {
   const result = await sharp(sourceBuffer)
     .resize(width)
-    .webp({ quality: WEBP_QUALITY })
+    .webp({ quality: WEBP_QUALITY, effort: WEBP_EFFORT })
     .toBuffer();
   await fs.writeFile(targetPath, result, { flag: "wx" });
 }
@@ -287,6 +333,14 @@ export async function migrateImages({
       const widths = targetWidths(metadata.width);
       const currentEntry = currentImages[slug];
       const legacyEntry = legacyImages[slug];
+      const previousPackageReusable = await previousPackageVariantsAreReusable({
+        entry: currentEntry,
+        sourceHash,
+        widths,
+        imageDist,
+        sourceWidth: metadata.width,
+        sourceHeight: metadata.height,
+      });
       const variants = [];
 
       for (let index = 0; index < widths.length; index++) {
@@ -301,6 +355,7 @@ export async function migrateImages({
           imageDist,
           legacyImageDist: legacyDist,
           widths,
+          previousPackageReusable,
         });
 
         if (inputPath) {
