@@ -54,9 +54,20 @@ SSH_OPTS="-o ControlMaster=auto -o ControlPath=/tmp/ssh-sync-%r@%h:%p -o Control
 # absichern, sonst schlaegt der Deploy ohne Argumente (Normalfall) immer fehl.
 RSYNC_EXTRA=("$@")
 
-# --- 1. Bild-CDN ------------------------------------------------------------
-echo "Synchronisiere .imagedist (Bild-CDN) via rsync/ssh..."
+# --- 1. Neue Bild-CDN-Dateien vorab hochladen --------------------------------
+# Keep old content-hashed URLs online until the new site HTML is published.
+echo "Lade .imagedist (Bild-CDN) vorab hoch, alte Hashes bleiben vorerst erhalten..."
 "$RSYNC_BIN" .imagedist/ "$IMAGES_DEST" \
+  --archive \
+  --chown=1002:webgroup \
+  --chmod=D2777,F666 \
+  --info=progress2 \
+  --rsh="ssh $SSH_OPTS" \
+  ${RSYNC_EXTRA[@]+"${RSYNC_EXTRA[@]}"}
+
+# --- 2. Website --------------------------------------------------------------
+echo "Synchronisiere reisinger.pictures via rsync/ssh..."
+"$RSYNC_BIN" dist/ "$DIST_DEST" \
   --archive \
   --delete \
   --chown=1002:webgroup \
@@ -65,9 +76,9 @@ echo "Synchronisiere .imagedist (Bild-CDN) via rsync/ssh..."
   --rsh="ssh $SSH_OPTS" \
   ${RSYNC_EXTRA[@]+"${RSYNC_EXTRA[@]}"}
 
-# --- 2. Website -------------------------------------------------------------
-echo "Synchronisiere reisinger.pictures via rsync/ssh..."
-"$RSYNC_BIN" dist/ "$DIST_DEST" \
+# --- 3. Veraltete Bild-CDN-Dateien nach dem Website-Cutover entfernen ---------
+echo "Entferne nicht mehr referenzierte Bild-CDN-Dateien..."
+"$RSYNC_BIN" .imagedist/ "$IMAGES_DEST" \
   --archive \
   --delete \
   --chown=1002:webgroup \

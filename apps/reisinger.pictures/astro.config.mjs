@@ -3,6 +3,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import solidJs from "@astrojs/solid-js";
+import astroImageCdn from "@all-the.rest/astro-image-cdn";
 import imageMetaPlugin from "./vite-plugin-image-meta.mjs";
 import containerSizesPlugin from "./vite-plugin-container-sizes.mjs";
 
@@ -43,7 +44,17 @@ export default defineConfig({
       ]
     }
   },
-  integrations: [mdx(), solidJs(), sitemap({
+  integrations: [mdx(), solidJs(), astroImageCdn({
+    baseUrl: process.env.PUBLIC_IMAGE_CDN_URL || "https://images.reisinger.pictures",
+    outputDir: ".imagedist",
+    cacheDir: ".astro-image-cdn",
+    widths: [256, 640, 828, 1080, 1200, 1920, 2048],
+    formats: ["webp"],
+    quality: 75,
+    includeSourceFormat: false,
+    includeNativeWidth: false,
+    autoRotate: false
+  }), sitemap({
     serialize(item) {
       // Prioritize key pages for crawlers.
       if (!item.url.endsWith("/")) return item;
