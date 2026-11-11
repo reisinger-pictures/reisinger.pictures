@@ -13,7 +13,8 @@
     "test:contrast": "pnpm exec playwright test -c playwright.contrast.config.ts",
     "review:validate": "node packages/tools/scripts/validate-review.mjs",
     "review:apply": "node packages/tools/scripts/apply-review.mjs",
-    "review:unit": "node --test tests/review-viewer.test.mjs",
+    "review:serve": "node packages/tools/scripts/review-server.mjs",
+    "review:unit": "node --test tests/review-viewer.test.mjs tests/review-server.test.mjs",
     "import:portal-terms": "node packages/tools/scripts/import-portal-license-terms.ts"
   },
   "devDependencies": {

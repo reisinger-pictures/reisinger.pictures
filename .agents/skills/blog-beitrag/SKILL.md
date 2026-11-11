@@ -95,21 +95,32 @@ precise event times.
 Nach **jeder** analysierten Bild-Charge (Blick des Hauptagenten oder Batch vom
 `vision-creative`-Subagenten) **unverzüglich** `review.json` fortschreiben:
 deutsche Beschreibung + Dateiname-Vorschlag pro Bild, Einträge in chronologischer
-Reihenfolge einfügen (Vertrag in Abschnitt 8). Es ist **nicht** erlaubt, die
-Bildanalyse aller Chargen erst im Kopf/Notizen zu sammeln und `review.json` am
-Ende zu schreiben — auch nicht bei 5, 15 oder 30 Bildern. Danach jede weitere
-Charge sofort ergänzen. Erst wenn alle Chargen in `review.json` stehen, folgen
-Strukturvorschlag, `author`-Entwurf und das Schreiben veröffentlichter Dateien.
+Reihenfolge einfügen (Vertrag in Abschnitt 8). Eine Charge umfasst **höchstens 10
+Bilder**; nach spätestens 10 Bildern müssen die Beschreibungen und Dateinamen
+dieser 10 Bilder geschrieben sein, bevor die nächste Charge beginnt. Es ist
+**nicht** erlaubt, die Bildanalyse aller Chargen erst im Kopf/Notizen zu sammeln
+und `review.json` am Ende zu schreiben — auch nicht bei 5, 15 oder 30 Bildern.
+Danach jede weitere Charge sofort ergänzen. Erst wenn alle Chargen in
+`review.json` stehen, folgen Strukturvorschlag, `author`-Entwurf und das
+Schreiben veröffentlichter Dateien.
 Der Grund: Der Viewer pollt `review.json` live (alle 2 s), damit der Mensch die
 bereits freigegebenen Bilder prüfen kann, während die restlichen Chargen noch
 analysiert werden.
+
+**HARTE REGEL – `review.json` vor jedem neuen Bild-Review löschen:**
+Zu Beginn eines neuen Bild-Reviews die vorhandene `review.json` löschen (oder
+auf `[]` setzen), bevor der erste Eintrag geschrieben wird. Die Datei ist lokal
+und git-ignoriert; Einträge aus einem früheren Event dürfen niemals übernommen
+oder fortgeschrieben werden. Jeder Review beginnt mit einer leeren Datei, die
+ausschließlich die Bilder des aktuellen Events enthält.
 
 ### 0. Prepare the Workspace
 
 1. Locate the repository root and the relevant application/content root.
 2. Read the applicable schema and inspect nearby existing content before choosing a format.
 3. Check the working tree. Preserve user changes and do not overwrite unrelated files.
-4. Establish the input image list and exclude generated assets, thumbnails, and unrelated reference material.
+4. Delete the existing root `review.json` (or reset it to `[]`) so the new review starts empty; never append to entries from a previous event.
+5. Establish the input image list and exclude generated assets, thumbnails, and unrelated reference material.
 
 Do not write published files during preparation. Scratch data may be kept only
 when the repository explicitly provides a place for it.
@@ -285,6 +296,13 @@ stays inconclusive, re-run a larger coherent batch through `vision-creative`
 with the correction as context. Avoid isolated single-image subagent calls for
 corrections because they lose series context and create inconsistent naming.
 Do not silently choose between credible interpretations.
+
+**Retroactive correction:** when a later image, a near-duplicate, or a newly
+identified detail clarifies an earlier image (vehicle type, person, action,
+sequence, location), revisit and rewrite the earlier entry even if its
+description and filename were already written or approved. Similar image
+content must not freeze an earlier, less precise reading. Treat the reconciled
+series as the source of truth, not the order in which the batches were written.
 
 ### 5.1 Result and Tone Guard
 
@@ -482,11 +500,23 @@ questionnaire.
    project root. Preserve optional technical fields only when the viewer or
    workflow supports them.
 3. Keep `review.html` fixed. It loads `review.json` and must not be regenerated
-   for individual events. Open it through an HTTP server, not `file://`. The
-   viewer polls for new entries and lets the reviewer edit `reviewComment` per
-   image. Browser edits are not written back to the source file: download the
-   updated `review.json` and replace the local ignored file explicitly. Resolve
-   any concurrent-comment conflicts in the viewer before exporting.
+   for individual events. Open it through the repo's local review server, never
+   `file://` (`pnpm run review:serve` → `http://127.0.0.1:8123/review.html`;
+   another port with `pnpm run review:serve -- --port 9000`). The viewer polls
+   for new entries and lets the reviewer edit `reviewComment` per image.
+   Comments are saved automatically about 0.5 s after the last keystroke: the
+   viewer POSTs to the server with the last-read SHA-256 ETag in `If-Match`; the
+   server validates the payload against `schemas/review.schema.json`, serializes
+   overlapping requests, rejects stale revisions with HTTP 409, and atomically
+   rewrites the local, ignored `review.json`. This protects against a file
+   change observed before the request, but the check-and-rename is not a
+   filesystem compare-and-swap against an uncooperative writer racing in that
+   interval. A stale response causes the viewer to reload and surface actual
+   comment conflicts before retrying. This POST is the only save path – there
+   is no download, export or other fallback; if it fails the viewer shows the
+   actionable error message.
+   Resolve any concurrent-comment conflicts in the viewer; they block autosave
+   until decided.
 4. Validate the data against `schemas/review.schema.json` before opening the
    viewer:
    ```bash
@@ -499,6 +529,13 @@ questionnaire.
    wording verbatim into a description, caption, or article.
 6. If a correction is needed, update the corresponding `review.json` entry,
    reload the viewer, and repeat the visual check.
+
+**Auto-approve per round:** every image without a `reviewComment` is approved
+for that round. It does not need to reappear in the viewer. Apply the approved
+images immediately (renames and YAML sidecars) and keep only the commented
+images in `review.json` and the viewer for the next round. The review set
+therefore shrinks from round to round to the images that actually need a
+decision.
 
 An image with unresolved interpretations must not be silently assigned a
 specific person, action, or event. Either resolve it through a focused
