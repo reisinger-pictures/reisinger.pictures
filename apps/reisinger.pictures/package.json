@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "astro": "astro",
-    "dev": "astro dev",
+    "dev": "astro dev --host 127.0.0.1 --port 4321",
+    "cms:editor": "astro-visual-cms-editor --config ./avcms-editor.json",
     "build": "PUBLIC_IMAGE_CDN_URL=https://images.reisinger.pictures astro check && PUBLIC_IMAGE_CDN_URL=https://images.reisinger.pictures astro build",
     "prebuild": "node ../../packages/tools/scripts/import-portal-license-terms.ts && node ../../packages/tools/scripts/add-metadata.mjs && node ../../packages/tools/scripts/process-images.mjs",
     "postbuild": "node ../../packages/tools/scripts/check_links.mjs && node ../../packages/tools/scripts/prune-imagedist.mjs",
@@ -34,6 +35,7 @@
   },
   "devDependencies": {
     "@all-the.rest/astro-image-cdn": "0.3.0",
+    "@all-the.rest/astro-visual-cms": "0.1.2",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/js": "^10.0.1",
     "@iconify-json/material-symbols": "^1.2.95",

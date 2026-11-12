@@ -1,0 +1,34 @@
+{
+  "port": 4323,
+  "sitePort": 4321,
+  "projectRoot": ".",
+  "contentConfigPath": "src/content.config.ts",
+  "fixturePath": "package.json",
+  "previewRoutes": [
+    { "id": "home", "label": "Startseite", "path": "/" },
+    { "id": "preise", "label": "Preise", "path": "/preise/" },
+    { "id": "ueber-mich", "label": "Über mich", "path": "/ueber-mich/" },
+    { "id": "personal-branding", "label": "Personal Branding", "path": "/personal-branding/" },
+    { "id": "portfolio-sport", "label": "Portfolio Sport", "path": "/portfolio/sport/" },
+    { "id": "shootings-akt", "label": "Shooting Akt", "path": "/shootings/akt/" },
+    { "id": "tfp", "label": "TFP", "path": "/tfp/" }
+  ],
+  "mdxComponentTargets": [
+    {
+      "id": "akt-contact-cta",
+      "projectRoot": ".",
+      "filePath": "src/content/privateAreas/akt.mdx",
+      "importSource": "@reisinger/shared/components/ContactCTA.astro",
+      "idProp": "subjectPrefix",
+      "fields": [
+        { "name": "text", "type": "string", "label": "Button-Text" },
+        {
+          "name": "design",
+          "type": "enum",
+          "label": "Darstellung",
+          "values": ["primary", "outline", "elegant-link"]
+        }
+      ]
+    }
+  ]
+}
