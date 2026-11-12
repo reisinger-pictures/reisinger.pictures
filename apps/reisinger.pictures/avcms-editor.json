@@ -3,7 +3,7 @@
   "sitePort": 4321,
   "projectRoot": ".",
   "contentConfigPath": "src/content.config.ts",
-  "fixturePath": "package.json",
+  "fixturePath": null,
   "previewRoutes": [
     { "id": "home", "label": "Startseite", "path": "/" },
     { "id": "preise", "label": "Preise", "path": "/preise/" },

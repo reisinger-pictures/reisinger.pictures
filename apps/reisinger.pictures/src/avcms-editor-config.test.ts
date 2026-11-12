@@ -33,7 +33,7 @@ type EditorConfig = {
   sitePort: number;
   projectRoot: string;
   contentConfigPath: string;
-  fixturePath: string;
+  fixturePath: string | null;
   previewRoutes: PreviewRoute[];
   mdxComponentTargets: EditorTarget[];
   [key: string]: unknown;
@@ -108,9 +108,8 @@ describe("astro-visual-cms trusted editor configuration", () => {
     expect(editorConfig.astroGalleryTargets).toBeUndefined();
   });
 
-  it("uses a neutral, non-editor fixture anchor", () => {
-    expect(editorConfig.fixturePath).toBe("package.json");
-    expect(editorConfig.fixturePath).not.toMatch(/astro\.config|akt\.mdx|\.astro$/);
+  it("explicitly disables the unused demo gallery fixture", () => {
+    expect(editorConfig.fixturePath).toBeNull();
   });
 
   it("keeps the editor port distinct from the site and test-harness ports", () => {

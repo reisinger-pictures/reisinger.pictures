@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@all-the.rest/astro-image-cdn": "0.3.0",
-    "@all-the.rest/astro-visual-cms": "0.1.2",
+    "@all-the.rest/astro-visual-cms": "0.1.3",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/js": "^10.0.1",
     "@iconify-json/material-symbols": "^1.2.95",
