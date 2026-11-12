@@ -473,6 +473,7 @@ the alternatives, trade-offs, and user decision explicit.
 
 Gallery rule for this project:
 
+- include each article's hero image in that article's gallery as well;
 - one gallery: place it after the complete text, including the conclusion;
 - multiple galleries: group them by meaningful scene or editorial section, with
   explanatory text before and after where appropriate.
