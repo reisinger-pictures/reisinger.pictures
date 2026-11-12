@@ -1,6 +1,6 @@
 # Dev-only visual CMS editor (`astro-visual-cms`)
 
-`@all-the.rest/astro-visual-cms` is pinned exactly to `0.1.2` as a **dev dependency**.
+`@all-the.rest/astro-visual-cms` is pinned exactly to `0.1.3` as a **dev dependency**.
 It is a loopback-only editor plus a dev-only Astro bridge — no production CMS or auth.
 
 ## Trusted halves, ports, loopback
@@ -18,9 +18,9 @@ It is a loopback-only editor plus a dev-only Astro bridge — no production CMS 
   `vite.server.strictPort: true` makes every dev run fail on a busy port instead
   of drifting into the editor's 4323; `sitePort` stays 4321.
 * `devToolbar.enabled` stays `false`, so open `http://127.0.0.1:4323/` directly.
-* `fixturePath` is `package.json`: a neutral, tracked anchor. The demo Gallery adapter
-  cannot read it, so the Gallery panel stays unavailable; reisinger galleries are
-  content/prop driven, not literal Astro frontmatter arrays.
+* `fixturePath` is `null`, explicitly disabling the unused demo Gallery adapter;
+  the key is required, and omitting it is a configuration error. Reisinger galleries
+  are content/prop driven, not literal Astro frontmatter arrays.
 
 ## Configured component target (proposal only)
 
