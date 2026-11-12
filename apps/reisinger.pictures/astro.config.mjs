@@ -4,6 +4,8 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import solidJs from "@astrojs/solid-js";
 import astroImageCdn from "@all-the.rest/astro-image-cdn";
+import { createLoopbackDevIntegration } from "@all-the.rest/astro-visual-cms/integration";
+import editorConfig from "./avcms-editor.json" with { type: "json" };
 import imageMetaPlugin from "./vite-plugin-image-meta.mjs";
 import containerSizesPlugin from "./vite-plugin-container-sizes.mjs";
 
@@ -32,6 +34,12 @@ export default defineConfig({
   },
   vite: {
     cacheDir: ".cache/.vite",
+    // The editor preview expects the dev server on exactly 127.0.0.1:4321
+    // (avcms-editor.json `sitePort`). Without `strictPort`, Vite silently moves
+    // to the next free port — potentially 4323, which the editor occupies.
+    server: {
+      strictPort: true
+    },
     plugins: [containerSizesPlugin(), tailwindcss(), imageMetaPlugin()],
     optimizeDeps: {
       include: [
@@ -71,5 +79,14 @@ export default defineConfig({
       else if (path === "/impressum/" || path === "/dsb/" || path === "/agb/") item.priority = 0.3;
       return item;
     }
+  }),
+  // Dev-only visual editor boundary: the integration registers its bridge and
+  // toolbar (when the Astro dev toolbar is enabled) only for `astro dev`, never
+  // for build/preview. The route catalog is shared with the standalone editor
+  // server in `avcms-editor.json` so both halves stay in sync. See
+  // rules/16-astro-visual-cms.md.
+  createLoopbackDevIntegration({
+    editorPort: editorConfig.port,
+    previewRoutes: editorConfig.previewRoutes
   })]
 });
