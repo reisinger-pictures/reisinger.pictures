@@ -16,8 +16,8 @@ const WEBP_QUALITY = 75;
 const WEBP_EFFORT = 4;
 const AVIF_EFFORT = 4;
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".svg"]);
-const PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.3.0";
-const PREVIOUS_PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.2.3";
+const PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.4.0";
+const PREVIOUS_PACKAGE_VERSION = "@all-the.rest/astro-image-cdn@0.3.0";
 const ADOPTION_OPTIONS = {
   sources: ["src"],
   outputDir: ".imagedist",
@@ -30,6 +30,7 @@ const ADOPTION_OPTIONS = {
   includeSourceFormat: false,
   includeNativeWidth: false,
   autoRotate: false,
+  verification: "stat",
   dangerouslyProcessSVG: true,
 };
 
@@ -56,6 +57,8 @@ const PREVIOUS_MIGRATION_PROFILE = JSON.stringify({
   widths: ADOPTION_OPTIONS.widths,
   formats: ADOPTION_OPTIONS.formats,
   quality: ADOPTION_OPTIONS.quality,
+  webpEffort: ADOPTION_OPTIONS.webpEffort,
+  avifEffort: ADOPTION_OPTIONS.avifEffort,
   includeSourceFormat: ADOPTION_OPTIONS.includeSourceFormat,
   includeNativeWidth: ADOPTION_OPTIONS.includeNativeWidth,
   autoRotate: ADOPTION_OPTIONS.autoRotate,
