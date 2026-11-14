@@ -17,10 +17,12 @@ const adoptImageVariants = await resolveAdoptImageVariants(path.join(REPO_ROOT, 
 const TARGET_WIDTHS = [256, 640, 828, 1080, 1200, 1920, 2048];
 const PREVIOUS_MIGRATION_PROFILE = JSON.stringify({
   version: 1,
-  package: "@all-the.rest/astro-image-cdn@0.2.3",
+  package: "@all-the.rest/astro-image-cdn@0.3.0",
   widths: TARGET_WIDTHS,
   formats: ["webp"],
   quality: 75,
+  webpEffort: 4,
+  avifEffort: 4,
   includeSourceFormat: false,
   includeNativeWidth: false,
   autoRotate: false,
@@ -203,9 +205,22 @@ test("migration adopts valid legacy variants, repairs only missing outputs, and 
       assert.equal(metadata.width, width);
     }
 
+    const targetPaths = initial.widths.map(width => getVariantPath(
+      path.join(rootDir, ".imagedist"),
+      manifestImage.hash,
+      width,
+    ));
+    const statsBefore = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
+
     const secondRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
     assert.equal(secondRun.reused, initial.widths.length);
     assert.equal(await fs.readFile(manifestPath, "utf8"), firstManifestText);
+    const statsAfter = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
+    assert.deepEqual(
+      statsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      statsBefore.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      "a warm rerun must not rewrite or copy adopted outputs",
+    );
 
     const changedSource = await sharp(await fs.readFile(sourcePath)).jpeg({ quality: 76 }).toBuffer();
     await fs.writeFile(sourcePath, changedSource);
@@ -220,7 +235,7 @@ test("migration adopts valid legacy variants, repairs only missing outputs, and 
   }
 });
 
-test("migration adopts valid 0.2.3 package variants into the 0.3.0 profile without changing inputs", async () => {
+test("migration adopts valid 0.3.0 package variants into the 0.4.0 profile without changing inputs", async () => {
   const { rootDir, sourcePath } = await makeFixtureRoot();
   const imageDist = path.join(rootDir, ".imagedist");
   const legacyImageDist = path.join(rootDir, "legacy-imagedist");
@@ -246,7 +261,7 @@ test("migration adopts valid 0.2.3 package variants into the 0.3.0 profile witho
     assert.equal(image.sourceHash, initial.sourceHash);
     assert.equal(image.migrationProfile, MIGRATION_PROFILE);
     const profile = JSON.parse(image.migrationProfile);
-    assert.equal(profile.package, "@all-the.rest/astro-image-cdn@0.3.0");
+    assert.equal(profile.package, "@all-the.rest/astro-image-cdn@0.4.0");
     assert.deepEqual(profile.widths, TARGET_WIDTHS);
     assert.deepEqual(profile.formats, ["webp"]);
     assert.equal(profile.quality, 75);
@@ -277,12 +292,64 @@ test("migration adopts valid 0.2.3 package variants into the 0.3.0 profile witho
       assert.deepEqual(await fs.readFile(oldVariantPath), oldVariantBytes.get(width));
     }
     assert.deepEqual(legacy.widths, initial.widths);
+
+    const adoptedTargets = initial.widths.map(width => getVariantPath(
+      path.join(rootDir, ".imagedist"),
+      image.hash,
+      width,
+    ));
+    const adoptedStats = await Promise.all(adoptedTargets.map(target => fs.stat(target, { bigint: true })));
+    const manifestAfterFirstRun = await fs.readFile(result.manifestPath, "utf8");
+    const secondRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
+    assert.equal(secondRun.reused, initial.widths.length);
+    assert.equal(await fs.readFile(result.manifestPath, "utf8"), manifestAfterFirstRun);
+    const adoptedStatsAfter = await Promise.all(adoptedTargets.map(target => fs.stat(target, { bigint: true })));
+    assert.deepEqual(
+      adoptedStatsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      adoptedStats.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      "repeated adoption must not copy or rewrite the 0.3.0 variants",
+    );
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
 
-test("migration rejects incomplete or mismatched 0.2.3 package variants as a set", async () => {
+test("the first 0.4.0 run reuses 0.3.0 targets in place without re-encoding", async () => {
+  const { rootDir } = await makeFixtureRoot({ width: 640, height: 360 });
+  const imageDist = path.join(rootDir, ".imagedist");
+  const manifestPath = path.join(imageDist, "manifest.json");
+
+  try {
+    await migrateImages({ rootDir, adoptImageVariants });
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+    const entry = manifest.images["synthetic-noise"];
+    assert.equal(entry.migrationProfile, MIGRATION_PROFILE);
+    const targetPaths = entry.variants.map(width => getVariantPath(imageDist, entry.hash, width));
+    const statsBefore = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
+
+    // Simulate the 0.3.0 state: same fingerprint and files, previous profile, no stat records.
+    entry.migrationProfile = PREVIOUS_MIGRATION_PROFILE;
+    await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    await fs.rm(path.join(rootDir, ".astro-image-cdn"), { recursive: true, force: true });
+
+    const result = await migrateImages({ rootDir, adoptImageVariants });
+    const upgraded = JSON.parse(await fs.readFile(manifestPath, "utf8")).images["synthetic-noise"];
+    assert.equal(result.reused, entry.variants.length);
+    assert.equal(upgraded.hash, entry.hash);
+    assert.equal(upgraded.migrationProfile, MIGRATION_PROFILE);
+    const statsAfter = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
+    assert.deepEqual(
+      statsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      statsBefore.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
+      "the first 0.4.0 run must reuse existing 0.3.0 targets in place",
+    );
+    assert.equal((await sharp(await fs.readFile(targetPaths[0])).metadata()).format, "webp");
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("migration rejects incomplete or mismatched 0.3.0 package variants as a set", async () => {
   const cases = [
     {
       name: "profile mismatch",
