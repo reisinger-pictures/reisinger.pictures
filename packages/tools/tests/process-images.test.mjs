@@ -7,11 +7,12 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import imageMetaPlugin from "../../../apps/reisinger.pictures/vite-plugin-image-meta.mjs";
 import { loadImageCdnOptions, processProjectImages, resolveProcessImages } from "../scripts/process-images.mjs";
-import { pruneImageDist } from "../scripts/prune-imagedist.mjs";
+import { pruneProjectImages, resolvePruneImages } from "../scripts/prune-images.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const APP_ROOT = path.join(REPO_ROOT, "apps", "reisinger.pictures");
 const processImages = await resolveProcessImages(APP_ROOT);
+const pruneImages = await resolvePruneImages(APP_ROOT);
 
 async function makeFixtureRoot({ width = 1200, height = 800 } = {}) {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-process-test-"));
@@ -116,7 +117,7 @@ test("processing rejects duplicate slugs before touching images", async () => {
   }
 });
 
-test("pruning removes unreferenced variants and the legacy public manifest", async () => {
+test("pruning delegates to the library and removes unreferenced variants", async () => {
   const { rootDir } = await makeFixtureRoot();
   const imageDist = path.join(rootDir, ".imagedist");
 
@@ -130,16 +131,17 @@ test("pruning removes unreferenced variants and the legacy public manifest", asy
     await fs.writeFile(orphanPath, "orphan");
     const emptyDirectory = path.join(imageDist, "ee");
     await fs.mkdir(emptyDirectory, { recursive: true });
-    const lockPath = path.join(imageDist, ".astro-image-cdn.lock");
-    await fs.writeFile(lockPath, "pid\n");
     const legacyManifest = path.join(imageDist, "manifest.json");
     await fs.writeFile(legacyManifest, JSON.stringify({ version: 2, images: {} }));
 
-    const result = await pruneImageDist({ rootDir });
-    assert.equal(result.removed, 1);
-    assert.equal(result.removedLegacyManifest, true);
+    const result = await pruneProjectImages({ rootDir, pruneImages });
+    assert.equal(result.removed, 2, "orphan variant and legacy public manifest");
+    assert.equal(result.legacyPublicManifestRemoved, true);
+    assert.equal(result.dryRun, false);
+    assert.ok(result.kept >= 1);
+    assert.ok(result.bytesFreed > 0, "byte statistics must come from the library");
+    assert.ok(result.removedDirectories >= 1);
     await fs.access(path.join(imageDist, referenced));
-    await fs.access(lockPath);
     await assert.rejects(fs.access(orphanPath));
     await assert.rejects(fs.access(legacyManifest));
     await assert.rejects(fs.access(emptyDirectory));
@@ -148,23 +150,47 @@ test("pruning removes unreferenced variants and the legacy public manifest", asy
   }
 });
 
-test("pruning without a manifest is a no-op", async () => {
-  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-prune-test-"));
+test("prune reports changes without deleting anything in a dry run", async () => {
+  const { rootDir } = await makeFixtureRoot();
+  const imageDist = path.join(rootDir, ".imagedist");
+
   try {
-    const result = await pruneImageDist({ rootDir });
-    assert.deepEqual(result, { removed: 0, removedLegacyManifest: false });
+    await processProjectImages({ rootDir, processImages });
+    const orphanPath = path.join(imageDist, "ff", "ffdeadbeef_256.webp");
+    await fs.mkdir(path.dirname(orphanPath), { recursive: true });
+    await fs.writeFile(orphanPath, "orphan");
+
+    const result = await pruneProjectImages({ rootDir, pruneImages, dryRun: true });
+    assert.equal(result.dryRun, true);
+    assert.equal(result.removed, 1);
+    assert.ok(result.bytesFreed > 0);
+    await fs.access(orphanPath);
+    await assert.rejects(fs.access(path.join(imageDist, "manifest.json")));
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
 
-test("pruning tolerates a manifest without an .imagedist directory", async () => {
+test("pruning without a manifest is a no-op", async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-prune-test-"));
   try {
+    await fs.copyFile(path.join(APP_ROOT, "image-cdn-options.json"), path.join(rootDir, "image-cdn-options.json"));
+    assert.equal(await pruneProjectImages({ rootDir, pruneImages }), undefined);
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("pruning an empty manifest creates the output directory and removes nothing", async () => {
+  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-prune-test-"));
+  try {
+    await fs.copyFile(path.join(APP_ROOT, "image-cdn-options.json"), path.join(rootDir, "image-cdn-options.json"));
     const manifestPath = path.join(rootDir, ".astro-image-cdn", "manifest.json");
     await fs.mkdir(path.dirname(manifestPath), { recursive: true });
     await fs.writeFile(manifestPath, JSON.stringify({ version: 2, images: {} }));
-    assert.deepEqual(await pruneImageDist({ rootDir }), { removed: 0, removedLegacyManifest: false });
+    const result = await pruneProjectImages({ rootDir, pruneImages });
+    assert.equal(result.removed, 0);
+    assert.equal(result.kept, 0);
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }

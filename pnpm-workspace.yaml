@@ -29,5 +29,5 @@ onlyBuiltDependencies:
 minimumReleaseAgeExclude:
   - '@astrojs/check@0.9.11'
   - astro@7.4.1
-  - '@all-the.rest/astro-image-cdn@0.4.0'
+  - '@all-the.rest/astro-image-cdn@0.4.1'
   - '@all-the.rest/astro-visual-cms@0.1.3'

@@ -8,7 +8,7 @@
     "cms:editor": "astro-visual-cms-editor --config ./avcms-editor.json",
     "build": "PUBLIC_IMAGE_CDN_URL=https://images.reisinger.pictures astro check && PUBLIC_IMAGE_CDN_URL=https://images.reisinger.pictures astro build",
     "prebuild": "node ../../packages/tools/scripts/import-portal-license-terms.ts && node ../../packages/tools/scripts/add-metadata.mjs && node ../../packages/tools/scripts/process-images.mjs",
-    "postbuild": "node ../../packages/tools/scripts/check_links.mjs && node ../../packages/tools/scripts/prune-imagedist.mjs",
+    "postbuild": "node ../../packages/tools/scripts/check_links.mjs && node ../../packages/tools/scripts/prune-images.mjs",
     "preview": "astro preview",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -34,7 +34,7 @@
     "solid-js": "^1.9.17"
   },
   "devDependencies": {
-    "@all-the.rest/astro-image-cdn": "0.4.0",
+    "@all-the.rest/astro-image-cdn": "0.4.1",
     "@all-the.rest/astro-visual-cms": "0.1.3",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/js": "^10.0.1",
