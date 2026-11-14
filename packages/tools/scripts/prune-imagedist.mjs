@@ -1,124 +1,105 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { load as parseYaml } from "js-yaml";
+import { fileURLToPath } from "node:url";
 
-const ROOT = process.cwd();
-const IMAGE_DIST = path.join(ROOT, ".imagedist");
-const MANIFEST_PATH = path.join(IMAGE_DIST, "manifest.json");
-const IMAGE_SOURCE_DIRS = [
-  path.join(ROOT, "src", "images"),
-  path.join(ROOT, "src", "content", "portfolio"),
-  path.join(ROOT, "src", "content", "simple"),
-];
-const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".svg"]);
+const IMAGE_DIST = ".imagedist";
+const MANIFEST_PATH = path.join(".astro-image-cdn", "manifest.json");
 
-async function getAllFiles(dirPath) {
-  let filesArray = [];
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+async function removeEmptyChildDirectories(directory) {
+  let entries;
+  try {
+    entries = await fs.readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
   for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      filesArray = filesArray.concat(await getAllFiles(fullPath));
-    } else {
-      filesArray.push(fullPath);
-    }
+    if (!entry.isDirectory()) continue;
+    const childDirectory = path.join(directory, entry.name);
+    await removeEmptyChildDirectories(childDirectory);
+    if ((await fs.readdir(childDirectory)).length === 0) await fs.rmdir(childDirectory);
   }
-  return filesArray;
 }
 
-async function getCurrentSlugs() {
-  const slugs = new Set();
-  for (const dir of IMAGE_SOURCE_DIRS) {
-    let files;
-    try {
-      files = await getAllFiles(dir);
-    } catch {
-      continue;
-    }
-    const imageFiles = files.filter(file => IMAGE_EXTENSIONS.has(path.extname(file).toLowerCase()));
-    for (const imagePath of imageFiles) {
-      const dirName = path.dirname(imagePath);
-      const basename = path.basename(imagePath, path.extname(imagePath));
-      for (const ext of [".yaml", ".yml"]) {
-        try {
-          const yamlContent = await fs.readFile(path.join(dirName, `${basename}${ext}`), "utf8");
-          const slug = parseYaml(yamlContent)?.slug;
-          if (slug) slugs.add(slug);
-          break;
-        } catch {
-          // sidecar not found, try next extension
-        }
-      }
-    }
-  }
-  return slugs;
-}
+/**
+ * Remove generated files the library manifest no longer references. The
+ * library keeps old content-addressed files on purpose, so this postbuild step
+ * mirrors only the currently referenced variants to the CDN directory.
+ */
+export async function pruneImageDist({ rootDir = process.cwd() } = {}) {
+  const imageDist = path.join(rootDir, IMAGE_DIST);
+  const manifestPath = path.join(rootDir, MANIFEST_PATH);
 
-async function main() {
   let manifest;
   try {
-    manifest = JSON.parse(await fs.readFile(MANIFEST_PATH, "utf-8"));
-  } catch {
-    console.log("📋 Kein Manifest gefunden. Überspringe.");
-    return;
-  }
-
-  const currentSlugs = await getCurrentSlugs();
-
-  // Entferne verwaiste Manifest-Einträge (Bild existiert nicht mehr in src/)
-  const staleSlugs = Object.keys(manifest.images ?? {}).filter(slug => !currentSlugs.has(slug));
-  let staleSlugCount = 0;
-  if (staleSlugs.length > 0) {
-    for (const slug of staleSlugs) {
-      delete manifest.images[slug];
-      staleSlugCount++;
+    manifest = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.log("📋 Kein Image-CDN-Manifest gefunden. Überspringe.");
+      return { removed: 0, removedLegacyManifest: false };
     }
+    throw error;
   }
 
   const expected = new Set();
-  for (const img of Object.values(manifest.images ?? {})) {
-    for (const w of img.variants) {
-      expected.add(`${img.hash}_${w}.webp`);
+  for (const image of Object.values(manifest.images ?? {})) {
+    for (const variant of image.variants ?? []) {
+      if (typeof variant.file === "string") expected.add(variant.file);
     }
-  }
-
-  let entries;
-  try {
-    entries = await fs.readdir(IMAGE_DIST, { withFileTypes: true });
-  } catch {
-    console.log("📁 Kein .imagedist/ gefunden. Überspringe.");
-    return;
   }
 
   let removed = 0;
+  let removedLegacyManifest = false;
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
-    const dirPath = path.join(IMAGE_DIST, entry.name);
-    const files = await fs.readdir(dirPath);
-
-    for (const file of files) {
-      if (!expected.has(file)) {
-        await fs.unlink(path.join(dirPath, file));
+  const walk = async directory => {
+    let entries;
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === "ENOENT") return;
+      throw error;
+    }
+    for (const entry of entries) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(filePath);
+        continue;
+      }
+      if (entry.name.startsWith(".")) {
+        // The library's writer lock lives inside the directory; never touch it.
+        continue;
+      }
+      const relative = path.relative(imageDist, filePath).split(path.sep).join("/");
+      if (relative === "manifest.json") {
+        // The library never writes a public manifest; a leftover one from the
+        // former slug-keyed CDN must not be deployed.
+        await fs.unlink(filePath);
+        removedLegacyManifest = true;
+        continue;
+      }
+      if (!expected.has(relative)) {
+        await fs.unlink(filePath);
         removed++;
       }
     }
+  };
 
-    const remaining = await fs.readdir(dirPath);
-    if (remaining.length === 0) {
-      await fs.rmdir(dirPath);
-    }
-  }
+  await walk(imageDist);
+  await removeEmptyChildDirectories(imageDist);
 
-  if (staleSlugCount > 0 || removed > 0) {
-    await fs.writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2), "utf8");
-  }
-  if (staleSlugCount > 0) {
-    console.log(`🧹 ${staleSlugCount} verwaiste Einträge aus manifest.json entfernt`);
-  }
   if (removed > 0) {
     console.log(`🧹 ${removed} verwaiste Datei(en) aus .imagedist/ entfernt`);
   }
+  if (removedLegacyManifest) {
+    console.log("🧹 Veraltetes öffentliches .imagedist/manifest.json entfernt");
+  }
+  return { removed, removedLegacyManifest };
 }
 
-main().catch(console.error);
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  pruneImageDist().catch(error => {
+    console.error(`❌ prune-imagedist fehlgeschlagen: ${error.stack ?? error.message}`);
+    process.exitCode = 1;
+  });
+}

@@ -34,9 +34,12 @@ const logoManifest = getManifestImage("logo");
 if (!logoManifest) {
   throw new Error("SchemaOrg: logo not found in manifest");
 }
-const logoHash = logoManifest.hash;
-const logoWidth = 256;
-const logoCdnPath = `${IMAGE_BASE_URL}/${logoHash.slice(0, 2)}/${logoHash}_${logoWidth}.webp`;
+const logoVariant = logoManifest.variants.find(variant => variant.format === "webp" && variant.width === 256)
+  ?? logoManifest.variants.find(variant => variant.format === "webp");
+if (!logoVariant) {
+  throw new Error("SchemaOrg: logo has no WebP variant in manifest");
+}
+const logoCdnPath = `${IMAGE_BASE_URL}/${logoVariant.file}`;
 const logoUrl = absoluteLink(url, logoCdnPath);
 
 const me: Person = {

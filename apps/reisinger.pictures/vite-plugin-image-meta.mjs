@@ -44,6 +44,10 @@ function isRelevantFile(filePath) {
   return isYaml(filePath) || isImage(filePath);
 }
 
+function relativeImagePath(imgPath) {
+  return imgPath.replace(/^\//, "").replaceAll("\\", "/");
+}
+
 export default function imageMetaPlugin() {
   let metaCache = null;
   let slugCache = null;
@@ -117,8 +121,11 @@ export default function imageMetaPlugin() {
         const srcDir = path.resolve(rootDir, "src");
         const map = buildSlugMap(srcDir);
         if (isBuild) {
-          const entries = Object.keys(map)
-            .map((slug) => `${JSON.stringify(slug)}: true`)
+          // Builds only need the project-relative path: the CDN manifest is
+          // keyed by it, so pages resolve a slug to its manifest entry without
+          // bundling the source image itself.
+          const entries = Object.entries(map)
+            .map(([slug, imgPath]) => `${JSON.stringify(slug)}: { path: ${JSON.stringify(relativeImagePath(imgPath))} }`)
             .join(",\n");
           return {
             code: `export default {\n${entries}\n};`,
@@ -126,7 +133,12 @@ export default function imageMetaPlugin() {
           };
         }
         const entries = Object.entries(map)
-          .map(([slug, imgPath]) => `${JSON.stringify(slug)}: () => import(${JSON.stringify(imgPath)})`)
+          .map(([slug, imgPath]) => [
+            `${JSON.stringify(slug)}: {`,
+            `path: ${JSON.stringify(relativeImagePath(imgPath))},`,
+            `load: () => import(${JSON.stringify(imgPath)})`,
+            "}",
+          ].join(" "))
           .join(",\n");
         return {
           code: `export default {\n${entries}\n};`,

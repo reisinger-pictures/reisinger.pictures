@@ -6,23 +6,21 @@ const isBuild = import.meta.env.PROD;
 
 export function tryGetImage(name: string | undefined) {
   if (name === undefined) return undefined;
-  const entry = slugMap[name];
-  if (isBuild) return entry;
-  return entry;
+  return slugMap[name];
 }
 
 export async function getImage(name: string) {
-  const image = tryGetImage(name);
-  if (image === undefined) {
+  const entry = tryGetImage(name);
+  if (entry === undefined) {
     throw new Error(`Image "${name}" does not exist!`);
   }
-  if (isBuild) {
+  if (isBuild || typeof entry.load !== "function") {
     throw new Error(
       `slug-map getImage("${name}") called during production build. ` +
       `Use the CDN manifest (getManifestImage) instead.`
     );
   }
-  return await image();
+  return await entry.load();
 }
 
 export function filterInvalidImageName(name?: string) {

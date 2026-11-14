@@ -15,6 +15,7 @@
     "review:apply": "node packages/tools/scripts/apply-review.mjs",
     "review:serve": "node packages/tools/scripts/review-server.mjs",
     "review:unit": "node --test tests/review-viewer.test.mjs tests/review-server.test.mjs",
+    "test:tools": "node --test packages/tools/tests/process-images.test.mjs",
     "import:portal-terms": "node packages/tools/scripts/import-portal-license-terms.ts"
   },
   "devDependencies": {

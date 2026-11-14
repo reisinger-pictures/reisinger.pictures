@@ -52,7 +52,7 @@ It is a loopback-only editor plus a dev-only Astro bridge — no production CMS 
   creation of a new entry — unavailable while every collection is read-only.
 
 ## Verification scope
-`src/content/` is git-ignored and `.imagedist/manifest.json` comes from `prebuild`.
+`src/content/` is git-ignored and `.astro-image-cdn/manifest.json` comes from `prebuild`.
 Without them dev routes and `astro build` fail with content/image errors unrelated to
 this integration. Validate the config test, editor startup, endpoint guards, the
 diff-only component proposal and production-isolation markers here; leave rendered route

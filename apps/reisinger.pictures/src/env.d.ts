@@ -43,7 +43,13 @@ declare module "*.gif" {
 
 declare module "virtual:image-slug-map" {
   import type { ImageMetadata } from "astro";
-  const map: Record<string, () => Promise<{ default: ImageMetadata }>>;
+  type SlugEntry = {
+    // Project-relative source path; the CDN manifest is keyed by it.
+    path: string;
+    // Development only: lazy import of the source image.
+    load?: () => Promise<{ default: ImageMetadata }>;
+  };
+  const map: Record<string, SlugEntry>;
   export default map;
 }
 

@@ -6,13 +6,19 @@ import solidJs from "@astrojs/solid-js";
 import astroImageCdn from "@all-the.rest/astro-image-cdn";
 import { createLoopbackDevIntegration } from "@all-the.rest/astro-visual-cms/integration";
 import editorConfig from "./avcms-editor.json" with { type: "json" };
+import imageCdnOptions from "./image-cdn-options.json" with { type: "json" };
 import imageMetaPlugin from "./vite-plugin-image-meta.mjs";
 import containerSizesPlugin from "./vite-plugin-container-sizes.mjs";
+
+// Single source of truth for the image pipeline: the prebuild script
+// (packages/tools/scripts/process-images.mjs) reads the same file, so the
+// fingerprints written to .imagedist cannot drift from the integration's.
+const { dangerouslyProcessSVG, ...astroImageCdnOptions } = imageCdnOptions;
 
 // https://astro.build/config
 export default defineConfig({
   image: {
-    dangerouslyProcessSVG: true
+    dangerouslyProcessSVG
   },
   // The friend deep link `/preise/friends` is NOT handled here: it is a
   // server-side redirect in the Caddyfile (caddyfile repo, `reisinger.pictures`
@@ -54,16 +60,7 @@ export default defineConfig({
   },
   integrations: [mdx(), solidJs(), astroImageCdn({
     baseUrl: process.env.PUBLIC_IMAGE_CDN_URL || "https://images.reisinger.pictures",
-    outputDir: ".imagedist",
-    cacheDir: ".astro-image-cdn",
-    widths: [256, 640, 828, 1080, 1200, 1920, 2048],
-    formats: ["webp"],
-    quality: 75,
-    webpEffort: 4,
-    avifEffort: 4,
-    includeSourceFormat: false,
-    includeNativeWidth: false,
-    autoRotate: false
+    ...astroImageCdnOptions
   }), sitemap({
     serialize(item) {
       // Prioritize key pages for crawlers.

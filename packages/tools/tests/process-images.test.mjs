@@ -1,39 +1,21 @@
 import assert from "node:assert/strict";
-import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import {
-  MIGRATION_PROFILE,
-  migrateImages,
-  resolveAdoptImageVariants,
-} from "../scripts/process-images.mjs";
+import imageMetaPlugin from "../../../apps/reisinger.pictures/vite-plugin-image-meta.mjs";
+import { loadImageCdnOptions, processProjectImages, resolveProcessImages } from "../scripts/process-images.mjs";
+import { pruneImageDist } from "../scripts/prune-imagedist.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const adoptImageVariants = await resolveAdoptImageVariants(path.join(REPO_ROOT, "apps", "reisinger.pictures"));
-const TARGET_WIDTHS = [256, 640, 828, 1080, 1200, 1920, 2048];
-const PREVIOUS_MIGRATION_PROFILE = JSON.stringify({
-  version: 1,
-  package: "@all-the.rest/astro-image-cdn@0.3.0",
-  widths: TARGET_WIDTHS,
-  formats: ["webp"],
-  quality: 75,
-  webpEffort: 4,
-  avifEffort: 4,
-  includeSourceFormat: false,
-  includeNativeWidth: false,
-  autoRotate: false,
-  dangerouslyProcessSVG: true,
-  legacyTransform: "sharp-resize-webp-q75-no-autorotate-v1",
-  sharp: sharp.versions.sharp,
-  libvips: sharp.versions.vips,
-});
+const APP_ROOT = path.join(REPO_ROOT, "apps", "reisinger.pictures");
+const processImages = await resolveProcessImages(APP_ROOT);
 
-async function makeFixtureRoot({ width = 2500, height = 1800 } = {}) {
-  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-migration-test-"));
+async function makeFixtureRoot({ width = 1200, height = 800 } = {}) {
+  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-process-test-"));
+  await fs.copyFile(path.join(APP_ROOT, "image-cdn-options.json"), path.join(rootDir, "image-cdn-options.json"));
   const sourceDir = path.join(rootDir, "src", "images");
   await fs.mkdir(sourceDir, { recursive: true });
   const pixels = Buffer.alloc(width * height * 3);
@@ -50,502 +32,187 @@ async function makeFixtureRoot({ width = 2500, height = 1800 } = {}) {
   return { rootDir, sourceDir, sourcePath };
 }
 
-async function makeLegacyVariants({ sourcePath, legacyImageDist, missingWidths = [], invalidWidths = [] }) {
-  const source = await fs.readFile(sourcePath);
-  const sourceHash = crypto.createHash("sha256").update(source).digest("hex");
-  const metadata = await sharp(source).metadata();
-  const widths = TARGET_WIDTHS.filter(width => width <= metadata.width);
-  const legacyHash = sourceHash.slice(0, 16);
-  const variantDir = path.join(legacyImageDist, legacyHash.slice(0, 2));
-  await fs.mkdir(variantDir, { recursive: true });
-
-  for (const width of widths) {
-    if (missingWidths.includes(width)) continue;
-    const variantPath = path.join(variantDir, `${legacyHash}_${width}.webp`);
-    if (invalidWidths.includes(width)) {
-      await fs.writeFile(variantPath, Buffer.from("invalid legacy output"));
-    } else {
-      const variant = await sharp(source).resize(width).webp({ quality: 75, effort: 4 }).toBuffer();
-      await fs.writeFile(variantPath, variant);
-    }
-  }
-
-  await fs.writeFile(path.join(legacyImageDist, "manifest.json"), JSON.stringify({
-    version: 1,
-    generated: "fixture",
-    images: {
-      "synthetic-noise": {
-        hash: legacyHash,
-        width: metadata.width,
-        height: metadata.height,
-        variants: widths,
-      },
-    },
-  }, null, 2));
-
-  return {
-    sourceHash,
-    legacyHash,
-    widths,
-    variantDir,
-  };
+async function readManifest(rootDir) {
+  return JSON.parse(await fs.readFile(path.join(rootDir, ".astro-image-cdn", "manifest.json"), "utf8"));
 }
 
-async function makePreviousPackageVariants({ sourcePath, imageDist }) {
-  const source = await fs.readFile(sourcePath);
-  const sourceHash = crypto.createHash("sha256").update(source).digest("hex");
-  const metadata = await sharp(source).metadata();
-  const widths = TARGET_WIDTHS.filter(width => width <= metadata.width);
-  const previousHash = crypto.createHash("sha256")
-    .update(PREVIOUS_MIGRATION_PROFILE)
-    .update(sourceHash)
-    .digest("hex");
-  const variantDir = path.join(imageDist, previousHash.slice(0, 2));
-  await fs.mkdir(variantDir, { recursive: true });
-
-  for (const width of widths) {
-    const variant = await sharp(source).resize(width).webp({ quality: 75, effort: 4 }).toBuffer();
-    await fs.writeFile(path.join(variantDir, `${previousHash}_${width}.webp`), variant);
-  }
-
-  const manifestPath = path.join(imageDist, "manifest.json");
-  await fs.writeFile(manifestPath, JSON.stringify({
-    version: 2,
-    generated: "previous-package-fixture",
-    images: {
-      "synthetic-noise": {
-        hash: previousHash,
-        sourceHash,
-        migrationProfile: PREVIOUS_MIGRATION_PROFILE,
-        width: metadata.width,
-        height: metadata.height,
-        variants: widths,
-      },
-    },
-  }, null, 2));
-
-  return { sourceHash, previousHash, widths, manifestPath, variantDir };
-}
-
-async function corruptWebpPayloadWithReadableMetadata(filePath) {
-  const original = await fs.readFile(filePath);
-  const originalMetadata = await sharp(original).metadata();
-  for (let offset = 20; offset < Math.min(original.length, 256); offset++) {
-    const corrupted = Buffer.from(original);
-    corrupted[offset] ^= 0xff;
-    const metadata = await sharp(corrupted, { failOn: "none" }).metadata().catch(() => undefined);
-    if (metadata?.format !== "webp" || metadata.width !== originalMetadata.width
-      || metadata.height !== originalMetadata.height) continue;
-    const decodes = await sharp(corrupted, { failOn: "warning" }).raw().toBuffer()
-      .then(() => true, () => false);
-    if (decodes) continue;
-    await fs.writeFile(filePath, corrupted);
-    return corrupted;
-  }
-  throw new Error(`Could not corrupt ${filePath} while retaining readable WebP metadata`);
-}
-
-function getVariantPath(imageDist, hash, width) {
-  return path.join(imageDist, hash.slice(0, 2), `${hash}_${width}.webp`);
-}
-
-async function snapshotFiles(directory) {
-  const files = new Map();
-  async function walk(currentDirectory, relativeDirectory = "") {
-    for (const entry of await fs.readdir(currentDirectory, { withFileTypes: true })) {
-      const relativePath = path.join(relativeDirectory, entry.name);
-      const filePath = path.join(currentDirectory, entry.name);
-      if (entry.isDirectory()) await walk(filePath, relativePath);
-      else if (entry.isFile()) files.set(relativePath, await fs.readFile(filePath));
-    }
-  }
-  await walk(directory);
-  return files;
-}
-
-async function assertFilesUnchanged(directory, before) {
-  const after = await snapshotFiles(directory);
-  assert.deepEqual([...after.keys()].sort(), [...before.keys()].sort());
-  for (const [file, bytes] of before) assert.deepEqual(after.get(file), bytes, `${file} changed`);
-}
-
-test("migration adopts valid legacy variants, repairs only missing outputs, and is idempotent", async () => {
-  const { rootDir, sourcePath } = await makeFixtureRoot();
-  const legacyImageDist = path.join(rootDir, "legacy-imagedist");
-  const initial = await makeLegacyVariants({
-    sourcePath,
-    legacyImageDist,
-    missingWidths: [256],
-  });
-  const legacyManifestBefore = await fs.readFile(path.join(legacyImageDist, "manifest.json"), "utf8");
-  const yamlBefore = await fs.readFile(path.join(path.dirname(sourcePath), "noise.yaml"), "utf8");
+test("processing delegates to the library and leaves a path-keyed manifest", async () => {
+  const { rootDir } = await makeFixtureRoot();
 
   try {
-    const firstRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    const manifestPath = path.join(rootDir, ".imagedist", "manifest.json");
-    const firstManifestText = await fs.readFile(manifestPath, "utf8");
-    const manifestImage = JSON.parse(firstManifestText).images["synthetic-noise"];
+    const firstRun = await processProjectImages({ rootDir, processImages });
+    assert.equal(firstRun.imageCount, 1);
+    assert.equal(firstRun.processed, 1);
+    assert.equal(firstRun.skipped, 0);
+    assert.equal(firstRun.slugs, 1);
+    assert.equal(firstRun.manifestPath, path.join(rootDir, ".astro-image-cdn", "manifest.json"));
 
-    assert.equal(manifestImage.hash.length, 64);
-    assert.equal(manifestImage.sourceHash, initial.sourceHash);
-    assert.equal(manifestImage.migrationProfile, MIGRATION_PROFILE);
-    assert.deepEqual(manifestImage.variants, initial.widths);
-    assert.equal(firstRun.reused, initial.widths.length - 1);
-    assert.equal(await fs.readFile(path.join(legacyImageDist, "manifest.json"), "utf8"), legacyManifestBefore);
-    assert.equal(await fs.readFile(path.join(path.dirname(sourcePath), "noise.yaml"), "utf8"), yamlBefore);
-    assert.deepEqual(
-      (await fs.readdir(path.join(rootDir, ".imagedist", manifestImage.hash.slice(0, 2)))).sort(),
-      initial.widths.map(width => `${manifestImage.hash}_${width}.webp`).sort(),
-    );
+    const manifest = await readManifest(rootDir);
+    const entry = manifest.images["src/images/noise.jpg"];
+    assert.ok(entry, "manifest must be keyed by the project-relative source path");
+    assert.match(entry.fingerprint, /^[a-f0-9]{64}$/);
+    assert.equal(entry.width, 1200);
+    assert.equal(entry.height, 800);
+    assert.deepEqual(entry.variants.map(variant => variant.width), [256, 640, 828, 1080, 1200]);
+    assert.ok(entry.variants.every(variant => variant.format === "webp"));
 
-    for (const width of initial.widths) {
-      const target = path.join(rootDir, ".imagedist", manifestImage.hash.slice(0, 2), `${manifestImage.hash}_${width}.webp`);
-      const metadata = await sharp(target).metadata();
+    for (const variant of entry.variants) {
+      const metadata = await sharp(path.join(rootDir, ".imagedist", variant.file)).metadata();
       assert.equal(metadata.format, "webp");
-      assert.equal(metadata.width, width);
+      assert.equal(metadata.width, variant.width);
     }
 
-    const targetPaths = initial.widths.map(width => getVariantPath(
-      path.join(rootDir, ".imagedist"),
-      manifestImage.hash,
-      width,
-    ));
-    const statsBefore = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
-
-    const secondRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    assert.equal(secondRun.reused, initial.widths.length);
-    assert.equal(await fs.readFile(manifestPath, "utf8"), firstManifestText);
-    const statsAfter = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
-    assert.deepEqual(
-      statsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      statsBefore.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      "a warm rerun must not rewrite or copy adopted outputs",
-    );
-
-    const changedSource = await sharp(await fs.readFile(sourcePath)).jpeg({ quality: 76 }).toBuffer();
-    await fs.writeFile(sourcePath, changedSource);
-    const changedHash = crypto.createHash("sha256").update(changedSource).digest("hex");
-    const changedRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    const changedEntry = JSON.parse(await fs.readFile(manifestPath, "utf8")).images["synthetic-noise"];
-    assert.equal(changedRun.reused, 0);
-    assert.equal(changedEntry.sourceHash, changedHash);
-    assert.notEqual(changedEntry.hash, manifestImage.hash);
-  } finally {
-    await fs.rm(rootDir, { recursive: true, force: true });
-  }
-});
-
-test("migration adopts valid 0.3.0 package variants into the 0.4.0 profile without changing inputs", async () => {
-  const { rootDir, sourcePath } = await makeFixtureRoot();
-  const imageDist = path.join(rootDir, ".imagedist");
-  const legacyImageDist = path.join(rootDir, "legacy-imagedist");
-  const initial = await makePreviousPackageVariants({ sourcePath, imageDist });
-  const legacy = await makeLegacyVariants({ sourcePath, legacyImageDist });
-  const yamlPath = path.join(path.dirname(sourcePath), "noise.yaml");
-  const sourceBefore = await fs.readFile(sourcePath);
-  const yamlBefore = await fs.readFile(yamlPath);
-  const previousManifestBefore = await fs.readFile(initial.manifestPath);
-  const legacyFilesBefore = await snapshotFiles(legacyImageDist);
-  const oldVariantBytes = new Map(await Promise.all(initial.widths.map(async width => {
-    const variantPath = path.join(initial.variantDir, `${initial.previousHash}_${width}.webp`);
-    return [width, await fs.readFile(variantPath)];
-  })));
-
-  try {
-    const result = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    const manifest = JSON.parse(await fs.readFile(result.manifestPath, "utf8"));
-    const image = manifest.images["synthetic-noise"];
-
-    assert.equal(manifest.version, 2);
-    assert.equal(result.reused, initial.widths.length);
-    assert.equal(image.sourceHash, initial.sourceHash);
-    assert.equal(image.migrationProfile, MIGRATION_PROFILE);
-    const profile = JSON.parse(image.migrationProfile);
-    assert.equal(profile.package, "@all-the.rest/astro-image-cdn@0.4.0");
-    assert.deepEqual(profile.widths, TARGET_WIDTHS);
-    assert.deepEqual(profile.formats, ["webp"]);
-    assert.equal(profile.quality, 75);
-    assert.equal(profile.webpEffort, 4);
-    assert.equal(profile.avifEffort, 4);
-    assert.equal(profile.includeSourceFormat, false);
-    assert.equal(profile.includeNativeWidth, false);
-    assert.equal(profile.autoRotate, false);
-    assert.deepEqual(image.variants, initial.widths);
-    assert.notEqual(image.hash, initial.previousHash);
-    assert.match(image.hash, /^[a-f0-9]{64}$/);
-    assert.notDeepEqual(await fs.readFile(initial.manifestPath), previousManifestBefore);
-
-    for (const width of initial.widths) {
-      const adoptedPath = path.join(rootDir, ".imagedist", image.hash.slice(0, 2), `${image.hash}_${width}.webp`);
-      const adoptedBytes = await fs.readFile(adoptedPath);
-      assert.deepEqual(adoptedBytes, oldVariantBytes.get(width));
-      const metadata = await sharp(adoptedBytes).metadata();
-      assert.equal(metadata.format, "webp");
-      assert.equal(metadata.width, width);
-    }
-
-    assert.deepEqual(await fs.readFile(sourcePath), sourceBefore);
-    assert.deepEqual(await fs.readFile(yamlPath), yamlBefore);
-    await assertFilesUnchanged(legacyImageDist, legacyFilesBefore);
-    for (const width of initial.widths) {
-      const oldVariantPath = path.join(initial.variantDir, `${initial.previousHash}_${width}.webp`);
-      assert.deepEqual(await fs.readFile(oldVariantPath), oldVariantBytes.get(width));
-    }
-    assert.deepEqual(legacy.widths, initial.widths);
-
-    const adoptedTargets = initial.widths.map(width => getVariantPath(
-      path.join(rootDir, ".imagedist"),
-      image.hash,
-      width,
-    ));
-    const adoptedStats = await Promise.all(adoptedTargets.map(target => fs.stat(target, { bigint: true })));
-    const manifestAfterFirstRun = await fs.readFile(result.manifestPath, "utf8");
-    const secondRun = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    assert.equal(secondRun.reused, initial.widths.length);
-    assert.equal(await fs.readFile(result.manifestPath, "utf8"), manifestAfterFirstRun);
-    const adoptedStatsAfter = await Promise.all(adoptedTargets.map(target => fs.stat(target, { bigint: true })));
-    assert.deepEqual(
-      adoptedStatsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      adoptedStats.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      "repeated adoption must not copy or rewrite the 0.3.0 variants",
+    const manifestBefore = await fs.readFile(path.join(rootDir, ".astro-image-cdn", "manifest.json"), "utf8");
+    const secondRun = await processProjectImages({ rootDir, processImages });
+    assert.equal(secondRun.processed, 0);
+    assert.equal(secondRun.skipped, 1);
+    assert.equal(
+      await fs.readFile(path.join(rootDir, ".astro-image-cdn", "manifest.json"), "utf8"),
+      manifestBefore,
+      "a warm run must not rewrite the manifest",
     );
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
 
-test("the first 0.4.0 run reuses 0.3.0 targets in place without re-encoding", async () => {
-  const { rootDir } = await makeFixtureRoot({ width: 640, height: 360 });
-  const imageDist = path.join(rootDir, ".imagedist");
-  const manifestPath = path.join(imageDist, "manifest.json");
+test("processing fails when a slugged image is missing from the manifest", async () => {
+  const { rootDir } = await makeFixtureRoot();
 
   try {
-    await migrateImages({ rootDir, adoptImageVariants });
-    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
-    const entry = manifest.images["synthetic-noise"];
-    assert.equal(entry.migrationProfile, MIGRATION_PROFILE);
-    const targetPaths = entry.variants.map(width => getVariantPath(imageDist, entry.hash, width));
-    const statsBefore = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
+    const fakeProcessImages = async ({ rootDir: fixtureRoot, cacheDir }) => {
+      const manifestPath = path.join(fixtureRoot, cacheDir, "manifest.json");
+      await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+      await fs.writeFile(manifestPath, JSON.stringify({ version: 2, images: {} }));
+      return { processed: 0, skipped: 0, imageCount: 0, manifestPath };
+    };
 
-    // Simulate the 0.3.0 state: same fingerprint and files, previous profile, no stat records.
-    entry.migrationProfile = PREVIOUS_MIGRATION_PROFILE;
-    await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-    await fs.rm(path.join(rootDir, ".astro-image-cdn"), { recursive: true, force: true });
-
-    const result = await migrateImages({ rootDir, adoptImageVariants });
-    const upgraded = JSON.parse(await fs.readFile(manifestPath, "utf8")).images["synthetic-noise"];
-    assert.equal(result.reused, entry.variants.length);
-    assert.equal(upgraded.hash, entry.hash);
-    assert.equal(upgraded.migrationProfile, MIGRATION_PROFILE);
-    const statsAfter = await Promise.all(targetPaths.map(target => fs.stat(target, { bigint: true })));
-    assert.deepEqual(
-      statsAfter.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      statsBefore.map(({ ino, size, mtimeNs }) => [ino, size, mtimeNs]),
-      "the first 0.4.0 run must reuse existing 0.3.0 targets in place",
-    );
-    assert.equal((await sharp(await fs.readFile(targetPaths[0])).metadata()).format, "webp");
-  } finally {
-    await fs.rm(rootDir, { recursive: true, force: true });
-  }
-});
-
-test("migration rejects incomplete or mismatched 0.3.0 package variants as a set", async () => {
-  const cases = [
-    {
-      name: "profile mismatch",
-      mutateEntry(entry) {
-        const profile = JSON.parse(entry.migrationProfile);
-        profile.quality++;
-        entry.migrationProfile = JSON.stringify(profile);
-      },
-    },
-    {
-      name: "source hash mismatch",
-      mutateEntry(entry) {
-        entry.sourceHash = "0".repeat(64);
-      },
-    },
-    {
-      name: "non-package fingerprint",
-      mutateEntry(entry) {
-        entry.hash = entry.hash.slice(0, 16);
-      },
-    },
-    {
-      name: "incomplete width list",
-      mutateEntry(entry) {
-        entry.variants = entry.variants.slice(0, -1);
-      },
-    },
-    {
-      name: "symlinked variant",
-      async mutateVariant({ sourcePath, variantPath }) {
-        const targetPath = path.join(path.dirname(sourcePath), "valid-webp-target.webp");
-        const metadata = await sharp(await fs.readFile(variantPath)).metadata();
-        assert.deepEqual(
-          { format: metadata.format, width: metadata.width, height: metadata.height },
-          { format: "webp", width: 256, height: 144 },
-        );
-        await fs.copyFile(variantPath, targetPath);
-        await fs.unlink(variantPath);
-        await fs.symlink(targetPath, variantPath);
-        return { path: targetPath, bytes: await fs.readFile(targetPath) };
-      },
-    },
-    {
-      name: "one-pixel dimension mismatch",
-      async mutateVariant({ sourcePath, variantPath }) {
-        const expectedHeight = Math.round(256 * 360 / 640);
-        await sharp(await fs.readFile(sourcePath))
-          .resize(256, expectedHeight + 1, { fit: "fill" })
-          .webp({ quality: 75, effort: 4 })
-          .toFile(variantPath);
-      },
-    },
-    {
-      name: "corrupt WebP payload with readable metadata",
-      async mutateVariant({ variantPath }) {
-        const corrupted = await corruptWebpPayloadWithReadableMetadata(variantPath);
-        const metadata = await sharp(corrupted, { failOn: "none" }).metadata();
-        assert.equal(metadata.format, "webp");
-        await assert.rejects(sharp(corrupted, { failOn: "warning" }).raw().toBuffer());
-      },
-    },
-  ];
-
-  for (const invalidCase of cases) {
-    const { rootDir, sourcePath } = await makeFixtureRoot({ width: 640, height: 360 });
-    const imageDist = path.join(rootDir, ".imagedist");
-    const legacyImageDist = path.join(rootDir, "legacy-imagedist");
-    const previous = await makePreviousPackageVariants({ sourcePath, imageDist });
-    const manifest = JSON.parse(await fs.readFile(previous.manifestPath, "utf8"));
-    const entry = manifest.images["synthetic-noise"];
-    invalidCase.mutateEntry?.(entry);
-    const invalidVariantPath = getVariantPath(imageDist, previous.previousHash, 256);
-    const symlinkTarget = await invalidCase.mutateVariant?.({ sourcePath, variantPath: invalidVariantPath });
-    const previousVariantsBefore = await snapshotFiles(previous.variantDir);
-    const sourceBefore = await fs.readFile(sourcePath);
-    const yamlPath = path.join(path.dirname(sourcePath), "noise.yaml");
-    const yamlBefore = await fs.readFile(yamlPath);
-    await fs.writeFile(previous.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
-
-    try {
-      const result = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-      assert.equal(result.reused, 0, invalidCase.name);
-      await assertFilesUnchanged(previous.variantDir, previousVariantsBefore);
-      if (symlinkTarget) {
-        assert.equal(await fs.readlink(invalidVariantPath), symlinkTarget.path);
-        assert.deepEqual(await fs.readFile(symlinkTarget.path), symlinkTarget.bytes);
-      }
-      assert.deepEqual(await fs.readFile(sourcePath), sourceBefore);
-      assert.deepEqual(await fs.readFile(yamlPath), yamlBefore);
-      const migrated = JSON.parse(await fs.readFile(result.manifestPath, "utf8")).images["synthetic-noise"];
-      assert.equal(migrated.sourceHash, previous.sourceHash);
-      assert.equal(migrated.migrationProfile, MIGRATION_PROFILE);
-    } finally {
-      await fs.rm(rootDir, { recursive: true, force: true });
-    }
-  }
-});
-
-test("current and legacy WebP reuse rejects corrupt payloads with readable metadata", async () => {
-  const currentFixture = await makeFixtureRoot({ width: 256, height: 180 });
-  const currentImageDist = path.join(currentFixture.rootDir, ".imagedist");
-  const currentManifestPath = path.join(currentImageDist, "manifest.json");
-  const currentYamlPath = path.join(path.dirname(currentFixture.sourcePath), "noise.yaml");
-  try {
-    await migrateImages({ rootDir: currentFixture.rootDir, adoptImageVariants });
-    const manifestBefore = await fs.readFile(currentManifestPath);
-    const entry = JSON.parse(manifestBefore.toString("utf8")).images["synthetic-noise"];
-    const currentVariantPath = getVariantPath(currentImageDist, entry.hash, 256);
-    const corruptCurrentBytes = await corruptWebpPayloadWithReadableMetadata(currentVariantPath);
-    const sourceBefore = await fs.readFile(currentFixture.sourcePath);
-    const yamlBefore = await fs.readFile(currentYamlPath);
     await assert.rejects(
-      migrateImages({ rootDir: currentFixture.rootDir, adoptImageVariants }),
-      /Refusing to replace an existing non-matching adopted output/,
+      processProjectImages({ rootDir, processImages: fakeProcessImages }),
+      /astro-image-cdn did not process 1 slugged image\(s\): synthetic-noise \(src\/images\/noise\.jpg\)/,
     );
-    assert.deepEqual(await fs.readFile(currentManifestPath), manifestBefore);
-    assert.deepEqual(await fs.readFile(currentVariantPath), corruptCurrentBytes);
-    assert.deepEqual(await fs.readFile(currentFixture.sourcePath), sourceBefore);
-    assert.deepEqual(await fs.readFile(currentYamlPath), yamlBefore);
-  } finally {
-    await fs.rm(currentFixture.rootDir, { recursive: true, force: true });
-  }
-
-  const legacyFixture = await makeFixtureRoot({ width: 256, height: 180 });
-  const legacyImageDist = path.join(legacyFixture.rootDir, "legacy-imagedist");
-  try {
-    const legacy = await makeLegacyVariants({ sourcePath: legacyFixture.sourcePath, legacyImageDist });
-    const invalidLegacyPath = getVariantPath(legacyImageDist, legacy.legacyHash, 256);
-    const corruptLegacyBytes = await corruptWebpPayloadWithReadableMetadata(invalidLegacyPath);
-    const legacyFilesBefore = await snapshotFiles(legacyImageDist);
-    const sourceBefore = await fs.readFile(legacyFixture.sourcePath);
-    const yamlPath = path.join(path.dirname(legacyFixture.sourcePath), "noise.yaml");
-    const yamlBefore = await fs.readFile(yamlPath);
-
-    const result = await migrateImages({ rootDir: legacyFixture.rootDir, legacyImageDist, adoptImageVariants });
-    assert.equal(result.reused, 0);
-    await assertFilesUnchanged(legacyImageDist, legacyFilesBefore);
-    assert.deepEqual(await fs.readFile(legacyFixture.sourcePath), sourceBefore);
-    assert.deepEqual(await fs.readFile(yamlPath), yamlBefore);
-    const image = JSON.parse(await fs.readFile(result.manifestPath, "utf8")).images["synthetic-noise"];
-    const repairedPath = getVariantPath(path.join(legacyFixture.rootDir, ".imagedist"), image.hash, 256);
-    const repaired = await fs.readFile(repairedPath);
-    assert.notDeepEqual(repaired, corruptLegacyBytes);
-    assert.equal((await sharp(repaired).metadata()).format, "webp");
-    await sharp(repaired, { failOn: "warning" }).raw().toBuffer();
-  } finally {
-    await fs.rm(legacyFixture.rootDir, { recursive: true, force: true });
-  }
-});
-
-test("an invalid legacy variant is regenerated without changing the legacy input", async () => {
-  const { rootDir, sourcePath } = await makeFixtureRoot();
-  const legacyImageDist = path.join(rootDir, "legacy-imagedist");
-  const initial = await makeLegacyVariants({
-    sourcePath,
-    legacyImageDist,
-    invalidWidths: [256],
-  });
-  const invalidLegacyPath = path.join(initial.variantDir, `${initial.legacyHash}_256.webp`);
-  const invalidLegacyBytes = await fs.readFile(invalidLegacyPath);
-
-  try {
-    const result = await migrateImages({ rootDir, legacyImageDist, adoptImageVariants });
-    assert.equal(result.reused, initial.widths.length - 1);
-    assert.deepEqual(await fs.readFile(invalidLegacyPath), invalidLegacyBytes);
-    const manifestImage = JSON.parse(await fs.readFile(result.manifestPath, "utf8")).images["synthetic-noise"];
-    const repairedPath = path.join(rootDir, ".imagedist", manifestImage.hash.slice(0, 2), `${manifestImage.hash}_256.webp`);
-    const repairedMetadata = await sharp(repairedPath).metadata();
-    assert.equal(repairedMetadata.format, "webp");
-    assert.equal(repairedMetadata.width, 256);
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
 
-test("a source failure leaves the existing public manifest byte-for-byte unchanged", async () => {
-  const { rootDir, sourceDir, sourcePath } = await makeFixtureRoot();
-  const manifestPath = path.join(rootDir, ".imagedist", "manifest.json");
-  const baselineManifest = JSON.stringify({
-    version: 1,
-    generated: "unchanged",
-    images: {
-      "pre-existing": { hash: "legacy", width: 1, height: 1, variants: [] },
-    },
-  }, null, 2);
-  await fs.mkdir(path.dirname(manifestPath), { recursive: true });
-  await fs.writeFile(manifestPath, baselineManifest);
-  await fs.writeFile(path.join(sourceDir, "z-broken.jpg"), Buffer.from("not an image"));
-  await fs.writeFile(path.join(sourceDir, "z-broken.yaml"), "slug: broken\n");
-  await fs.rename(path.join(sourceDir, "noise.jpg"), path.join(sourceDir, "a-noise.jpg"));
-  await fs.rename(path.join(sourceDir, "noise.yaml"), path.join(sourceDir, "a-noise.yaml"));
+test("processing rejects duplicate slugs before touching images", async () => {
+  const { rootDir } = await makeFixtureRoot();
 
   try {
-    await assert.rejects(migrateImages({ rootDir, adoptImageVariants }), /Could not read source image for "broken"/);
-    assert.equal(await fs.readFile(manifestPath, "utf8"), baselineManifest);
+    await fs.writeFile(path.join(rootDir, "src", "images", "noise-copy.yaml"), "slug: synthetic-noise\n");
+    await fs.copyFile(
+      path.join(rootDir, "src", "images", "noise.jpg"),
+      path.join(rootDir, "src", "images", "noise-copy.jpg"),
+    );
+
+    await assert.rejects(
+      processProjectImages({ rootDir, processImages }),
+      /Duplicate image slug "synthetic-noise"/,
+    );
+    await assert.rejects(fs.access(path.join(rootDir, ".astro-image-cdn", "manifest.json")));
   } finally {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
+
+test("pruning removes unreferenced variants and the legacy public manifest", async () => {
+  const { rootDir } = await makeFixtureRoot();
+  const imageDist = path.join(rootDir, ".imagedist");
+
+  try {
+    await processProjectImages({ rootDir, processImages });
+    const manifest = await readManifest(rootDir);
+    const referenced = manifest.images["src/images/noise.jpg"].variants[0].file;
+
+    const orphanPath = path.join(imageDist, "ff", "ffdeadbeef_256.webp");
+    await fs.mkdir(path.dirname(orphanPath), { recursive: true });
+    await fs.writeFile(orphanPath, "orphan");
+    const emptyDirectory = path.join(imageDist, "ee");
+    await fs.mkdir(emptyDirectory, { recursive: true });
+    const lockPath = path.join(imageDist, ".astro-image-cdn.lock");
+    await fs.writeFile(lockPath, "pid\n");
+    const legacyManifest = path.join(imageDist, "manifest.json");
+    await fs.writeFile(legacyManifest, JSON.stringify({ version: 2, images: {} }));
+
+    const result = await pruneImageDist({ rootDir });
+    assert.equal(result.removed, 1);
+    assert.equal(result.removedLegacyManifest, true);
+    await fs.access(path.join(imageDist, referenced));
+    await fs.access(lockPath);
+    await assert.rejects(fs.access(orphanPath));
+    await assert.rejects(fs.access(legacyManifest));
+    await assert.rejects(fs.access(emptyDirectory));
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("pruning without a manifest is a no-op", async () => {
+  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-prune-test-"));
+  try {
+    const result = await pruneImageDist({ rootDir });
+    assert.deepEqual(result, { removed: 0, removedLegacyManifest: false });
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("pruning tolerates a manifest without an .imagedist directory", async () => {
+  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "astro-image-prune-test-"));
+  try {
+    const manifestPath = path.join(rootDir, ".astro-image-cdn", "manifest.json");
+    await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+    await fs.writeFile(manifestPath, JSON.stringify({ version: 2, images: {} }));
+    assert.deepEqual(await pruneImageDist({ rootDir }), { removed: 0, removedLegacyManifest: false });
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("processing rejects mistyped option keys instead of silently using defaults", async () => {
+  const { rootDir } = await makeFixtureRoot();
+  try {
+    const options = await loadImageCdnOptions(rootDir);
+    await fs.writeFile(
+      path.join(rootDir, "image-cdn-options.json"),
+      JSON.stringify({ ...options, autoRotat: true }),
+    );
+    await assert.rejects(loadImageCdnOptions(rootDir), /Unknown image CDN option\(s\).*autoRotat/);
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test("the shared options file feeds both prebuild and the Astro integration", async () => {
+  const options = await loadImageCdnOptions(APP_ROOT);
+  assert.deepEqual(options.widths, [256, 640, 828, 1080, 1200, 1920, 2048]);
+  assert.deepEqual(options.formats, ["webp"]);
+  assert.equal(options.outputDir, ".imagedist");
+  assert.equal(options.cacheDir, ".astro-image-cdn");
+  assert.equal(options.autoRotate, false);
+  assert.equal(options.dangerouslyProcessSVG, true);
+  assert.deepEqual(options.sources, ["src"]);
+});
+
+test("the slug map exposes the manifest path in both dev and build", async () => {
+  const { rootDir } = await makeFixtureRoot();
+
+  try {
+    const plugin = imageMetaPlugin();
+    let code;
+    const context = { addWatchFile() {} };
+
+    plugin.configResolved({ root: rootDir, command: "build" });
+    code = plugin.load.call(context, "\0virtual:image-slug-map").code;
+    const buildEntries = (await import(`data:text/javascript,${encodeURIComponent(code)}`)).default;
+    assert.deepEqual(buildEntries["synthetic-noise"], { path: "src/images/noise.jpg" });
+
+    plugin.configResolved({ root: rootDir, command: "serve" });
+    code = plugin.load.call(context, "\0virtual:image-slug-map").code;
+    assert.match(code, /"synthetic-noise": \{ path: "src\/images\/noise\.jpg", load: \(\) => import\("\/src\/images\/noise\.jpg"\) \}/);
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});
+

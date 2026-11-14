@@ -175,8 +175,12 @@ for (const { link, tariff, amount } of [
 // not asserted here — it is `null` in the built output.
 const ACTIVE_BOUDOIR_SLUG = "akt-boudoir-fine-art-fa-02";
 const activeBoudoirPattern = (() => {
-  const manifest = JSON.parse(readFileSync(new URL("../.imagedist/manifest.json", import.meta.url), "utf8"));
-  return new RegExp(`${ACTIVE_BOUDOIR_SLUG}|fa-02\\.jpg|${manifest.images[ACTIVE_BOUDOIR_SLUG].hash as string}`);
+  const manifest = JSON.parse(
+    readFileSync(new URL("../.astro-image-cdn/manifest.json", import.meta.url), "utf8"),
+  ) as { images: Record<string, { source: string, fingerprint: string }> };
+  const entry = manifest.images["src/content/portfolio/akt/boudoir-fine-art/fa-02.jpg"];
+  if (!entry) throw new Error("e2e: fa-02.jpg missing from the image CDN manifest");
+  return new RegExp(`${ACTIVE_BOUDOIR_SLUG}|fa-02\\.jpg|${entry.fingerprint}`);
 })();
 
 test("uses the owner's selected Boudoir image for the homepage offer", async ({ page }) => {

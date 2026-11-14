@@ -59,8 +59,7 @@ if (!isBuild || directImage) {
 // Resolve native dimensions and CDN manifest data
 let nativeWidth = 0;
 let nativeHeight = 0;
-let buildHash: string | undefined;
-let buildVariants: number[] | undefined;
+let buildVariants: { width: number, file: string }[] | undefined;
 
 if (isBuild && name) {
   const { getManifestImage } = await import("../images/image-manifest");
@@ -68,11 +67,14 @@ if (isBuild && name) {
   if (mi) {
     nativeWidth = mi.width;
     nativeHeight = mi.height;
-    buildHash = mi.hash;
-    buildVariants = mi.variants;
+    buildVariants = mi.variants
+      .filter(variant => variant.format === "webp")
+      .sort((left, right) => left.width - right.width)
+      .map(variant => ({ width: variant.width, file: variant.file }));
+    if (buildVariants.length === 0) buildVariants = undefined;
   } else {
     throw new Error(
-      `ResponsiveImage: "${name}" nicht in .imagedist/manifest.json gefunden. ` +
+      `ResponsiveImage: "${name}" nicht in .astro-image-cdn/manifest.json gefunden. ` +
         `existiert der Slug in src/images/ oder src/content/?`
     );
   }
@@ -114,15 +116,14 @@ const aspectRatioValue = `${nativeWidth}/${nativeHeight}`;
 let src: string;
 let srcset: string;
 
-if (isBuild && name && buildHash && buildVariants) {
+if (isBuild && name && buildVariants) {
   const { IMAGE_BASE_URL: cdnBase } = await import("../images/image-config");
-  const prefix = `${cdnBase}/${buildHash.slice(0, 2)}/${buildHash}`;
-  const cdnWidths = widths.filter(w => buildVariants.includes(w));
-  const effectiveWidths = cdnWidths.length > 0 ? cdnWidths : [buildVariants[0]];
-  src = `${prefix}_${effectiveWidths[effectiveWidths.length - 1]}.webp`;
-  srcset = effectiveWidths.map(w => `${prefix}_${w}.webp ${w}w`).join(", ");
-} else if (isBuild && name && !buildHash) {
-  throw new Error(`ResponsiveImage: "${name}" nicht in .imagedist/manifest.json gefunden. existsiert der Slug in src/images/ oder src/content/portfolio/?`);
+  const cdnVariants = buildVariants.filter(variant => widths.includes(variant.width));
+  const effectiveVariants = cdnVariants.length > 0 ? cdnVariants : [buildVariants[0]];
+  src = `${cdnBase}/${effectiveVariants[effectiveVariants.length - 1].file}`;
+  srcset = effectiveVariants.map(variant => `${cdnBase}/${variant.file} ${variant.width}w`).join(", ");
+} else if (isBuild && name && !buildVariants) {
+  throw new Error(`ResponsiveImage: "${name}" hat keine WebP-Varianten in .astro-image-cdn/manifest.json. Existiert der Slug in src/images/ oder src/content/portfolio/?`);
 } else {
   if (!image) {
     throw new Error("ResponsiveImage: Kein Bild verfügbar. image-prop oder name muss gesetzt sein.");
