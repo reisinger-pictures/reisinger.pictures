@@ -41,7 +41,7 @@
     "@iconify-json/material-symbols": "^1.2.100",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify/tailwind4": "^1.2.3",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.5",
     "@types/js-yaml": "^4.0.9",

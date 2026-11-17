@@ -19,7 +19,7 @@
     "import:portal-terms": "node packages/tools/scripts/import-portal-license-terms.ts"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.65.1",
     "typescript": "5.9.3"
   }
 }
